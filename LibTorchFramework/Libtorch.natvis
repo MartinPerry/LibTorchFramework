@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="at::Tensor" Priority="High">
+    <DisplayString>
+		{{ dimension={impl_.target_->sizes_and_strides_.inlineStorage_} }}
+	</DisplayString>
+    <Expand>		
+      <Item Name="Raw" ExcludeView="simple">impl_.target_</Item>
+	  <Item Name="Dimension" ExcludeView="Simple">impl_.target_->sizes_and_strides_.inlineStorage_</Item>
+		<Item Name="Device" ExcludeView="Simple">impl_.target_->device_opt_.storage_.value_.type_</Item>
+      <Item Name="Data" ExcludeView="simple">impl_.target_->storage_.storage_impl_.target_->data_ptr_.ptr_</Item>
+      <Item Name="requires_grad" ExcludeView="simple">(*((torch::autograd::AutogradMeta*)impl_.target_->autograd_meta_._Mypair._Myval2)).requires_grad_</Item>
+      <Item Name="grad_fn" ExcludeView="simple">(*((torch::autograd::AutogradMeta*)(*((c10::TensorImpl*)impl_.target_)).autograd_meta_._Mypair._Myval2)).grad_fn_</Item>
+      <Item Name="grad" ExcludeView="simple">(*((torch::autograd::AutogradMeta*)impl_.target_->autograd_meta_._Mypair._Myval2)).grad_</Item>
+      <ArrayItems>
+        <Size>impl_.target_->numel_</Size>
+        <ValuePointer>(float *)impl_.target_->storage_.storage_impl_.target_->data_ptr_.ptr_.data_</ValuePointer>
+        </ArrayItems>
+    </Expand>
+  </Type>
+</AutoVisualizer>

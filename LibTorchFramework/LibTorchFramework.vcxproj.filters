@@ -1,0 +1,206 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\core">
+      <UniqueIdentifier>{03ac5d38-92f7-4b37-ac56-2d9e083a956a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core">
+      <UniqueIdentifier>{1c6121d2-83c1-4cb6-a9eb-86bafe6a0d54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Utils">
+      <UniqueIdentifier>{704eb02a-3400-4736-a152-ca0369ab4721}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils">
+      <UniqueIdentifier>{9a623f52-efb4-47a8-a0aa-15b09ccca320}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\InputProcessing">
+      <UniqueIdentifier>{69a3057a-6cb6-4eec-88e4-614205bf68ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\InputProcessing">
+      <UniqueIdentifier>{4ddc6755-6447-4a98-8b71-9fa204fa87d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Metrics">
+      <UniqueIdentifier>{40238fc4-bf3d-463f-b161-2115bd2ba47e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Metrics">
+      <UniqueIdentifier>{d65b7be9-27a8-45b1-8159-0a73e8b627a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ModelZoo">
+      <UniqueIdentifier>{32253992-9de3-4f61-abad-4b7441a60840}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ModelZoo\UNet">
+      <UniqueIdentifier>{393f26c1-29f0-414b-999f-117f5f5f64d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ModelZoo">
+      <UniqueIdentifier>{cb6b9288-a9f0-410e-b334-1f600cae954f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ModelZoo\UNet">
+      <UniqueIdentifier>{a0f84281-8fe2-49d7-a235-0a77d387e03b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules">
+      <UniqueIdentifier>{26dcd564-6501-44a5-a26f-71f0090996a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules\LossFunctions">
+      <UniqueIdentifier>{7cdb44af-5e98-4a91-bbe8-d339601ee3ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\InputProcessing\InputLoaders">
+      <UniqueIdentifier>{4f897757-0583-4bc3-b254-d11061714745}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\InputProcessing\InputLoaders">
+      <UniqueIdentifier>{7909850c-48b3-420a-b916-81313210ddf6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Snapshot">
+      <UniqueIdentifier>{a8335690-8888-4516-a996-640b5f0033d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Snapshot">
+      <UniqueIdentifier>{fe834689-95e8-47de-9a75-5d03fdbb5389}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InputProcessing\DefaultDataset.cpp">
+      <Filter>Source Files\InputProcessing</Filter>
+    </ClCompile>
+    <ClCompile Include="InputProcessing\InputLoader.cpp">
+      <Filter>Source Files\InputProcessing</Filter>
+    </ClCompile>
+    <ClCompile Include="InputProcessing\InputLoadersWrapper.cpp">
+      <Filter>Source Files\InputProcessing</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Trainer.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Runner.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\AbstractModel.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Metrics\MetricsDefault.cpp">
+      <Filter>Source Files\core\Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Metrics\MetricsImage.cpp">
+      <Filter>Source Files\core\Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\TorchImageUtils.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="PerformanceSettings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelZoo\UNet\UNetModel.cpp">
+      <Filter>Source Files\ModelZoo\UNet</Filter>
+    </ClCompile>
+    <ClCompile Include="InputProcessing\InputLoaders\SegmentationInputLoader.cpp">
+      <Filter>Source Files\InputProcessing\InputLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\ProgressBar.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Snapshot\PretrainedManager.cpp">
+      <Filter>Source Files\core\Snapshot</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Snapshot\SnapshotLoader.cpp">
+      <Filter>Source Files\core\Snapshot</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Snapshot\SnapshotSaver.cpp">
+      <Filter>Source Files\core\Snapshot</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="InputProcessing\DefaultDataset.h">
+      <Filter>Header Files\InputProcessing</Filter>
+    </ClInclude>
+    <ClInclude Include="InputProcessing\InputLoader.h">
+      <Filter>Header Files\InputProcessing</Filter>
+    </ClInclude>
+    <ClInclude Include="InputProcessing\DataLoaderData.h">
+      <Filter>Header Files\InputProcessing</Filter>
+    </ClInclude>
+    <ClInclude Include="InputProcessing\InputLoadersWrapper.h">
+      <Filter>Header Files\InputProcessing</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\TorchUtils.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Trainer.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Runner.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="Settings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\AbstractModel.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Metrics\MetricsDefault.h">
+      <Filter>Header Files\core\Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Metrics\MetricsImage.h">
+      <Filter>Header Files\core\Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\TorchImageUtils.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="PerformanceSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelZoo\UNet\UNetModel.h">
+      <Filter>Header Files\ModelZoo\UNet</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\UpSample2d.h">
+      <Filter>Header Files\core\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\LossFunctions\DiceLoss.h">
+      <Filter>Header Files\core\Modules\LossFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="InputProcessing\InputLoaders\SegmentationInputLoader.h">
+      <Filter>Header Files\InputProcessing\InputLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\ProgressBar.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Snapshot\PretrainedManager.h">
+      <Filter>Header Files\core\Snapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Snapshot\FreezeInfo.h">
+      <Filter>Header Files\core\Snapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Snapshot\SnapshotLoader.h">
+      <Filter>Header Files\core\Snapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Snapshot\SnapshotSaver.h">
+      <Filter>Header Files\core\Snapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Structures.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\TrainingHelper.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\gradscaler.hpp">
+      <Filter>Header Files\core\Modules</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="Libtorch.natvis">
+      <Filter>Resource Files</Filter>
+    </Natvis>
+  </ItemGroup>
+</Project>
