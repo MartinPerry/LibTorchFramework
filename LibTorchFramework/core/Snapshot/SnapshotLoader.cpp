@@ -58,7 +58,7 @@ void SnapshotLoader::LoadParametersFromSerialized(const std::string& path)
     archive.load_from(path);
 
     // Read each parameter we have in model (safe: read only those present)
-    const torch::OrderedDict<std::string, at::Tensor>& modelParams = model->named_parameters();
+    torch::OrderedDict<std::string, at::Tensor> modelParams = model->named_parameters();
 
     for (const auto& p : modelParams)
     {
@@ -105,7 +105,7 @@ void SnapshotLoader::LoadParametersFromDict(const std::string& path)
     
     c10::Dict<c10::IValue, c10::IValue> weights = torch::pickle_load(f).toGenericDict();
     
-    const torch::OrderedDict<std::string, at::Tensor>& modelParams = model->named_parameters();
+    torch::OrderedDict<std::string, at::Tensor> modelParams = model->named_parameters();
     
     std::vector<std::string> paramNames;
     for (auto const& w : modelParams)
@@ -138,7 +138,7 @@ void SnapshotLoader::UpdateFreeze(std::shared_ptr<FreezeInfo> freezeInfo)
         return;
     }
 
-    const torch::OrderedDict<std::string, at::Tensor>& params = model->named_parameters();
+    torch::OrderedDict<std::string, at::Tensor> params = model->named_parameters();
 
     std::vector<std::string> freezedParts;
     for (auto& kv : params)

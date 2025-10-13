@@ -56,10 +56,10 @@ void SnapshotSaver::SaveParametersSerialized(const std::string& path)
 {
     torch::serialize::OutputArchive archive;
 
-    // Save named parameters
-    const torch::OrderedDict<std::string, at::Tensor>& modelParams = model->named_parameters();
+    // Save named parameters   
+    torch::OrderedDict<std::string, at::Tensor> params = model->named_parameters();
 
-    for (const auto& p : modelParams)
+    for (const auto& p : params)
     {
         const std::string name = p.key();        
         
@@ -79,25 +79,32 @@ void SnapshotSaver::SaveParametersSerialized(const std::string& path)
         }
     }
 
-    // Save named buffers (optional)
-    const torch::OrderedDict<std::string, at::Tensor>& modelBuffers = model->named_buffers();
-
-    for (const auto& b : modelBuffers)
+    
+    // Save named buffers (optional)    
+    /*
+    //if there are no buffers, program crash on ~OrderedDict
+    if (model->buffers().size() > 0)
     {
-        const std::string name = b.key();
-        at::Tensor safe = b.value().detach().to(at::kCPU).contiguous();
+        torch::OrderedDict<std::string, at::Tensor> buffers = model->named_buffers();
 
-        //MY_LOG_INFO("Saving buffer: %s", name.c_str());
+        for (const auto& b : buffers)
+        {
+            const std::string name = b.key();
+            at::Tensor safe = b.value().detach().to(at::kCPU).contiguous();
 
-        try 
-        {
-            archive.write(name, safe);
-        }
-        catch (const std::exception& e) 
-        {
-            MY_LOG_ERROR("Failed to write buffer '%s': %s", name.c_str(), e.what());
+            //MY_LOG_INFO("Saving buffer: %s", name.c_str());
+
+            try
+            {
+                archive.write(name, safe);
+            }
+            catch (const std::exception& e)
+            {
+                MY_LOG_ERROR("Failed to write buffer '%s': %s", name.c_str(), e.what());
+            }
         }
     }
+    */
 
     // Finally save to path
     archive.save_to(path);
@@ -111,7 +118,7 @@ void SnapshotSaver::SaveParametersSerialized(const std::string& path)
 void SnapshotSaver::SaveParametersAsDict(const std::string& path)
 {
     // Get model parameters
-    const torch::OrderedDict<std::string, at::Tensor>& modelParams = model->named_parameters();
+    torch::OrderedDict<std::string, at::Tensor> modelParams = model->named_parameters();
 
     // Create a dictionary to hold parameter name -> tensor mapping
     c10::Dict<std::string, at::Tensor> weights;

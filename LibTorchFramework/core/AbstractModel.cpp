@@ -1,12 +1,18 @@
 #include "./AbstractModel.h"
 
 
-AbstractModel::AbstractModel()
+AbstractModel::AbstractModel() : 
+	optimizer(nullptr)
 {
 }
 
 AbstractModel::~AbstractModel()
 {
+}
+
+void AbstractModel::RemoveOptimizer()
+{	
+	this->optimizer = nullptr;
 }
 
 void AbstractModel::OnBatchStart()

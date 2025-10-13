@@ -212,7 +212,7 @@ int main()
     ImageSize imSize(3, 64, 64);
 
     InputLoaderSettings loaderSets;
-    loaderSets.subsetSize = 10;
+    //loaderSets.subsetSize = 10;
 
     auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
     ilw->InitLoaders<SegmentationInputLoader, std::string>({{ RunMode::TRAIN, loaderSets }}, "D:\\Datasets\\Skyfinder");
@@ -220,6 +220,8 @@ int main()
     //auto trainLoader = ilw->GetLoader(RunMode::TRAIN);
     
     auto m = std::make_shared<UNetModel>(imSize.channels, 1, imSize.width, imSize.height);
+        
+    m->AssignOptimizer<torch::optim::Adam>(torch::optim::AdamOptions(0.0001));
 
     sets.pretrainedManager = std::make_shared<PretrainedManager>("D://CppTorchModels");
     sets.pretrainedManager->EnableTrainingSnapshot(true);

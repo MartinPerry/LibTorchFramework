@@ -15,6 +15,11 @@ public:
 	virtual ~AbstractModel();
 
 	virtual const char* GetName() const = 0;
+	
+	template <typename OptimType, typename Options>
+	void AssignOptimizer(const Options& options = {});
+
+	void RemoveOptimizer();
 
 	virtual std::vector<at::Tensor> RunForward(DataLoaderData& batch) = 0;
 
@@ -29,7 +34,12 @@ public:
 protected:
 
 	std::shared_ptr<torch::optim::Optimizer> optimizer;
-
 };
+
+template <typename OptimType, typename Options>
+void AbstractModel::AssignOptimizer(const Options& options)
+{
+	this->optimizer = std::make_shared<OptimType>(this->parameters(), options);
+}
 
 #endif

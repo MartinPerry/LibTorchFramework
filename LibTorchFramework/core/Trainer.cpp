@@ -65,6 +65,10 @@ void Trainer::ProcessBatch(DataLoaderData& batch)
             optimizer = nullptr;
         }
     }
+    else if (optimizer == nullptr)
+    {
+        MY_LOG_WARNING("No optimizer is set. Model wont train");
+    }
 
     this->RunTrainSteps(loss, optimizer);
 
