@@ -4,6 +4,8 @@
 
 #include <RasterData/Image2d.h>
 
+#include "./PredictionEvaluators.h"
+
 #include "../../Utils/TorchImageUtils.h"
 
 MetricsImage::MetricsImage() :
@@ -195,14 +197,14 @@ void MetricsImage::Save(const std::string& filePath) const
 
 }
 
-void MetricsImage::AddImages(at::Tensor p, at::Tensor t)
+void MetricsImage::AddImages(torch::Tensor p, torch::Tensor t)
 {
     if (keepImages == 0)
     {
         return;
     }
 
-    images.push_back({ t, p });
+    images.push_back({ t.cpu(), p.cpu()});
     if (images.size() > keepImages)
     {
         images.pop_front();
@@ -211,6 +213,11 @@ void MetricsImage::AddImages(at::Tensor p, at::Tensor t)
 
 void MetricsImage::Evaluate()
 {
+    if (this->predEval)
+    {
+        this->pred = this->predEval->Convert(this->pred);
+    }
+
     this->AddImages(this->pred, this->target);
 
     //todo: calculate psnr, ssim etc ?
@@ -230,7 +237,7 @@ void MetricsImage::Evaluate()
 // Calculations of metrics
 //==================================================================================
 
-void MetricsImage::RunningRmseMae(at::Tensor p, at::Tensor t)
+void MetricsImage::RunningRmseMae(torch::Tensor p, torch::Tensor t)
 {
     auto error = p - t;
     auto error2 = error * error;
@@ -239,7 +246,7 @@ void MetricsImage::RunningRmseMae(at::Tensor p, at::Tensor t)
     runningMse += error2.sum().item().toFloat();
 }
 
-void MetricsImage::JaccardIndexBinary(at::Tensor p, at::Tensor t, bool mergeBatches)
+void MetricsImage::JaccardIndexBinary(torch::Tensor p, torch::Tensor t, bool mergeBatches)
 {
     //if mergeBatches is True, results are for all batches together
     //if mergeBatches is False, each batch has its own result

@@ -29,7 +29,7 @@ void ProgressBar::Start(int total)
 {
     this->total = total;
     this->lastCurrent = 0;
-    this->lastProgress = 0;
+    this->lastProgress = -1;
 
     start_time = std::chrono::steady_clock::now();
 }

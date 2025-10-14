@@ -1,6 +1,8 @@
 #ifndef METRICS_DEFAULT_H
 #define METRICS_DEFAULT_H
 
+class PredictionEvaluator;
+
 #include <vector>
 #include <unordered_map>
 
@@ -14,11 +16,10 @@ public:
 	MetricsDefault();
 	virtual ~MetricsDefault();
 
+	void SetPredictionEvaluator(std::shared_ptr<PredictionEvaluator> predEval);
+
 	virtual void Reset();
-
-	//todo
-	//void SetPredictionEvaluator();
-
+		
 	virtual bool IsBetterThan(std::shared_ptr<MetricsDefault> other) const;
 
 	virtual std::unordered_map<std::string, float> GetResultExtended() const;
@@ -27,9 +28,9 @@ public:
 	void UpdateProcessCounter();
 	bool CanProcess() const;
 
-	void AddLoss(at::Tensor loss);
+	void AddLoss(torch::Tensor loss);
 	void AddDataIndices(const std::vector<int64_t>& indices);
-	void AddPredictionTarget(at::Tensor pred, at::Tensor target, bool firstDimensionIsBatch = true);
+	void AddPredictionTarget(torch::Tensor pred, torch::Tensor target, bool firstDimensionIsBatch = true);
 
 	float GetMeanLoss() const;
 
@@ -42,8 +43,10 @@ protected:
 
 	std::vector<int64_t> dataIndices;
 
-	at::Tensor pred; 
-	at::Tensor target;
+	std::shared_ptr<PredictionEvaluator> predEval;
+	
+	torch::Tensor pred; 
+	torch::Tensor target;
 
 	virtual void Evaluate();
 };

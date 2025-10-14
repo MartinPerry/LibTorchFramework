@@ -24,6 +24,8 @@ struct Settings
 	int epochCount = 10;
 
 	size_t batchSize = 3;
+
+	size_t numWorkers = 0;
 	
 	LossFnCallback lossFn = nullptr;
 

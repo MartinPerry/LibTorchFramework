@@ -81,6 +81,8 @@ torch::Tensor SegmentationInputLoader::LoadImageAsTensor(const std::string& p, i
     Image2d<uint8_t> img = Image2d<uint8_t>(p.c_str());
     if (img.GetChannelsCount() == 0)
     {
+        MY_LOG_ERROR("Failed to load image %s. Return zero tensor.", p.c_str());
+
         //failed to load image - return zero tensor
         return at::zeros({ reqChannelsCount, sets.imgH, sets.imgW }, at::kFloat);
     }    
@@ -92,6 +94,8 @@ torch::Tensor SegmentationInputLoader::LoadImageAsTensor(const std::string& p, i
             auto tmp = ColorSpace::ConvertToRGB(img);
             if (tmp.has_value() == false)
             {
+                MY_LOG_ERROR("Failed to convert image %s. Return zero tensor.", p.c_str());
+
                 //failed to convert image - return zero tensor
                 return at::zeros({ reqChannelsCount, sets.imgH, sets.imgW }, at::kFloat);
             }
@@ -102,6 +106,8 @@ torch::Tensor SegmentationInputLoader::LoadImageAsTensor(const std::string& p, i
             auto tmp = ColorSpace::ConvertToGray(img);
             if (tmp.has_value() == false)
             {
+                MY_LOG_ERROR("Failed to convert image %s. Return zero tensor.", p.c_str());
+
                 //failed to convert image - return zero tensor
                 return at::zeros({ reqChannelsCount, sets.imgH, sets.imgW }, at::kFloat);
             }
@@ -115,6 +121,11 @@ torch::Tensor SegmentationInputLoader::LoadImageAsTensor(const std::string& p, i
 
     img = ImageResize<uint8_t>::ResizeBilinear(img, ImageDimension(sets.imgW, sets.imgH));
     auto imgf = img.CreateAsMapped<float>(0, 255, 0.0f, 1.0f);
+
+    if (img.GetWidth() == 0)
+    {
+        MY_LOG_ERROR("zero image width");
+    }
 
     auto t = TorchUtils::make_tensor(imgf.MoveData(), 
         {static_cast<int>(img.GetChannelsCount()), img.GetHeight(), img.GetWidth()});

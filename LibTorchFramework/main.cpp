@@ -29,6 +29,7 @@
 #include "./core/Runner.h"
 #include "./core/Trainer.h"
 #include "./core/AbstractModel.h"
+#include "./core/Metrics/PredictionEvaluators.h"
 #include "./core/Metrics/MetricsDefault.h"
 #include "./core/Metrics/MetricsImage.h"
 #include "./core/Modules/LossFunctions/DiceLoss.h"
@@ -186,23 +187,27 @@ int main()
 
     Settings::PrintCudaInfo();
 
-    torch::nn::MSELoss loss;
-    torch::nn::ModuleHolder mm = loss;
+    //torch::nn::MSELoss loss;
+    //torch::nn::ModuleHolder mm = loss;
     //torch::nn::Module mod = torch::nn::MSELoss();
 
+    static std::shared_ptr<PredictionEvaluator> predEval = std::make_shared<PredictionEvaluatorSigmoid>();
 
     BceDiceLoss bceLoss;
 
     Settings sets;
-    sets.batchSize = 3;
-    sets.metricsInitFn = []() -> auto {
-        return std::make_shared<MetricsImage>();
-        };
+    sets.device = torch::kCUDA;
+    sets.batchSize = 150;
+    sets.metricsInitFn = [predEval= predEval]() -> auto {
+        auto metr = std::make_shared<MetricsImage>(MetricsImage::MetricsType::SEGMENTATION);
+        metr->SetPredictionEvaluator(predEval);
+        return metr;
+    };
     sets.lossFn = [&](const auto& output, const auto& targets) {
         //return torch::binary_cross_entropy(output[0], targets);
         //return torch::binary_cross_entropy_with_logits(output[0], targets);
         return bceLoss(output[0], targets);
-        };
+     };
 
     //auto ex = Example();
     //ex.data
@@ -212,7 +217,7 @@ int main()
     ImageSize imSize(3, 64, 64);
 
     InputLoaderSettings loaderSets;
-    //loaderSets.subsetSize = 10;
+    loaderSets.subsetSize = 200;
 
     auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
     ilw->InitLoaders<SegmentationInputLoader, std::string>({{ RunMode::TRAIN, loaderSets }}, "D:\\Datasets\\Skyfinder");
@@ -221,12 +226,12 @@ int main()
     
     auto m = std::make_shared<UNetModel>(imSize.channels, 1, imSize.width, imSize.height);
         
-    m->AssignOptimizer<torch::optim::Adam>(torch::optim::AdamOptions(0.0001));
+    m->CreateOptimizer<torch::optim::Adam>(torch::optim::AdamOptions(0.0001));
 
     sets.pretrainedManager = std::make_shared<PretrainedManager>("D://CppTorchModels");
     sets.pretrainedManager->EnableTrainingSnapshot(true);
     sets.pretrainedManager->EnableSaving(true);
-    //sets.pretrainedManager->EnableLoading()
+    sets.pretrainedManager->EnableLoading(false);
     
     // 
     //SnapshotSaver saver(m.get());

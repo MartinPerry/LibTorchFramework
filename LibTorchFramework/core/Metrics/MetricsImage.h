@@ -31,7 +31,7 @@ protected:
 	MetricsType mType;
 
 	int keepImages;
-	std::list<std::tuple<at::Tensor, at::Tensor>> images;
+	std::list<std::tuple<torch::Tensor, torch::Tensor>> images;
 
 	float iPosAll; //intersection all
 	float uPosAll; //union all
@@ -50,9 +50,9 @@ protected:
 		const std::string& extension,
 		bool extensionSeparateDir = false) const;
 
-	void AddImages(at::Tensor p, at::Tensor t);
-	void RunningRmseMae(at::Tensor p, at::Tensor t);
-	void JaccardIndexBinary(at::Tensor p, at::Tensor t, bool mergeBatches = true);
+	void AddImages(torch::Tensor p, torch::Tensor t);
+	void RunningRmseMae(torch::Tensor p, torch::Tensor t);
+	void JaccardIndexBinary(torch::Tensor p, torch::Tensor t, bool mergeBatches = true);
 
 	std::tuple<float, float, float, float> CalcIntersectUnions(torch::Tensor p, torch::Tensor t, bool mergeBatches) const;
 	std::pair<torch::Tensor, torch::Tensor> IouInverse(const torch::Tensor& p, const torch::Tensor& t) const;

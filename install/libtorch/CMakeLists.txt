@@ -27,28 +27,6 @@ if(MSVC)
   add_definitions(/MP)
 endif()
 
-# ========================= TARGET =============================================
-set(TARGET_NAME "NNC")
- file(GLOB_RECURSE SOURCES 
-        "src/*.cpp" 
-        "src/*.hpp" 
-        "src/*.h" 
-        )
-if(NOT NN_EXAMPLES)
-    file(GLOB_RECURSE EXAMPLE_FILES "src/examples/*.cpp")
-    list(REMOVE_ITEM SOURCES ${EXAMPLE_FILES})
-endif()
-
-add_executable(${TARGET_NAME} ${SOURCES})
-set_target_properties(PROPERTIES OUTPUT_NAME "NNC")
-target_include_directories(${TARGET_NAME} PRIVATE  "src")
-target_precompile_headers(${TARGET_NAME} PRIVATE "src/core/nn.h")
-#target_link_options(${TARGET_NAME} PRIVATE -static-libgcc -static-libstdc++)
-
-#target_compile_options(${TARGET_NAME} PRIVATE
-#    $<$<CXX_COMPILER_ID:MSVC>:/W4>
-#    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic>
-#)
 
 # ========================= TORCH =============================================
 

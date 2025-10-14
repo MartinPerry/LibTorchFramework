@@ -182,8 +182,11 @@ auto InputLoader::BuildDataLoader(const Settings& sets, int& bacthesCount)
     bacthesCount = (datasetSize + sets.batchSize - 1) / sets.batchSize;
 
     auto loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(
-        std::move(dsMapped),
-        sets.batchSize
+        std::move(dsMapped),        
+        torch::data::DataLoaderOptions()
+            .batch_size(sets.batchSize)            
+            .workers(sets.numWorkers)
+            .enforce_ordering(false)            
     );    
 
     return loader;

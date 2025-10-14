@@ -197,6 +197,9 @@
     <ClInclude Include="core\Modules\gradscaler.hpp">
       <Filter>Header Files\core\Modules</Filter>
     </ClInclude>
+    <ClInclude Include="core\Metrics\PredictionEvaluators.h">
+      <Filter>Header Files\core\Metrics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Libtorch.natvis">

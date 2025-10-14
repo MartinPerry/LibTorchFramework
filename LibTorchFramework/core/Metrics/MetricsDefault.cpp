@@ -8,12 +8,18 @@
 MetricsDefault::MetricsDefault() : 
 	batchesCount(0),
 	processCounter(0),
-	meanLoss(std::nullopt)
+	meanLoss(std::nullopt),
+	predEval(nullptr)
 {
 }
 
 MetricsDefault::~MetricsDefault()
 {
+}
+
+void MetricsDefault::SetPredictionEvaluator(std::shared_ptr<PredictionEvaluator> predEval)
+{
+	this->predEval = predEval;
 }
 
 void MetricsDefault::Reset()
@@ -86,7 +92,7 @@ bool MetricsDefault::CanProcess() const
 	return true;
 }
 
-void MetricsDefault::AddLoss(at::Tensor loss)
+void MetricsDefault::AddLoss(torch::Tensor loss)
 {
 	losses.push_back(loss.item().toFloat());
 	meanLoss = std::nullopt;
@@ -100,7 +106,7 @@ void MetricsDefault::AddDataIndices(const std::vector<int64_t>& indices)
 	}
 }
 
-void MetricsDefault::AddPredictionTarget(at::Tensor pred, at::Tensor target, bool firstDimensionIsBatch)
+void MetricsDefault::AddPredictionTarget(torch::Tensor pred, torch::Tensor target, bool firstDimensionIsBatch)
 {
 	this->pred = pred;
 	this->target = target;
