@@ -9,21 +9,26 @@
 #pragma comment(lib, "cpuinfo.lib")
 #pragma comment(lib, "dnnl.lib")
 #pragma comment(lib, "fbgemm.lib")
-#pragma comment(lib, "fbjni.lib")
+//#pragma comment(lib, "fbjni.lib")
+//#pragma comment(lib, "pytorch_jni.lib")
 #pragma comment(lib, "kineto.lib")
 #pragma comment(lib, "pthreadpool.lib")
-#pragma comment(lib, "pytorch_jni.lib")
 #pragma comment(lib, "torch.lib")
 #pragma comment(lib, "torch_cpu.lib")
 #pragma comment(lib, "torch_cuda.lib")
 #pragma comment(lib, "XNNPACK.lib")
 
-//debug versions
-#pragma comment(lib, "libprotobufd.lib")
-#pragma comment(lib, "libprotocd.lib")
+#ifdef _DEBUG
+#   pragma comment(lib, "libprotobufd.lib")
+#   pragma comment(lib, "libprotocd.lib")
+#   pragma comment(lib, "Playgroundd.lib")
+#else
+#   pragma comment(lib, "libprotobuf.lib")
+#   pragma comment(lib, "libprotoc.lib")
+#   pragma comment(lib, "Playground.lib")
+#endif
 
 
-#pragma comment(lib, "Playgroundd.lib")
 
 #include "./core/Structures.h"
 #include "./core/Runner.h"
@@ -170,6 +175,10 @@ std::vector<at::Tensor> TestModel::RunForward(DataLoaderData& batch)
 
 int main()
 {
+    auto log = MyUtils::Logger::GetInstance();
+    log->Enable(MyUtils::Logger::LogType::Error, MyUtils::Logger::LogOutput::StdOut);
+    log->Enable(MyUtils::Logger::LogType::Warning, MyUtils::Logger::LogOutput::StdOut);
+    log->Enable(MyUtils::Logger::LogType::Info, MyUtils::Logger::LogOutput::StdOut);
 
     //std::cout << "Hello World!\n";
     //at::Tensor tensor = at::ones({ 3, 7, 2 }, at::kInt);
@@ -196,8 +205,9 @@ int main()
     BceDiceLoss bceLoss;
 
     Settings sets;
-    sets.device = torch::kCUDA;
-    sets.batchSize = 150;
+    sets.numWorkers = 4;
+    sets.device = torch::kCPU; //torch::kCUDA;
+    sets.batchSize = 3;
     sets.metricsInitFn = [predEval= predEval]() -> auto {
         auto metr = std::make_shared<MetricsImage>(MetricsImage::MetricsType::SEGMENTATION);
         metr->SetPredictionEvaluator(predEval);

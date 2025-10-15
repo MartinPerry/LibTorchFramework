@@ -124,7 +124,7 @@ torch::Tensor SegmentationInputLoader::LoadImageAsTensor(const std::string& p, i
 
     if (img.GetWidth() == 0)
     {
-        MY_LOG_ERROR("zero image width");
+        MY_LOG_ERROR("zero image width %s", p.c_str());
     }
 
     auto t = TorchUtils::make_tensor(imgf.MoveData(), 
@@ -134,7 +134,7 @@ torch::Tensor SegmentationInputLoader::LoadImageAsTensor(const std::string& p, i
 }
 
 void SegmentationInputLoader::FillData(size_t index, DataLoaderData& ld)
-{
+{    
     const auto& fi = this->data[index];
     auto maskName = fi.GetMaskFileName(sets.datasetPath);
 

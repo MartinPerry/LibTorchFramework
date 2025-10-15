@@ -32,6 +32,9 @@ void ProgressBar::Start(int total)
     this->lastProgress = -1;
 
     start_time = std::chrono::steady_clock::now();
+
+    //print starting state with no progress
+    this->Update(0);
 }
 
 void ProgressBar::NextStep()
@@ -43,11 +46,7 @@ void ProgressBar::Update(int current)
 {
     lastCurrent = current;
 
-    int progress = static_cast<int>(100.0 * current / total);
-    if (progress == lastProgress)
-    {
-        return;  // avoid flicker
-    }
+    int progress = static_cast<int>(100.0 * current / total);    
     lastProgress = progress;
 
     double ratio = static_cast<double>(current) / total;
