@@ -28,8 +28,8 @@ Global
 		{7A639B11-1BF9-498C-AD30-7F9BD03F27E7}.Debug|x64.Build.0 = Debug_lib_md|x64
 		{7A639B11-1BF9-498C-AD30-7F9BD03F27E7}.Debug|x86.ActiveCfg = Debug|Win32
 		{7A639B11-1BF9-498C-AD30-7F9BD03F27E7}.Debug|x86.Build.0 = Debug|Win32
-		{7A639B11-1BF9-498C-AD30-7F9BD03F27E7}.Release|x64.ActiveCfg = Release|x64
-		{7A639B11-1BF9-498C-AD30-7F9BD03F27E7}.Release|x64.Build.0 = Release|x64
+		{7A639B11-1BF9-498C-AD30-7F9BD03F27E7}.Release|x64.ActiveCfg = Release_lib_md|x64
+		{7A639B11-1BF9-498C-AD30-7F9BD03F27E7}.Release|x64.Build.0 = Release_lib_md|x64
 		{7A639B11-1BF9-498C-AD30-7F9BD03F27E7}.Release|x86.ActiveCfg = Release|Win32
 		{7A639B11-1BF9-498C-AD30-7F9BD03F27E7}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection

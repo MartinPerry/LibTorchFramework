@@ -120,12 +120,16 @@ torch::Tensor SegmentationInputLoader::LoadImageAsTensor(const std::string& p, i
     }
 
     img = ImageResize<uint8_t>::ResizeBilinear(img, ImageDimension(sets.imgW, sets.imgH));
-    auto imgf = img.CreateAsMapped<float>(0, 255, 0.0f, 1.0f);
-
-    if (img.GetWidth() == 0)
+    
+    if ((img.GetWidth() != sets.imgW) && (img.GetHeight() == sets.imgH))
     {
-        MY_LOG_ERROR("zero image width %s", p.c_str());
+        MY_LOG_ERROR("Incorrect image dimension [%d, %d] for %s", img.GetWidth(), img.GetHeight(), p.c_str());
+
+        //return zero tensor
+        return at::zeros({ reqChannelsCount, sets.imgH, sets.imgW }, at::kFloat);
     }
+
+    auto imgf = img.CreateAsMapped<float>(0, 255, 0.0f, 1.0f);
 
     auto t = TorchUtils::make_tensor(imgf.MoveData(), 
         {static_cast<int>(img.GetChannelsCount()), img.GetHeight(), img.GetWidth()});
