@@ -120,6 +120,9 @@
     <ClCompile Include="core\Snapshot\SnapshotSaver.cpp">
       <Filter>Source Files\core\Snapshot</Filter>
     </ClCompile>
+    <ClCompile Include="main_testcpp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InputProcessing\DefaultDataset.h">

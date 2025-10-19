@@ -1,4 +1,5 @@
 mkdir buildRelease
 cd buildRelease
-cmake -DTORCH_CONFIGURATION=Release  -DOneConfigOnly=ON ..
+cmake -DTORCH_CONFIGURATION=Release ..
 pause
+cd ..

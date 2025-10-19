@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -27,19 +19,6 @@
     <ProjectName>LibTorchFramework</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -58,53 +37,23 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="CustomMacros.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="CustomMacros.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)..\libtorch\Debug\libtorch\include;$(ProjectDir)..\libtorch\Debug\libtorch\include\torch\csrc\api\include;$(ProjectDir)..\libtorchvision\Debug\include;D:\Cpp\CppPlayground\Playground;D:\Cpp\CppPlayground\include;$(VCPKG_INSTALL_DIR)\x64-windows\include;D:\opencv\build\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\libtorch\Debug\libtorch\lib;$(ProjectDir)..\libtorchvision\Debug\lib;D:\Cpp\CppPlayground\libs_x64;D:\opencv\build\x64\vc15\lib;$(VCPKG_INSTALL_DIR)\x64-windows\debug\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\libtorch\Debug\libtorch_2.9.0\include;$(ProjectDir)..\libtorch\Debug\libtorch_2.9.0\include\torch\csrc\api\include;$(PLAYGROUND_PATH)\Playground;$(PLAYGROUND_PATH)\include;$(VCPKG_INSTALL_DIR)\x64-windows\include;D:\opencv\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\libtorch\Debug\libtorch_2.9.0\lib;$(PLAYGROUND_PATH)\libs_x64;D:\opencv\build\x64\vc15\lib;$(VCPKG_INSTALL_DIR)\x64-windows\debug\lib;$(ProjectDir)..\x64\Debug_lib_md;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)..\libtorch\Release\libtorch\include;$(ProjectDir)..\libtorch\Release\libtorch\include\torch\csrc\api\include;D:\Cpp\CppPlayground\Playground;D:\Cpp\CppPlayground\include;$(VCPKG_INSTALL_DIR)\x64-windows\include;D:\opencv\build\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\libtorch\Release\libtorch\lib;D:\Cpp\CppPlayground\libs_x64;D:\opencv\build\x64\vc15\lib;$(VCPKG_INSTALL_DIR)\x64-windows\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\libtorch\Release\libtorch_2.9.0\include;$(ProjectDir)..\libtorch\Release\libtorch_2.9.0\include\torch\csrc\api\include;$(PLAYGROUND_PATH)\Playground;$(PLAYGROUND_PATH)\include;$(VCPKG_INSTALL_DIR)\x64-windows\include;D:\opencv\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\libtorch\Release\libtorch_2.9.0\lib;$(PLAYGROUND_PATH)\libs_x64;D:\opencv\build\x64\vc15\lib;$(VCPKG_INSTALL_DIR)\x64-windows\lib;$(ProjectDir)..\x64\Release_lib_md;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -113,11 +62,12 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalOptions>/INCLUDE:"?warp_size@cuda@at@@YAHXZ" %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -129,7 +79,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;USE_RELEASE_LOG_INFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -151,6 +101,7 @@
     <ClCompile Include="InputProcessing\InputLoadersWrapper.cpp" />
     <ClCompile Include="InputProcessing\InputLoaders\SegmentationInputLoader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="main_testcpp.cpp" />
     <ClCompile Include="ModelZoo\UNet\UNetModel.cpp" />
     <ClCompile Include="PerformanceSettings.cpp" />
     <ClCompile Include="Utils\ProgressBar.cpp" />
@@ -183,11 +134,6 @@
     <ClInclude Include="Utils\TorchImageUtils.h" />
     <ClInclude Include="Utils\TorchUtils.h" />
     <ClInclude Include="Utils\TrainingHelper.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\CppPlayground\Playground\Playground.vcxproj">
-      <Project>{7a639b11-1bf9-498c-ad30-7f9bd03f27e7}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Libtorch.natvis" />

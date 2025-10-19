@@ -2,15 +2,16 @@
 
 #include <iostream>
 
-#pragma comment(lib, "asmjit.lib")
+//#pragma comment(lib, "asmjit.lib")
+//#pragma comment(lib, "fbgemm.lib")
+//#pragma comment(lib, "fbjni.lib")
+//#pragma comment(lib, "pytorch_jni.lib")
+
 #pragma comment(lib, "c10.lib")
 #pragma comment(lib, "c10_cuda.lib")
 #pragma comment(lib, "caffe2_nvrtc.lib")
 #pragma comment(lib, "cpuinfo.lib")
 #pragma comment(lib, "dnnl.lib")
-#pragma comment(lib, "fbgemm.lib")
-//#pragma comment(lib, "fbjni.lib")
-//#pragma comment(lib, "pytorch_jni.lib")
 #pragma comment(lib, "kineto.lib")
 #pragma comment(lib, "pthreadpool.lib")
 #pragma comment(lib, "torch.lib")
@@ -206,7 +207,7 @@ int main()
 
     Settings sets;
     sets.numWorkers = 4;
-    sets.device = torch::kCPU; //torch::kCUDA;
+    sets.device = torch::kCUDA; //torch::kCUDA;
     sets.batchSize = 3;
     sets.metricsInitFn = [predEval= predEval]() -> auto {
         auto metr = std::make_shared<MetricsImage>(MetricsImage::MetricsType::SEGMENTATION);
@@ -227,10 +228,10 @@ int main()
     ImageSize imSize(3, 64, 64);
 
     InputLoaderSettings loaderSets;
-    loaderSets.subsetSize = 200;
+    //loaderSets.subsetSize = 200;
 
     auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
-    ilw->InitLoaders<SegmentationInputLoader, std::string>({{ RunMode::TRAIN, loaderSets }}, "D:\\Datasets\\Skyfinder");
+    ilw->InitLoaders<SegmentationInputLoader, std::string>({{ RunMode::TRAIN, loaderSets }}, "E:\\Datasets\\Skyfinder");
 
     //auto trainLoader = ilw->GetLoader(RunMode::TRAIN);
     

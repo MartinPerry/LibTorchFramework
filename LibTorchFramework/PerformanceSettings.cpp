@@ -48,12 +48,12 @@ void PerformanceSettings::SetMatMulPrec(MatMulPrecision m)
     switch (m)
     {
     case MatMulPrecision::HIGHEST:
-        torch::globalContext().setFloat32MatmulPrecision(at::Float32MatmulPrecision::HIGHEST);
+        torch::globalContext().setFloat32MatmulPrecision("highest");
     case MatMulPrecision::HIGH:
-        torch::globalContext().setFloat32MatmulPrecision(at::Float32MatmulPrecision::HIGH);
+        torch::globalContext().setFloat32MatmulPrecision("high");
     case MatMulPrecision::MEDIUM:
-        torch::globalContext().setFloat32MatmulPrecision(at::Float32MatmulPrecision::MEDIUM);
+        torch::globalContext().setFloat32MatmulPrecision("medium");
     default:
-        torch::globalContext().setFloat32MatmulPrecision(at::Float32MatmulPrecision::HIGHEST);
+        torch::globalContext().setFloat32MatmulPrecision("highest");
     }
 }
