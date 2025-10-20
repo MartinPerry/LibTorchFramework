@@ -30,15 +30,15 @@ Runner::~Runner()
 torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch)
 {    
     if (sets.perf.enableAutoCast)
-    {                
-        at::autocast::set_enabled(true);
+    {                        
+        at::autocast::set_autocast_enabled(sets.device, true);
     }
     auto result = model->RunForward(batch);
 
     if (sets.perf.enableAutoCast)
     {
-        at::autocast::clear_cache();
-        at::autocast::set_enabled(false);
+        at::autocast::clear_cache();        
+        at::autocast::set_autocast_enabled(sets.device, false);
     }
 
     torch::Tensor loss;

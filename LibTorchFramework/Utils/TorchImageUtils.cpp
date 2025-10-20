@@ -51,7 +51,9 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 
 	t = t.cpu().contiguous();
 
-	std::vector<float> flat(t.data_ptr<float>(), t.data_ptr<float>() + t.numel());
+	const float* rawData = t.const_data_ptr<float>();
+
+	std::vector<float> flat(rawData, rawData + t.numel());
 
 	// interval mapping / clamping
 	if (intervalMapping)

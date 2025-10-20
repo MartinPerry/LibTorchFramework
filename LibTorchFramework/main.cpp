@@ -128,8 +128,8 @@ int main()
     Settings sets;
     //-----
     //model debug
-    sets.numWorkers = 0;
-    sets.device = torch::kCPU;
+    sets.numWorkers = 4;
+    sets.device = torch::kCUDA;
     sets.perf.enableAutoCast = false;
     //-----
 
@@ -145,11 +145,13 @@ int main()
     sets.lossFn = [&](const auto& output, const auto& targets) {
         //return torch::binary_cross_entropy(output[0], targets);
         //return torch::binary_cross_entropy_with_logits(output[0], targets);
-        return bceLoss(output[0], targets);
-        //return multiLoss(output, targets);
+        //return bceLoss(output[0], targets);
+        return multiLoss(output, targets);
      };
 
-   
+    //if crashes with openMp - disable it
+    // Assertion failed: nthr_ == nthr, file C:\actions-runner\_work\pytorch\pytorch\pytorch\third_party\ideep\mkl-dnn\src\common/dnnl_thread.hpp, line 293    
+    //at::globalContext().setUserEnabledMkldnn(false);
    
     ImageSize imSize(3, 256, 256);
 

@@ -19,7 +19,7 @@ void ProgressBar::ClearParams()
 void ProgressBar::SetParam(const std::string& name, const std::string& val)
 {
     auto it = this->params.try_emplace(name, val);
-    if (it.second)
+    if (it.second == false)
     {
         it.first->second = val;
     }
