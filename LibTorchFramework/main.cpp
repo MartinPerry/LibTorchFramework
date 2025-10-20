@@ -157,12 +157,12 @@ int main()
     //loaderSets.subsetSize = 200;
 
     auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
-    ilw->InitLoaders<SegmentationInputLoader, std::string>({{ RunMode::TRAIN, loaderSets }}, "D:\\Datasets\\Skyfinder");
+    ilw->InitLoaders<SegmentationInputLoader, std::string>({{ RunMode::TRAIN, loaderSets }}, "E:\\Datasets\\Skyfinder");
 
     //auto trainLoader = ilw->GetLoader(RunMode::TRAIN);
     
-    auto m = std::make_shared<ModelZoo::unet::UNetModel>(imSize.channels, 1, imSize.width, imSize.height);
-    //auto m = std::make_shared<ModelZoo::u2net::U2NetModel>(imSize.channels, 1);
+    //auto m = std::make_shared<ModelZoo::unet::UNetModel>(imSize.channels, 1, imSize.width, imSize.height);
+    auto m = std::make_shared<ModelZoo::u2net::U2NetModel>(imSize.channels, 1);
         
     m->CreateOptimizer<torch::optim::Adam>(torch::optim::AdamOptions(0.0001));
 
