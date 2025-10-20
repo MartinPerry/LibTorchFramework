@@ -18,6 +18,7 @@ struct Settings
 {
 	using LossFnCallback = std::function<torch::Tensor(const std::vector<torch::Tensor>& output, torch::Tensor target)>;
 	using MetricsInitCallback = std::function<std::shared_ptr<MetricsDefault>()>;
+	using GradientClippingCallback = std::function<double(const torch::autograd::variable_list& params)>;
 
 	torch::DeviceType device = torch::kCPU;
 
@@ -34,6 +35,10 @@ struct Settings
 	std::shared_ptr<PretrainedManager> pretrainedManager = nullptr;
 
 	PerformanceSettings perf;
+
+	//Gradient Norm Clipping - torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm = 2.0, norm_type = 2)
+	//Gradient Value Clipping - torch.nn.utils.clip_grad_value_(self.model.parameters(), clip_value = 1.0)
+	GradientClippingCallback clippingFn = nullptr;
 
 	std::optional<int> gradientAccumulationCount = std::nullopt;
 

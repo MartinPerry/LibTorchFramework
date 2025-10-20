@@ -149,5 +149,5 @@ void SegmentationInputLoader::FillData(size_t index, DataLoaderData& ld)
     mask = torch::where(mask > 0.5, torch::ones_like(mask), torch::zeros_like(mask));
 
     ld.input = this->LoadImageAsTensor(fi.fn, sets.imgChannelsCount);
-    ld.target = mask;    
+    ld.target = mask;     
 }

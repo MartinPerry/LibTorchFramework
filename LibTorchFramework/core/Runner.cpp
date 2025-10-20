@@ -81,7 +81,7 @@ void Runner::OnEpochStart()
 
     model->eval();
 
-    torch::GradMode::set_enabled(false);
+    torch::autograd::GradMode::set_enabled(false);
 
     this->pBar->ClearParams();
     this->pBar->Start(this->dataLoaderBatchesCount);

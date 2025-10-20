@@ -3,6 +3,8 @@
 #include "../../core/Modules/UpSample2d.h"
 #include "../../InputProcessing/DataLoaderData.h"
 
+using namespace ModelZoo::unet;
+
 SimpleUNetBlockImpl::SimpleUNetBlockImpl(int in_ch,
     int out_ch,
     bool use_padding,
@@ -41,8 +43,7 @@ SimpleUNetBlockImpl::SimpleUNetBlockImpl(int in_ch,
         use_dropout = true;
     }
     else 
-    {
-        identity = register_module("identity", torch::nn::Identity());
+    {        
         use_dropout = false;
     }
 }
@@ -54,11 +55,7 @@ torch::Tensor SimpleUNetBlockImpl::forward(torch::Tensor x)
     if (use_dropout) 
     {
         x = dropout->forward(x);
-    }
-    else 
-    {
-        x = identity->forward(x);
-    }
+    }    
     x = conv2->forward(x);
     return x;
 }
@@ -208,7 +205,7 @@ torch::Tensor UNetModel::forward(torch::Tensor x)
     return out;
 }
 
-std::vector<at::Tensor> UNetModel::RunForward(DataLoaderData& batch)
+std::vector<torch::Tensor> UNetModel::RunForward(DataLoaderData& batch)
 {
     auto x = this->forward(batch.input);
     

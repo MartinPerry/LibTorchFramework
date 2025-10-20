@@ -67,6 +67,12 @@
     <Filter Include="Source Files\core\Snapshot">
       <UniqueIdentifier>{fe834689-95e8-47de-9a75-5d03fdbb5389}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\ModelZoo\U2Net">
+      <UniqueIdentifier>{03c44e62-1b94-46b2-a461-3e460e525f1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ModelZoo\U2Net">
+      <UniqueIdentifier>{448da00d-d00a-4997-a484-7bfcebe36dc2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -120,8 +126,8 @@
     <ClCompile Include="core\Snapshot\SnapshotSaver.cpp">
       <Filter>Source Files\core\Snapshot</Filter>
     </ClCompile>
-    <ClCompile Include="main_testcpp.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="ModelZoo\U2Net\U2NetModel.cpp">
+      <Filter>Source Files\ModelZoo\U2Net</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -202,6 +208,12 @@
     </ClInclude>
     <ClInclude Include="core\Metrics\PredictionEvaluators.h">
       <Filter>Header Files\core\Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelZoo\U2Net\U2NetModel.h">
+      <Filter>Header Files\ModelZoo\U2Net</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\LossFunctions\MultiBceLoss.h">
+      <Filter>Header Files\core\Modules\LossFunctions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

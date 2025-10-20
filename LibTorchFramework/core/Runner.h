@@ -79,10 +79,10 @@ void Runner::RunEpoch(DataLoaderType& dl, int epochId, int batchesCount)
     this->dataLoaderBatchesCount = batchesCount;
     this->activeEpochId = epochId;
 
-    this->OnEpochStart();
-
     model->to(sets.device);
 
+    this->OnEpochStart();
+    
     model->OnEpochStart();
 
     batchIndex = 0;

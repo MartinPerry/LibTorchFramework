@@ -105,8 +105,8 @@ namespace torch::data::transforms
             {
                 d.additionalData.try_emplace(k, torch::stack(v));
             }
-            
-            return std::move(d);
+                        
+            return d;
         }
     };
 }

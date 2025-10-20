@@ -46,7 +46,7 @@ endmacro()
 
 
 # Main folder
-set(LIBTORCH_DIR "${PROJECT_SOURCE_DIR}/vendor/libtorch")
+set(LIBTORCH_DIR "${PROJECT_SOURCE_DIR}/vendor/libtorch_${LIBTORCH_VERSION}")
 file(MAKE_DIRECTORY "${LIBTORCH_DIR}")
 
 # Download and extract configurations in DOWNLOAD_TORCH_CONFIGS

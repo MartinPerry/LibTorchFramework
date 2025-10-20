@@ -8,90 +8,96 @@
 
 #include "../../core/AbstractModel.h"
 
-
-struct SimpleUNetBlockImpl : public torch::nn::Module 
+namespace ModelZoo
 {
-    torch::nn::Conv2d conv1{ nullptr };
-    torch::nn::Conv2d conv2{ nullptr };
-    torch::nn::ReLU relu{ nullptr };
-    torch::nn::Dropout dropout{ nullptr };
-    torch::nn::Identity identity{ nullptr };
-    bool use_dropout;
+    namespace unet
+    {
 
-    SimpleUNetBlockImpl(int in_ch,
-        int out_ch,
-        bool use_padding = false,
-        std::optional<double> dropout_rate = std::nullopt);    
+        struct SimpleUNetBlockImpl : public torch::nn::Module
+        {
+            torch::nn::Conv2d conv1{ nullptr };
+            torch::nn::Conv2d conv2{ nullptr };
+            torch::nn::ReLU relu{ nullptr };
+            torch::nn::Dropout dropout{ nullptr };            
+            bool use_dropout;
 
-    torch::Tensor forward(torch::Tensor x);
-};
+            SimpleUNetBlockImpl(int in_ch,
+                int out_ch,
+                bool use_padding = false,
+                std::optional<double> dropout_rate = std::nullopt);
 
-TORCH_MODULE(SimpleUNetBlock);
+            torch::Tensor forward(torch::Tensor x);
+        };
 
-//===================================================================================
+        TORCH_MODULE(SimpleUNetBlock);
 
-struct EncoderImpl : public torch::nn::Module
-{
-    torch::nn::ModuleList enc_blocks{ nullptr };
-    torch::nn::MaxPool2d pool{ nullptr };
-    
-    EncoderImpl(int inputChannels,
-        const std::vector<int>& chs = { 64, 128, 256, 512, 1024 },
-        bool use_padding = false);
+        //===================================================================================
 
-    std::vector<torch::Tensor> forward(torch::Tensor x);
-};
+        struct EncoderImpl : public torch::nn::Module
+        {
+            torch::nn::ModuleList enc_blocks{ nullptr };
+            torch::nn::MaxPool2d pool{ nullptr };
 
-TORCH_MODULE(Encoder);
+            EncoderImpl(int inputChannels,
+                const std::vector<int>& chs = { 64, 128, 256, 512, 1024 },
+                bool use_padding = false);
 
-//===================================================================================
+            std::vector<torch::Tensor> forward(torch::Tensor x);
+        };
 
-struct DecoderImpl : public torch::nn::Module
-{
-    std::vector<int> chs;
-    torch::nn::ModuleList upconvs{ nullptr };
-    torch::nn::ModuleList dec_blocks{ nullptr };
+        TORCH_MODULE(Encoder);
 
-    DecoderImpl(const std::vector<int>& chs = { 1024, 512, 256, 128, 64 },
-        bool use_padding = false);
+        //===================================================================================
 
-    torch::Tensor crop(const torch::Tensor& img, const torch::Tensor& target);
+        struct DecoderImpl : public torch::nn::Module
+        {
+            std::vector<int> chs;
+            torch::nn::ModuleList upconvs{ nullptr };
+            torch::nn::ModuleList dec_blocks{ nullptr };
 
-    torch::Tensor forward(torch::Tensor x, const std::vector<torch::Tensor>& encoderFeatures);
-};
+            DecoderImpl(const std::vector<int>& chs = { 1024, 512, 256, 128, 64 },
+                bool use_padding = false);
 
-TORCH_MODULE(Decoder);
+            torch::Tensor crop(const torch::Tensor& img, const torch::Tensor& target);
+
+            torch::Tensor forward(torch::Tensor x, const std::vector<torch::Tensor>& encoderFeatures);
+        };
+
+        TORCH_MODULE(Decoder);
 
 
-//===================================================================================
+        //===================================================================================
 
-class UNetModel : public AbstractModel
-{
-public:
-    Encoder encoder{ nullptr };
-    Decoder decoder{ nullptr };
-    torch::nn::Conv2d head{ nullptr };
+        class UNetModel : public AbstractModel
+        {
+        public:
+            Encoder encoder{ nullptr };
+            Decoder decoder{ nullptr };
+            torch::nn::Conv2d head{ nullptr };
 
-    int outW;
-    int outH;
+            int outW;
+            int outH;
 
-    UNetModel(int in_ch,
-        int out_ch,
-        int outW,
-        int outH,
-        const std::vector<int>& enc_chs = { 64, 128, 256, 512, 1024 },
-        const std::vector<int>& dec_chs = { 1024, 512, 256, 128, 64 }
-    );
+            UNetModel(int in_ch,
+                int out_ch,
+                int outW,
+                int outH,
+                const std::vector<int>& enc_chs = { 64, 128, 256, 512, 1024 },
+                const std::vector<int>& dec_chs = { 1024, 512, 256, 128, 64 }
+            );
 
-    torch::Tensor forward(torch::Tensor x);
+            torch::Tensor forward(torch::Tensor x);
 
-    const char* GetName() const override;
+            const char* GetName() const override;
 
-	std::vector<at::Tensor> RunForward(DataLoaderData& batch) override;
+            std::vector<torch::Tensor> RunForward(DataLoaderData& batch) override;
 
-protected:
-};
+        protected:
+        };
 
-//TORCH_MODULE(UNetModel); // creates module holder for NetImpl
+        //TORCH_MODULE(UNetModel); // creates module holder for NetImpl
+
+    }
+}
 
 #endif

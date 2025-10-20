@@ -2,6 +2,7 @@
 
 #include <iterator>
 #include <type_traits>
+#include <variant>
 
 #include <torch/torch.h>
 #include <torch/serialize/archive.h>
@@ -19,7 +20,7 @@ struct is_container<T, std::void_t<decltype(std::declval<T>().begin()),
 struct GradScalerOptions
 {
 	GradScalerOptions() = default;
-
+	
 	TORCH_ARG(double, init_scale) = pow(2.0, 16);
 	TORCH_ARG(double, growth_factor) = 2.0;
 	TORCH_ARG(double, backoff_factor) = 0.5;
@@ -32,7 +33,7 @@ class GradScaler
 	enum class OptState : int { READY, UNSCALED, STEPPED };
 
 	using PerDeviceTensors = std::map<c10::DeviceType, torch::Tensor>;
-	using States = c10::variant<OptState, PerDeviceTensors>;
+	using States = std::variant<OptState, PerDeviceTensors>;
 	using OptimizerStates = std::map<std::string, States>;
 	using PerOptimizerStates = std::map<std::uintptr_t, OptimizerStates>;
 
@@ -206,7 +207,7 @@ public:
 	{
 		if (optimizer_state.contains("found_inf_per_device"))
 		{
-			auto& found_inf_per_device = c10::get<1>(optimizer_state["found_inf_per_device"]);
+			auto& found_inf_per_device = std::get<1>(optimizer_state["found_inf_per_device"]);
 			if (!sum(found_inf_per_device))
 			{
 				auto tensor = optimizer.step(args);
@@ -258,7 +259,7 @@ public:
 		if (optimizer_state["stage"] == OptState::READY)
 			unscale_(optimizer);
 
-		auto&& found_inf_per_device = c10::get<1>(optimizer_state["found_inf_per_device"]);
+		auto&& found_inf_per_device = std::get<1>(optimizer_state["found_inf_per_device"]);
 		TORCH_CHECK(found_inf_per_device.size() > 0, "No inf checks were recorded for this optimizer.");
 
 		retval = _maybe_opt_step(optimizer, optimizer_state, optimizer_args);
@@ -268,7 +269,7 @@ public:
 		return retval;
 	}
 
-	void update(c10::optional<c10::variant<double, torch::Tensor>> const& new_scale = c10::nullopt)
+	void update(c10::optional<std::variant<double, torch::Tensor>> const& new_scale = c10::nullopt)
 	{
 		if (!_enabled)
 			return;
@@ -279,7 +280,7 @@ public:
 		{
 			assert(_scale.defined());
 
-			c10::visit([=](auto&& arg)
+			std::visit([=](auto&& arg)
 			{
 				using T = std::decay_t<decltype(arg)>;
 				if constexpr (std::is_same_v<T, double>)
@@ -304,7 +305,7 @@ public:
 			std::vector<torch::Tensor> found_infs;
 			for (auto&& [_, state] : _per_optimizer_states)
 			{
-				auto& iterator = c10::get<1>(state["found_inf_per_device"]);
+				auto& iterator = std::get<1>(state["found_inf_per_device"]);
 				for (auto& [_, found_inf] : iterator)
 					found_infs.push_back(found_inf.to(_scale.device(), true));
 			}
@@ -506,7 +507,7 @@ private:
 
 	friend bool operator==(States const& lhs, OptState const& rhs)
 	{
-		return (lhs.index() > 0) ? false : c10::get<0>(lhs) == rhs;
+		return (lhs.index() > 0) ? false : std::get<0>(lhs) == rhs;
 	}
 
 private:

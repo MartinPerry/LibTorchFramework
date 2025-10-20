@@ -13,23 +13,57 @@
 
 #include "./Snapshot/SnapshotSaver.h"
 
+#include "./Modules/gradscaler.hpp"
+
 Trainer::Trainer(const Settings& sets, std::shared_ptr<AbstractModel> model) :
 	Runner(RunMode::TRAIN, sets, model),
+    scaler(nullptr),
     bestMetrics(nullptr)
 {
+    if (sets.perf.enableAutoCast)
+    {
+        scaler = std::make_shared<torch::amp::GradScaler>();
+    }
 }
 
 Trainer::~Trainer()
 {
 }
 
-void Trainer::RunTrainSteps(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer)
+void Trainer::RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer)
 {
     loss.backward();
+
+    if (sets.clippingFn)
+    {        
+        sets.clippingFn(model->parameters());
+    }
 
     if (optimizer)
     {
         optimizer->step();
+        optimizer->zero_grad();
+    }
+}
+
+void Trainer::RunTrainStepsAutocast(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer)
+{
+    scaler->scale(loss).backward();
+   
+    if (sets.clippingFn)
+    {
+        if (optimizer)
+        {
+            scaler->unscale_(*optimizer);
+        }
+        sets.clippingFn(model->parameters());
+    }
+
+    if (optimizer)
+    {
+        scaler->step(*optimizer);
+        scaler->update();
+
         optimizer->zero_grad();
     }
 }
@@ -43,11 +77,8 @@ void Trainer::OnEpochStart()
     Runner::OnEpochStart();
 
     model->train();
-
-    torch::GradMode::set_enabled(true);   
     
-    //if ((self.scaler is None) and (self.perfSettings.enableAutoCast)) :
-    //    self.scaler = torch.cuda.amp.GradScaler()
+    torch::autograd::GradMode::set_enabled(true);
 }
 
 void Trainer::ProcessBatch(DataLoaderData& batch)
@@ -70,7 +101,14 @@ void Trainer::ProcessBatch(DataLoaderData& batch)
         MY_LOG_WARNING("No optimizer is set. Model wont train");
     }
 
-    this->RunTrainSteps(loss, optimizer);
+    if (sets.perf.enableAutoCast)
+    {
+        this->RunTrainStepsAutocast(loss, optimizer);
+    }
+    else
+    {
+        this->RunTrainStepsFull(loss, optimizer);
+    }
 
     this->pBar->SetParam("loss", std::to_string(loss.item().toFloat()));
     this->pBar->NextStep();

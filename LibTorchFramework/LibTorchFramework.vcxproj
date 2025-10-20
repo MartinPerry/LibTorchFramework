@@ -101,7 +101,7 @@
     <ClCompile Include="InputProcessing\InputLoadersWrapper.cpp" />
     <ClCompile Include="InputProcessing\InputLoaders\SegmentationInputLoader.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="main_testcpp.cpp" />
+    <ClCompile Include="ModelZoo\U2Net\U2NetModel.cpp" />
     <ClCompile Include="ModelZoo\UNet\UNetModel.cpp" />
     <ClCompile Include="PerformanceSettings.cpp" />
     <ClCompile Include="Utils\ProgressBar.cpp" />
@@ -114,6 +114,7 @@
     <ClInclude Include="core\Metrics\PredictionEvaluators.h" />
     <ClInclude Include="core\Modules\gradscaler.hpp" />
     <ClInclude Include="core\Modules\LossFunctions\DiceLoss.h" />
+    <ClInclude Include="core\Modules\LossFunctions\MultiBceLoss.h" />
     <ClInclude Include="core\Modules\UpSample2d.h" />
     <ClInclude Include="core\Runner.h" />
     <ClInclude Include="core\Snapshot\FreezeInfo.h" />
@@ -127,6 +128,7 @@
     <ClInclude Include="InputProcessing\DataLoaderData.h" />
     <ClInclude Include="InputProcessing\InputLoadersWrapper.h" />
     <ClInclude Include="InputProcessing\InputLoaders\SegmentationInputLoader.h" />
+    <ClInclude Include="ModelZoo\U2Net\U2NetModel.h" />
     <ClInclude Include="ModelZoo\UNet\UNetModel.h" />
     <ClInclude Include="PerformanceSettings.h" />
     <ClInclude Include="Settings.h" />

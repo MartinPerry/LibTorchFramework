@@ -7,7 +7,7 @@
     <Expand>		
       <Item Name="Raw" ExcludeView="simple">impl_.target_</Item>
 	  <Item Name="Dimension" ExcludeView="Simple">impl_.target_->sizes_and_strides_.inlineStorage_</Item>
-		<Item Name="Device" ExcludeView="Simple">impl_.target_->device_opt_.storage_.value_.type_</Item>
+      <Item Name="Device" ExcludeView="Simple">impl_.target_->device_opt_._Value.type_</Item>
       <Item Name="Data" ExcludeView="simple">impl_.target_->storage_.storage_impl_.target_->data_ptr_.ptr_</Item>
       <Item Name="requires_grad" ExcludeView="simple">(*((torch::autograd::AutogradMeta*)impl_.target_->autograd_meta_._Mypair._Myval2)).requires_grad_</Item>
       <Item Name="grad_fn" ExcludeView="simple">(*((torch::autograd::AutogradMeta*)(*((c10::TensorImpl*)impl_.target_)).autograd_meta_._Mypair._Myval2)).grad_fn_</Item>

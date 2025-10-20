@@ -6,6 +6,12 @@ class MetricsDefault;
 class AbstractModel;
 struct DataLoaderData;
 
+namespace torch {
+	namespace amp {
+		class GradScaler;
+	}
+}
+
 #include <torch/torch.h>
 
 #include "./Runner.h"
@@ -20,9 +26,12 @@ public:
 
 protected:
 
+	std::shared_ptr<torch::amp::GradScaler> scaler;
+
 	std::shared_ptr<MetricsDefault> bestMetrics;
 
-	void RunTrainSteps(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer);
+	void RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer);
+	void RunTrainStepsAutocast(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer);
 
 	virtual void OnEpochStart() override;
 	virtual void ProcessBatch(DataLoaderData& batch) override;
