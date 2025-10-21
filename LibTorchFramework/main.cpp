@@ -65,6 +65,7 @@
 
 #include "./ModelZoo/UNet/UNetModel.h"
 #include "./ModelZoo/U2Net/U2NetModel.h"
+#include "./ModelZoo/SimVPv2/SimVPv2Model.h"
 
 //=========================================================
 // Utils
@@ -87,6 +88,9 @@
 //https://expoundai.wordpress.com/2020/10/13/setting-up-a-cpp-project-in-visual-studio-2019-with-libtorch-1-6/
 
 //https://tebesu.github.io/posts/PyTorch-C++-Frontend
+
+
+//https://medium.com/crim/from-pytorch-to-libtorch-tips-and-tricks-dc45b6c1b1ac
 
 //===================================================================
 //===================================================================
@@ -159,12 +163,13 @@ int main()
     //loaderSets.subsetSize = 200;
 
     auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
-    ilw->InitLoaders<SegmentationInputLoader, std::string>({{ RunMode::TRAIN, loaderSets }}, "E:\\Datasets\\Skyfinder");
+    ilw->InitLoaders<SegmentationInputLoader, std::string>({{ RunMode::TRAIN, loaderSets }}, "D:\\Datasets\\Skyfinder");
 
     //auto trainLoader = ilw->GetLoader(RunMode::TRAIN);
     
     //auto m = std::make_shared<ModelZoo::unet::UNetModel>(imSize.channels, 1, imSize.width, imSize.height);
-    auto m = std::make_shared<ModelZoo::u2net::U2NetModel>(imSize.channels, 1);
+    //auto m = std::make_shared<ModelZoo::u2net::U2NetModel>(imSize.channels, 1);
+    auto m = std::make_shared<ModelZoo::SimVPv2::SimVPv2Model>(4, 8, imSize.channels, imSize.width, imSize.height);
         
     m->CreateOptimizer<torch::optim::Adam>(torch::optim::AdamOptions(0.0001));
 

@@ -190,7 +190,7 @@ void MetricsImage::Save(const std::string& filePath) const
         auto img = TorchImageUtils::TensorsToImage(rows, TorchImageUtils::SequenceFormat::B_S,
             -1, -1, -1,
             5);
-        std::string imgPath = this->BuildPath(filePath, static_cast<int>(i), "png", false);
+        std::string imgPath = this->BuildPath(filePath, static_cast<int>(i), "jpg", false);
         img.Save(imgPath.c_str());
     }
    

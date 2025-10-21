@@ -73,6 +73,21 @@
     <Filter Include="Source Files\ModelZoo\U2Net">
       <UniqueIdentifier>{448da00d-d00a-4997-a484-7bfcebe36dc2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\ModelZoo\SimVPv2">
+      <UniqueIdentifier>{6ac9ef34-16df-4f5a-998e-1e0ff9b0b5ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ModelZoo\SimVPv2">
+      <UniqueIdentifier>{fca33d05-ff63-4f1b-b640-0c4b0ffe647d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules\WeightsInit">
+      <UniqueIdentifier>{d5eabaff-667b-472b-a635-c34875a25766}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Modules">
+      <UniqueIdentifier>{515d8eb7-8248-4ca5-ac30-b96587640b3e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Modules\WeightsInit">
+      <UniqueIdentifier>{77aaae97-0b87-4fdd-a181-0a8e36a0a9ca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -128,6 +143,15 @@
     </ClCompile>
     <ClCompile Include="ModelZoo\U2Net\U2NetModel.cpp">
       <Filter>Source Files\ModelZoo\U2Net</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelZoo\SimVPv2\modules.cpp">
+      <Filter>Source Files\ModelZoo\SimVPv2</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\WeightsInit\TruncatedNormalInit.cpp">
+      <Filter>Source Files\core\Modules\WeightsInit</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelZoo\SimVPv2\SimVPv2Model.cpp">
+      <Filter>Source Files\ModelZoo\SimVPv2</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -214,6 +238,18 @@
     </ClInclude>
     <ClInclude Include="core\Modules\LossFunctions\MultiBceLoss.h">
       <Filter>Header Files\core\Modules\LossFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelZoo\SimVPv2\modules.h">
+      <Filter>Header Files\ModelZoo\SimVPv2</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\WeightsInit\TruncatedNormalInit.h">
+      <Filter>Header Files\core\Modules\WeightsInit</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelZoo\SimVPv2\SimVPv2Model.h">
+      <Filter>Header Files\ModelZoo\SimVPv2</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\DownSample2d.h">
+      <Filter>Header Files\core\Modules</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

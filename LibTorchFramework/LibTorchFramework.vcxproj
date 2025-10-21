@@ -93,6 +93,7 @@
     <ClCompile Include="core\AbstractModel.cpp" />
     <ClCompile Include="core\Metrics\MetricsDefault.cpp" />
     <ClCompile Include="core\Metrics\MetricsImage.cpp" />
+    <ClCompile Include="core\Modules\WeightsInit\TruncatedNormalInit.cpp" />
     <ClCompile Include="core\Runner.cpp" />
     <ClCompile Include="core\Snapshot\PretrainedManager.cpp" />
     <ClCompile Include="core\Snapshot\SnapshotLoader.cpp" />
@@ -103,6 +104,8 @@
     <ClCompile Include="InputProcessing\InputLoadersWrapper.cpp" />
     <ClCompile Include="InputProcessing\InputLoaders\SegmentationInputLoader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ModelZoo\SimVPv2\modules.cpp" />
+    <ClCompile Include="ModelZoo\SimVPv2\SimVPv2Model.cpp" />
     <ClCompile Include="ModelZoo\U2Net\U2NetModel.cpp" />
     <ClCompile Include="ModelZoo\UNet\UNetModel.cpp" />
     <ClCompile Include="PerformanceSettings.cpp" />
@@ -114,10 +117,12 @@
     <ClInclude Include="core\Metrics\MetricsDefault.h" />
     <ClInclude Include="core\Metrics\MetricsImage.h" />
     <ClInclude Include="core\Metrics\PredictionEvaluators.h" />
+    <ClInclude Include="core\Modules\DownSample2d.h" />
     <ClInclude Include="core\Modules\gradscaler.hpp" />
     <ClInclude Include="core\Modules\LossFunctions\DiceLoss.h" />
     <ClInclude Include="core\Modules\LossFunctions\MultiBceLoss.h" />
     <ClInclude Include="core\Modules\UpSample2d.h" />
+    <ClInclude Include="core\Modules\WeightsInit\TruncatedNormalInit.h" />
     <ClInclude Include="core\Runner.h" />
     <ClInclude Include="core\Snapshot\FreezeInfo.h" />
     <ClInclude Include="core\Snapshot\PretrainedManager.h" />
@@ -130,6 +135,8 @@
     <ClInclude Include="InputProcessing\DataLoaderData.h" />
     <ClInclude Include="InputProcessing\InputLoadersWrapper.h" />
     <ClInclude Include="InputProcessing\InputLoaders\SegmentationInputLoader.h" />
+    <ClInclude Include="ModelZoo\SimVPv2\modules.h" />
+    <ClInclude Include="ModelZoo\SimVPv2\SimVPv2Model.h" />
     <ClInclude Include="ModelZoo\U2Net\U2NetModel.h" />
     <ClInclude Include="ModelZoo\UNet\UNetModel.h" />
     <ClInclude Include="PerformanceSettings.h" />
