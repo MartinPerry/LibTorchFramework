@@ -2,14 +2,23 @@
 
 #include <filesystem>
 
-#include <RasterData/Image2d.h>
-#include <RasterData/ImageResize.h>
-
 #include <Utils/Logger.h>
 
 #include "../InputLoadersWrapper.h"
 
 #include "../../Utils/TorchUtils.h"
+#include "../../Utils/TorchImageUtils.h"
+
+//============================================
+// Data in dataset dir are expected to be in format:
+// -----
+// [dir] image_id -> list of images
+// [file] image_id.png -> mask
+// ------
+// image_id is id of image - in its folder, there are multiple versions of the
+// same image (eg. webcam images, augmented images etc)
+// image_id.png is mask for the image
+//============================================
 
 SegmentationInputLoader::SegmentationInputLoader(    
     RunMode type,
@@ -78,63 +87,7 @@ void SegmentationInputLoader::Load()
 
 torch::Tensor SegmentationInputLoader::LoadImageAsTensor(const std::string& p, int reqChannelsCount) const
 {
-    Image2d<uint8_t> img = Image2d<uint8_t>(p.c_str());
-    if (img.GetChannelsCount() == 0)
-    {
-        MY_LOG_ERROR("Failed to load image %s. Return zero tensor.", p.c_str());
-
-        //failed to load image - return zero tensor
-        return at::zeros({ reqChannelsCount, sets.imgH, sets.imgW }, at::kFloat);
-    }    
-
-    if (reqChannelsCount != img.GetChannelsCount())
-    {
-        if (reqChannelsCount == 3)
-        {
-            auto tmp = ColorSpace::ConvertToRGB(img);
-            if (tmp.has_value() == false)
-            {
-                MY_LOG_ERROR("Failed to convert image %s. Return zero tensor.", p.c_str());
-
-                //failed to convert image - return zero tensor
-                return at::zeros({ reqChannelsCount, sets.imgH, sets.imgW }, at::kFloat);
-            }
-            img = *tmp;
-        }
-        else if (reqChannelsCount == 1)
-        {
-            auto tmp = ColorSpace::ConvertToGray(img);
-            if (tmp.has_value() == false)
-            {
-                MY_LOG_ERROR("Failed to convert image %s. Return zero tensor.", p.c_str());
-
-                //failed to convert image - return zero tensor
-                return at::zeros({ reqChannelsCount, sets.imgH, sets.imgW }, at::kFloat);
-            }
-            img = *tmp;
-        }
-        else 
-        {
-            MY_LOG_ERROR("Channels count %d not supported", reqChannelsCount);
-        }
-    }
-
-    img = ImageResize<uint8_t>::ResizeBilinear(img, ImageDimension(sets.imgW, sets.imgH));
-    
-    if ((img.GetWidth() != sets.imgW) && (img.GetHeight() == sets.imgH))
-    {
-        MY_LOG_ERROR("Incorrect image dimension [%d, %d] for %s", img.GetWidth(), img.GetHeight(), p.c_str());
-
-        //return zero tensor
-        return at::zeros({ reqChannelsCount, sets.imgH, sets.imgW }, at::kFloat);
-    }
-
-    auto imgf = img.CreateAsMapped<float>(0, 255, 0.0f, 1.0f);
-
-    auto t = TorchUtils::make_tensor(imgf.MoveData(), 
-        {static_cast<int>(img.GetChannelsCount()), img.GetHeight(), img.GetWidth()});
-
-    return t;
+    return TorchImageUtils::LoadImageAs<torch::Tensor>(p, reqChannelsCount, sets.imgW, sets.imgH);
 }
 
 void SegmentationInputLoader::FillData(size_t index, DataLoaderData& ld)

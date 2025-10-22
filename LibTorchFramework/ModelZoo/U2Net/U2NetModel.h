@@ -1,6 +1,7 @@
 #ifndef U2NET_LIBTORCH_H
 #define U2NET_LIBTORCH_H
 
+struct ImageSize;
 
 #include <torch/torch.h>
 #include <vector>

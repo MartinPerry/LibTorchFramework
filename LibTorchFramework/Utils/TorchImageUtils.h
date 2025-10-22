@@ -5,6 +5,8 @@
 
 #include <RasterData/Image2d.h>
 
+//=====================================================================
+
 struct ImageSize
 {
 	uint16_t channels;
@@ -22,6 +24,14 @@ struct ImageSize
 	}
 };
 
+//=====================================================================
+
+#define TENSOR_VEC_RET_VAL(T) \
+	typename std::enable_if< \
+		std::is_same<T, torch::Tensor>::value || \
+		std::is_same<T, std::vector<float>>::value, \
+	T>::type
+
 class TorchImageUtils
 {
 public:
@@ -30,6 +40,20 @@ public:
 		B_S = 0, 
 		S_B = 1 
 	};
+
+	template <typename T>
+	static TENSOR_VEC_RET_VAL(T) LoadImageAs(
+		const std::string& imgPath,
+		int chanCount,
+		int w,
+		int h);
+
+	template <typename T>
+	static TENSOR_VEC_RET_VAL(T) LoadImageAs(
+		const Image2d<uint8_t>& img,
+		int chanCount,
+		int w,
+		int h);
 
 	static Image2d<uint8_t> TensorToImage(at::Tensor t,
 		int chanCount = -1,

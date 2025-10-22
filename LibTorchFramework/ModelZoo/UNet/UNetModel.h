@@ -1,6 +1,8 @@
 #ifndef UNET_MODEL_H
 #define UNET_MODEL_H
 
+struct ImageSize;
+
 #include <vector>
 #include <optional>
 
@@ -78,10 +80,8 @@ namespace ModelZoo
             int outW;
             int outH;
 
-            UNetModel(int in_ch,
-                int out_ch,
-                int outW,
-                int outH,
+            UNetModel(const ImageSize& inputImSize,
+                const ImageSize& outputImSize,                
                 const std::vector<int>& enc_chs = { 64, 128, 256, 512, 1024 },
                 const std::vector<int>& dec_chs = { 1024, 512, 256, 128, 64 }
             );

@@ -10,8 +10,133 @@
 #include <string>
 #include <memory>
 
+#include <RasterData/ImageResize.h>
 #include <RasterData/Colors/ColorSpace.h>
 
+#include <Utils/Logger.h>
+
+#include "./TorchUtils.h"
+
+/// <summary>
+/// Load image from uin8_t format and convert it to 
+/// [0, 1] float tensor
+/// If error occured, return tensor filled with zeroes
+/// </summary>
+/// <param name="imgPath"></param>
+/// <param name="chanCount"></param>
+/// <param name="w"></param>
+/// <param name="h"></param>
+/// <returns></returns>
+template <typename T>
+TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
+	const std::string& imgPath,
+	int chanCount,
+	int w,
+	int h)
+{
+	Image2d<uint8_t> img = Image2d<uint8_t>(imgPath.c_str());
+	return TorchImageUtils::LoadImageAs<T>(img, chanCount, w, h);
+}
+
+template <typename T>
+TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
+	const Image2d<uint8_t>& img,
+	int chanCount,
+	int w,
+	int h)
+{
+	if (img.GetChannelsCount() == 0)
+	{
+		MY_LOG_ERROR("Failed to load image %s. Return zero tensor.", imgPath.c_str());
+
+		//failed to load image - return zero tensor
+		if constexpr (std::is_same<T, std::vector<float>>::value)
+		{
+			return std::vector<float>(chanCount * h * w, 0);
+		}
+		else
+		{
+			return at::zeros({ chanCount, h, w }, at::kFloat);
+		}
+	}
+
+	if (chanCount != img.GetChannelsCount())
+	{
+		if (chanCount == 3)
+		{
+			auto tmp = ColorSpace::ConvertToRGB(img);
+			if (tmp.has_value() == false)
+			{
+				MY_LOG_ERROR("Failed to convert image %s. Return zero tensor.", imgPath.c_str());
+
+				//failed to convert image - return zero tensor
+				if constexpr (std::is_same<T, std::vector<float>>::value)
+				{
+					return std::vector<float>(chanCount * h * w, 0);
+				}
+				else
+				{
+					return at::zeros({ chanCount, h, w }, at::kFloat);
+				}
+			}
+			img = *tmp;
+		}
+		else if (chanCount == 1)
+		{
+			auto tmp = ColorSpace::ConvertToGray(img);
+			if (tmp.has_value() == false)
+			{
+				MY_LOG_ERROR("Failed to convert image %s. Return zero tensor.", imgPath.c_str());
+
+				//failed to convert image - return zero tensor
+				if constexpr (std::is_same<T, std::vector<float>>::value)
+				{
+					return std::vector<float>(chanCount * h * w, 0);
+				}
+				else
+				{
+					return at::zeros({ chanCount, h, w }, at::kFloat);
+				}
+			}
+			img = *tmp;
+		}
+		else
+		{
+			MY_LOG_ERROR("Channels count %d not supported", chanCount);
+		}
+	}
+
+	auto imgFinal = ImageResize<uint8_t>::ResizeBilinear(img, ImageDimension(w ,h));
+
+	if ((imgFinal.GetWidth() != w) && (imgFinal.GetHeight() == h))
+	{
+		MY_LOG_ERROR("Incorrect image dimension [%d, %d] for %s", imgFinal.GetWidth(), imgFinal.GetHeight(), imgPath.c_str());
+
+		//return zero tensor
+		if constexpr (std::is_same<T, std::vector<float>>::value)
+		{
+			return std::vector<float>(chanCount * h * w, 0);
+		}
+		else
+		{
+			return at::zeros({ chanCount, h, w }, at::kFloat);
+		}
+	}
+
+	
+	auto imgf = imgFinal.CreateAsMapped<float>(0, 255, 0.0f, 1.0f);
+	if constexpr (std::is_same<T, std::vector<float>>::value)
+	{
+		return imgf.MoveData();
+	}
+	else
+	{
+		auto t = TorchUtils::make_tensor(imgf.MoveData(),
+			{ static_cast<int>(img.GetChannelsCount()), img.GetHeight(), img.GetWidth() });
+
+		return t;
+	}
+}
 
 Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 	int chanCount,
@@ -330,7 +455,17 @@ std::vector<std::vector<torch::Tensor>> TorchImageUtils::MergeTensorsToRows(
 
 
 
+template std::vector<float> TorchImageUtils::LoadImageAs<std::vector<float>>(
+	const std::string& imgPath,
+	int chanCount,
+	int w,
+	int h);
 
+template torch::Tensor TorchImageUtils::LoadImageAs<torch::Tensor>(
+	const std::string& imgPath,
+	int chanCount,
+	int w,
+	int h);
 
 
 

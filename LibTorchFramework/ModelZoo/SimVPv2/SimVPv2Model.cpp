@@ -10,11 +10,13 @@
 
 #include "../../InputProcessing/DataLoaderData.h"
 
+#include "../../Utils/TorchImageUtils.h"
+
 using namespace ModelZoo::SimVPv2;
 
 
 //=================== Helper ===================
-std::vector<bool> sampling_generator(int N, bool reverse)
+static std::vector<bool> sampling_generator(int N, bool reverse)
 {
     std::vector<bool> samplings;
     for (int i = 0; i < N / 2; i++)
@@ -148,7 +150,7 @@ torch::Tensor gInception_STImpl::forward(const torch::Tensor& x)
 //=================== Encoder ===================
 EncoderImpl::EncoderImpl(int64_t C_in, int64_t C_hid, int N_S, int spatio_kernel)
 {
-    auto samplings = sampling_generator(N_S);
+    auto samplings = sampling_generator(N_S, false);
 
     enc->push_back(ConvSC(C_in, C_hid, spatio_kernel, samplings[0]));
     for (size_t i = 1; i < samplings.size(); i++)
@@ -210,7 +212,7 @@ GABlockImpl::GABlockImpl(int64_t in_ch, int64_t out_ch, float mlp_ratio, float d
 {
     in_channels = in_ch;
     out_channels = out_ch;    
-    register_module("block", GASubBlock(in_ch, 21, mlp_ratio, drop, drop_path, torch::nn::GELU()));
+    register_module("block", GASubBlock(in_ch, 21, mlp_ratio, drop, drop_path));
 
     if (in_channels != out_channels)
     {
@@ -309,7 +311,7 @@ torch::Tensor Mid_IncepNetImpl::forward(const torch::Tensor& x)
 }
 
 //=================== SimVPv2Model ===================
-SimVPv2Model::SimVPv2Model(int past_count, int future_count, int C, int H, int W,
+SimVPv2Model::SimVPv2Model(int past_count, int future_count, const ImageSize& imSize,
     int hid_S, int hid_T, int N_S, int N_T,
     float mlp_ratio, float drop, float drop_path,
     int spatio_kernel_enc, int spatio_kernel_dec,
@@ -318,8 +320,8 @@ SimVPv2Model::SimVPv2Model(int past_count, int future_count, int C, int H, int W
     pastCount = past_count;
     futureCount = future_count;
     
-    enc = register_module("enc", Encoder(C, hid_S, N_S, spatio_kernel_enc));
-    dec = register_module("dec", Decoder(hid_S, C, N_S, spatio_kernel_dec));
+    enc = register_module("enc", Encoder(imSize.channels, hid_S, N_S, spatio_kernel_enc));
+    dec = register_module("dec", Decoder(hid_S, imSize.channels, N_S, spatio_kernel_dec));
 
     if (model_type == "IncepU")
     {

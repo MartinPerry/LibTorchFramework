@@ -57,7 +57,9 @@
 #include "./InputProcessing/InputLoadersWrapper.h"
 #include "./InputProcessing/InputLoader.h"
 #include "./InputProcessing/DataLoaderData.h"
+
 #include "./InputProcessing/InputLoaders/SegmentationInputLoader.h"
+#include "./InputProcessing/InputLoaders/VideoSequenceInputLoader.h"
 
 //=========================================================
 // ModelZoo
@@ -76,6 +78,8 @@
 #include "./Utils/TrainingHelper.h"
 
 //=========================================================
+
+#include "./CustomScenarios/MrmsDatasetTraining/setup.h"
 
 #include "./Settings.h"
 
@@ -104,6 +108,8 @@ int main()
     log->Enable(MyUtils::Logger::LogType::Warning, MyUtils::Logger::LogOutput::StdOut);
     log->Enable(MyUtils::Logger::LogType::Info, MyUtils::Logger::LogOutput::StdOut);
 
+
+        
     //std::cout << "Hello World!\n";
     //at::Tensor tensor = at::ones({ 3, 7, 2 }, at::kInt);
     //std::cout << tensor << std::endl;
@@ -119,6 +125,9 @@ int main()
     */
 
     Settings::PrintCudaInfo();
+
+    CustomScenarios::MrmsTraining::setup();
+    return 0;
 
     //torch::nn::MSELoss loss;
     //torch::nn::ModuleHolder mm = loss;
@@ -158,18 +167,22 @@ int main()
     //at::globalContext().setUserEnabledMkldnn(false);
    
     ImageSize imSize(3, 256, 256);
+    ImageSize outSize(1, imSize.width, imSize.height);
 
     InputLoaderSettings loaderSets;
     //loaderSets.subsetSize = 200;
 
     auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
-    ilw->InitLoaders<SegmentationInputLoader, std::string>({{ RunMode::TRAIN, loaderSets }}, "D:\\Datasets\\Skyfinder");
+    //ilw->InitLoaders<SegmentationInputLoader, std::string>({{ RunMode::TRAIN, loaderSets }}, "D:\\Datasets\\Skyfinder");
+    ilw->InitLoaders<VideoSequenceInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } }, "D:\\Datasets\\mrms_lz4", 4, 8);
+    
+    ilw->GetLoader(RunMode::TRAIN)->Load();
 
     //auto trainLoader = ilw->GetLoader(RunMode::TRAIN);
     
-    //auto m = std::make_shared<ModelZoo::unet::UNetModel>(imSize.channels, 1, imSize.width, imSize.height);
+    //auto m = std::make_shared<ModelZoo::unet::UNetModel>(imSize, outSize);
     //auto m = std::make_shared<ModelZoo::u2net::U2NetModel>(imSize.channels, 1);
-    auto m = std::make_shared<ModelZoo::SimVPv2::SimVPv2Model>(4, 8, imSize.channels, imSize.width, imSize.height);
+    auto m = std::make_shared<ModelZoo::SimVPv2::SimVPv2Model>(4, 8, imSize);
         
     m->CreateOptimizer<torch::optim::Adam>(torch::optim::AdamOptions(0.0001));
 

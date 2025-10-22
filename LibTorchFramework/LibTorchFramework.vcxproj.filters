@@ -88,6 +88,18 @@
     <Filter Include="Source Files\core\Modules\WeightsInit">
       <UniqueIdentifier>{77aaae97-0b87-4fdd-a181-0a8e36a0a9ca}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\CustomScenarios">
+      <UniqueIdentifier>{40b5e957-ac7b-4045-b834-d9017beff680}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CustomScenarios">
+      <UniqueIdentifier>{dde2a4d9-f0de-4f12-a846-b9ddba8b2d10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CustomScenarios\MrmsDatasetTraining">
+      <UniqueIdentifier>{58734e03-5159-499f-9e28-14866279dfec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CustomScenarios\MrmsDatasetTraining">
+      <UniqueIdentifier>{6736f769-18f4-4d41-a400-119bcecb482c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -152,6 +164,18 @@
     </ClCompile>
     <ClCompile Include="ModelZoo\SimVPv2\SimVPv2Model.cpp">
       <Filter>Source Files\ModelZoo\SimVPv2</Filter>
+    </ClCompile>
+    <ClCompile Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.cpp">
+      <Filter>Source Files\InputProcessing\InputLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomScenarios\MrmsDatasetTraining\setup.cpp">
+      <Filter>Source Files\CustomScenarios\MrmsDatasetTraining</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.cpp">
+      <Filter>Source Files\CustomScenarios\MrmsDatasetTraining</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\TrainingHelper.cpp">
+      <Filter>Source Files\Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -250,6 +274,15 @@
     </ClInclude>
     <ClInclude Include="core\Modules\DownSample2d.h">
       <Filter>Header Files\core\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.h">
+      <Filter>Header Files\InputProcessing\InputLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomScenarios\MrmsDatasetTraining\setup.h">
+      <Filter>Header Files\CustomScenarios\MrmsDatasetTraining</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.h">
+      <Filter>Header Files\CustomScenarios\MrmsDatasetTraining</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,8 @@
 #ifndef SIMVP_V2_MODEL_H
 #define SIMVP_V2_MODEL_H
 
+struct ImageSize;
+
 #include <vector>
 #include <optional>
 
@@ -12,10 +14,7 @@
 
 namespace ModelZoo {
     namespace SimVPv2 {
-        
-        //=================== Helper ===================
-        std::vector<bool> sampling_generator(int N, bool reverse = false);
-
+                
         //=================== Modules ===================
         struct BasicConv2dImpl : torch::nn::Module
         {
@@ -125,8 +124,8 @@ namespace ModelZoo {
             Decoder dec{ nullptr };
             torch::nn::AnyModule hid;
 
-            SimVPv2Model(int past_count, int future_count, int C, int H, int W,
-                int hid_S = 16, int hid_T = 256, int N_S = 4, int N_T = 8,
+            SimVPv2Model(int past_count, int future_count, const ImageSize& imSize,
+                int hid_S = 64, int hid_T = 512, int N_S = 4, int N_T = 8,
                 float mlp_ratio = 8.0, float drop = 0.0, float drop_path = 0.0,
                 int spatio_kernel_enc = 3, int spatio_kernel_dec = 3,
                 const std::string& model_type = "");

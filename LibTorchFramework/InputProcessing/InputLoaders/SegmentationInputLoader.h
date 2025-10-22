@@ -14,7 +14,7 @@ public:
     
     SegmentationInputLoader(RunMode type, std::weak_ptr<InputLoadersWrapper> parent,
         const std::string& datasetPath);
-    ~SegmentationInputLoader() = default;
+    virtual ~SegmentationInputLoader() = default;
 
     size_t GetSize() const override;
     void Load()  override;
@@ -32,8 +32,8 @@ protected:
 
     struct FileInfo
     {
-        std::string fn;
-        std::string dirId;
+        std::string fn; //file path
+        std::string dirId; //id of directoy (image_id)
 
         FileInfo(const std::string& fn, const std::string& dirId) :
             fn(fn),
@@ -67,7 +67,7 @@ protected:
 
     bool IsNumeric(const std::string& s) const;
 
-    torch::Tensor LoadImageAsTensor(const std::string& p, int reqChannelsCount) const;
+    virtual torch::Tensor LoadImageAsTensor(const std::string& p, int reqChannelsCount) const;
 };
 
 #endif

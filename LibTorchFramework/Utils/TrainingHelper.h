@@ -49,11 +49,6 @@ protected:
 
 //================================================================================
 
-TrainingHelper::TrainingHelper(const Settings& sets, std::shared_ptr<AbstractModel> model) : 
-    sets(sets),
-    model(model)
-{
-}
 
 template <typename DatasetType>
 auto TrainingHelper::BuildDataLoader(RunMode type, 

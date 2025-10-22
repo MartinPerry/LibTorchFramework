@@ -3,6 +3,8 @@
 #include "../../core/Modules/UpSample2d.h"
 #include "../../InputProcessing/DataLoaderData.h"
 
+#include "../../Utils/TorchImageUtils.h"
+
 using namespace ModelZoo::unet;
 
 SimpleUNetBlockImpl::SimpleUNetBlockImpl(int in_ch,
@@ -152,19 +154,17 @@ torch::Tensor DecoderImpl::forward(torch::Tensor x, const std::vector<torch::Ten
 
 //===================================================================================
 
-UNetModel::UNetModel(int in_ch,
-    int out_ch,
-    int outW,
-    int outH,
+UNetModel::UNetModel(const ImageSize& inputImSize,
+    const ImageSize& outputImSize,
     const std::vector<int>& enc_chs,
     const std::vector<int>& dec_chs) : 
-    outW(outW),
-    outH(outH)
+    outW(outputImSize.width),
+    outH(outputImSize.height)
 {
-    encoder = Encoder(in_ch, enc_chs, true);
+    encoder = Encoder(inputImSize.channels, enc_chs, true);
     decoder = Decoder(dec_chs, true);
 
-    head = torch::nn::Conv2d(torch::nn::Conv2dOptions(dec_chs.back(), out_ch, 1));
+    head = torch::nn::Conv2d(torch::nn::Conv2dOptions(dec_chs.back(), outputImSize.channels, 1));
 
     encoder = register_module("encoder", encoder);
     decoder = register_module("decoder", decoder);

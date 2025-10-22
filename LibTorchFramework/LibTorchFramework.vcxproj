@@ -99,10 +99,13 @@
     <ClCompile Include="core\Snapshot\SnapshotLoader.cpp" />
     <ClCompile Include="core\Snapshot\SnapshotSaver.cpp" />
     <ClCompile Include="core\Trainer.cpp" />
+    <ClCompile Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.cpp" />
+    <ClCompile Include="CustomScenarios\MrmsDatasetTraining\setup.cpp" />
     <ClCompile Include="InputProcessing\DefaultDataset.cpp" />
     <ClCompile Include="InputProcessing\InputLoader.cpp" />
     <ClCompile Include="InputProcessing\InputLoadersWrapper.cpp" />
     <ClCompile Include="InputProcessing\InputLoaders\SegmentationInputLoader.cpp" />
+    <ClCompile Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModelZoo\SimVPv2\modules.cpp" />
     <ClCompile Include="ModelZoo\SimVPv2\SimVPv2Model.cpp" />
@@ -111,6 +114,7 @@
     <ClCompile Include="PerformanceSettings.cpp" />
     <ClCompile Include="Utils\ProgressBar.cpp" />
     <ClCompile Include="Utils\TorchImageUtils.cpp" />
+    <ClCompile Include="Utils\TrainingHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\AbstractModel.h" />
@@ -130,11 +134,14 @@
     <ClInclude Include="core\Snapshot\SnapshotSaver.h" />
     <ClInclude Include="core\Structures.h" />
     <ClInclude Include="core\Trainer.h" />
+    <ClInclude Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.h" />
+    <ClInclude Include="CustomScenarios\MrmsDatasetTraining\setup.h" />
     <ClInclude Include="InputProcessing\DefaultDataset.h" />
     <ClInclude Include="InputProcessing\InputLoader.h" />
     <ClInclude Include="InputProcessing\DataLoaderData.h" />
     <ClInclude Include="InputProcessing\InputLoadersWrapper.h" />
     <ClInclude Include="InputProcessing\InputLoaders\SegmentationInputLoader.h" />
+    <ClInclude Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.h" />
     <ClInclude Include="ModelZoo\SimVPv2\modules.h" />
     <ClInclude Include="ModelZoo\SimVPv2\SimVPv2Model.h" />
     <ClInclude Include="ModelZoo\U2Net\U2NetModel.h" />
