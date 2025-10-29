@@ -309,7 +309,8 @@ public:
 				for (auto& [_, found_inf] : iterator)
 					found_infs.push_back(found_inf.to(_scale.device(), true));
 			}
-			assert(found_infs.size() > 0, "No inf checks were recorded prior to update.");
+			assert(found_infs.size() > 0);
+			//too many arguments for function-like macro invocation 'assert'
 
 			auto& found_inf_combined = found_infs.front();
 			if (found_infs.size() > 1)

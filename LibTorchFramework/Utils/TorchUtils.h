@@ -8,6 +8,14 @@
 
 //===============================================================================
 
+#define AUTO_REGISTER_NEW_MODULE(var, ...) \
+    var = register_module(#var __VA_OPT__(,) __VA_ARGS__)
+
+#define AUTO_REGISTER_EXISTING_MODULE(var) \
+    var = register_module(#var, var)
+
+//===============================================================================
+
 // traits classes for PyTorch tensor type constants
 template <typename T>
 struct tensor_type_traits {};

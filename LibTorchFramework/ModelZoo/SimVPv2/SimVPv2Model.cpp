@@ -10,6 +10,7 @@
 
 #include "../../InputProcessing/DataLoaderData.h"
 
+#include "../../Utils/TorchUtils.h"
 #include "../../Utils/TorchImageUtils.h"
 
 using namespace ModelZoo::SimVPv2;
@@ -45,23 +46,23 @@ BasicConv2dImpl::BasicConv2dImpl(int64_t in_channels, int64_t out_channels,
     if (upsampling)
     {
         int64_t upscaleFactor = 2;
-        conv = register_module("conv", UpSample2d(in_channels, out_channels, upscaleFactor, kernel_size, padding, dilation));
+        AUTO_REGISTER_NEW_MODULE(conv, UpSample2d(in_channels, out_channels, upscaleFactor, kernel_size, padding, dilation));
     }
     else if (stride > 1)
     {
-        conv = register_module("conv", DownSample2d(in_channels, out_channels, stride, kernel_size, padding, dilation));
+        AUTO_REGISTER_NEW_MODULE(conv, DownSample2d(in_channels, out_channels, stride, kernel_size, padding, dilation));
     }
     else
     {
-        conv = register_module("conv", torch::nn::Conv2d(torch::nn::Conv2dOptions(in_channels, out_channels, kernel_size)
+        AUTO_REGISTER_NEW_MODULE(conv, torch::nn::Conv2d(torch::nn::Conv2dOptions(in_channels, out_channels, kernel_size)
             .stride(stride)
             .padding(padding)
             .dilation(dilation)));        
     }
     
     
-    norm = register_module("norm", torch::nn::GroupNorm(torch::nn::GroupNormOptions(2, out_channels)));
-    act = register_module("act", torch::nn::SiLU());
+    AUTO_REGISTER_NEW_MODULE(norm, torch::nn::GroupNorm(torch::nn::GroupNormOptions(2, out_channels)));
+    AUTO_REGISTER_NEW_MODULE(act, torch::nn::SiLU());
 
     auto oldVal = TruncatedNormalInit::stdErr;
     TruncatedNormalInit::stdErr = 0.02;
@@ -84,8 +85,8 @@ ConvSCImpl::ConvSCImpl(int64_t C_in, int64_t C_out, int64_t kernel_size, bool do
 {
     int64_t stride = downsampling ? 2 : 1;
     int64_t padding = (kernel_size - stride + 1) / 2;
-    conv = BasicConv2d(C_in, C_out, kernel_size, stride, padding, 1, upsampling, true);
-    register_module("conv", conv);
+        
+    AUTO_REGISTER_NEW_MODULE(conv, BasicConv2d(C_in, C_out, kernel_size, stride, padding, 1, upsampling, true));
 }
 
 torch::Tensor ConvSCImpl::forward(const torch::Tensor& x)
@@ -107,9 +108,9 @@ GroupConv2dImpl::GroupConv2dImpl(int64_t in_channels, int64_t out_channels, int6
     norm = torch::nn::GroupNorm(torch::nn::GroupNormOptions(groups_, out_channels));
     activate = torch::nn::LeakyReLU(torch::nn::LeakyReLUOptions().negative_slope(0.2).inplace(true));
 
-    register_module("conv", conv);
-    register_module("norm", norm);
-    register_module("activate", activate);
+    AUTO_REGISTER_EXISTING_MODULE(conv);
+    AUTO_REGISTER_EXISTING_MODULE(norm);
+    AUTO_REGISTER_EXISTING_MODULE(activate);
 }
 
 torch::Tensor GroupConv2dImpl::forward(const torch::Tensor& x)
@@ -125,15 +126,15 @@ torch::Tensor GroupConv2dImpl::forward(const torch::Tensor& x)
 //=================== gInception_ST ===================
 gInception_STImpl::gInception_STImpl(int64_t C_in, int64_t C_hid, int64_t C_out,
     std::vector<int> incep_ker, int groups)
-{
-    conv1 = torch::nn::Conv2d(torch::nn::Conv2dOptions(C_in, C_hid, 1).stride(1).padding(0));
-    register_module("conv1", conv1);
+{    
+    AUTO_REGISTER_NEW_MODULE(conv1, torch::nn::Conv2d(torch::nn::Conv2dOptions(C_in, C_hid, 1).stride(1).padding(0)));
 
     for (size_t i = 0; i < incep_ker.size(); i++)
     {
         layers->push_back(GroupConv2d(C_hid, C_out, incep_ker[i], 1, incep_ker[i] / 2, groups, true));
     }
-    register_module("layers", layers);
+    
+    AUTO_REGISTER_EXISTING_MODULE(layers);
 }
 
 torch::Tensor gInception_STImpl::forward(const torch::Tensor& x)
@@ -157,7 +158,8 @@ EncoderImpl::EncoderImpl(int64_t C_in, int64_t C_hid, int N_S, int spatio_kernel
     {
         enc->push_back(ConvSC(C_hid, C_hid, spatio_kernel, samplings[i]));
     }
-    register_module("enc", enc);
+
+    AUTO_REGISTER_EXISTING_MODULE(enc);
 }
 
 std::pair<torch::Tensor, torch::Tensor> EncoderImpl::forward(const torch::Tensor& x)
@@ -181,8 +183,9 @@ DecoderImpl::DecoderImpl(int64_t C_hid, int64_t C_out, int N_S, int spatio_kerne
     }
     dec->push_back(ConvSC(C_hid, C_hid, spatio_kernel, false, samplings.back()));
     readout = torch::nn::Conv2d(torch::nn::Conv2dOptions(C_hid, C_out, 1));
-    register_module("dec", dec);
-    register_module("readout", readout);
+    
+    AUTO_REGISTER_EXISTING_MODULE(dec);
+    AUTO_REGISTER_EXISTING_MODULE(readout);
 }
 
 torch::Tensor DecoderImpl::forward(const torch::Tensor& hid, const std::optional<torch::Tensor>& enc1)
@@ -212,11 +215,11 @@ GABlockImpl::GABlockImpl(int64_t in_ch, int64_t out_ch, float mlp_ratio, float d
 {
     in_channels = in_ch;
     out_channels = out_ch;    
-    register_module("block", GASubBlock(in_ch, 21, mlp_ratio, drop, drop_path));
+    AUTO_REGISTER_NEW_MODULE(block, GASubBlock(in_ch, 21, mlp_ratio, drop, drop_path));
 
     if (in_channels != out_channels)
     {
-        reduction = register_module("reduction", torch::nn::Conv2d(torch::nn::Conv2dOptions(in_channels, out_channels, 1).stride(1).padding(0)));        
+        AUTO_REGISTER_NEW_MODULE(reduction, torch::nn::Conv2d(torch::nn::Conv2dOptions(in_channels, out_channels, 1).stride(1).padding(0)));
     }
 }
 
@@ -245,7 +248,7 @@ Mid_GANetImpl::Mid_GANetImpl(int pastCount, int futureCount, int s, int channel_
     }
     enc->push_back(GABlock(channel_hid, channel_out, mlp_ratio, drop, drop_path));
 
-    register_module("enc", enc);
+    AUTO_REGISTER_EXISTING_MODULE(enc);
 }
 
 torch::Tensor Mid_GANetImpl::forward(const torch::Tensor& x)
@@ -285,8 +288,8 @@ Mid_IncepNetImpl::Mid_IncepNetImpl(int pastCount, int futureCount, int s, int ch
     }
     dec->push_back(gInception_ST(2 * channel_hid, channel_hid / 2, channel_out, incep_ker, groups));
 
-    register_module("enc", enc);
-    register_module("dec", dec);
+    AUTO_REGISTER_EXISTING_MODULE(enc);
+    AUTO_REGISTER_EXISTING_MODULE(dec);
 }
 
 torch::Tensor Mid_IncepNetImpl::forward(const torch::Tensor& x)
@@ -320,16 +323,16 @@ SimVPv2Model::SimVPv2Model(int past_count, int future_count, const ImageSize& im
     pastCount = past_count;
     futureCount = future_count;
     
-    enc = register_module("enc", Encoder(imSize.channels, hid_S, N_S, spatio_kernel_enc));
-    dec = register_module("dec", Decoder(hid_S, imSize.channels, N_S, spatio_kernel_dec));
+    AUTO_REGISTER_NEW_MODULE(enc, Encoder(imSize.channels, hid_S, N_S, spatio_kernel_enc));
+    AUTO_REGISTER_NEW_MODULE(dec, Decoder(hid_S, imSize.channels, N_S, spatio_kernel_dec));
 
     if (model_type == "IncepU")
     {
-        hid = register_module("hid", Mid_IncepNet(past_count, future_count, hid_S, hid_T, N_T));
+        AUTO_REGISTER_NEW_MODULE(hid, Mid_IncepNet(past_count, future_count, hid_S, hid_T, N_T));
     }
     else
     {
-        hid = register_module("hid", Mid_GANet(past_count, future_count, hid_S, hid_T, N_T, mlp_ratio, drop, drop_path));
+        AUTO_REGISTER_NEW_MODULE(hid, Mid_GANet(past_count, future_count, hid_S, hid_T, N_T, mlp_ratio, drop, drop_path));
     }    
 }
 

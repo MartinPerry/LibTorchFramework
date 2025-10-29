@@ -61,7 +61,7 @@ namespace CustomScenarios::MrmsTraining
 		//model debug
 		sets.numWorkers = 4;
 		sets.device = torch::kCUDA;
-		sets.perf.enableAutoCast = false;
+		sets.perf.enableAutoCast = true;		
 		//-----
 
 		//sets.numWorkers = 4;

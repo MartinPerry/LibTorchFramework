@@ -22,7 +22,7 @@ Trainer::Trainer(const Settings& sets, std::shared_ptr<AbstractModel> model) :
 {
     if (sets.perf.enableAutoCast)
     {
-        scaler = std::make_shared<torch::amp::GradScaler>();
+        scaler = std::make_shared<torch::amp::GradScaler>();        
     }
 }
 
@@ -48,7 +48,8 @@ void Trainer::RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::O
 
 void Trainer::RunTrainStepsAutocast(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer)
 {
-    scaler->scale(loss).backward();
+    auto scaledLoss = scaler->scale(loss);
+    scaledLoss.backward();
    
     if (sets.clippingFn)
     {
