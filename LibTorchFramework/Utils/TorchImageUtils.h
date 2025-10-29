@@ -1,6 +1,8 @@
 #ifndef TORCH_IMAGE_UTILS_H
 #define TORCH_IMAGE_UTILS_H
 
+#include <optional>
+
 #include <torch/torch.h>
 
 #include <RasterData/Image2d.h>
@@ -41,6 +43,18 @@ public:
 		S_B = 1 
 	};
 
+	struct TensorsToImageSettings
+	{
+		SequenceFormat seqFormat = SequenceFormat::B_S;
+		int chanCount = -1;
+		int w = -1;
+		int h = -1;
+		int borderSize = 0;
+		uint8_t backgroundValue = 255;
+		bool intervalMapping = true;
+		std::optional<std::string> colorMappingFileName = std::nullopt;
+	};
+
 	template <typename T>
 	static TENSOR_VEC_RET_VAL(T) LoadImageAs(
 		const std::string& imgPath,
@@ -50,7 +64,7 @@ public:
 
 	template <typename T>
 	static TENSOR_VEC_RET_VAL(T) LoadImageAs(
-		const Image2d<uint8_t>& img,
+		Image2d<uint8_t>& img,
 		int chanCount,
 		int w,
 		int h);
@@ -61,23 +75,11 @@ public:
 		int h = -1,
 		bool intervalMapping = true);
 
-	static Image2d<uint8_t> TensorsToImage(at::Tensor t,
-		SequenceFormat seqFormat = SequenceFormat::B_S,
-		int chanCount = -1,
-		int w = -1,
-		int h = -1,
-		int borderSize = 0,
-		uint8_t backgroundValue = 255,
-		bool intervalMapping = true);
+	static Image2d<uint8_t> TensorsToImage(at::Tensor t, 
+		const TensorsToImageSettings& sets);
 
 	static Image2d<uint8_t> TensorsToImage(const std::vector<std::vector<torch::Tensor>>& t,
-		SequenceFormat seqFormat = SequenceFormat::B_S,
-		int chanCount = -1,
-		int w = -1,
-		int h = -1,
-		int borderSize = 0,
-		uint8_t backgroundValue = 255,
-		bool intervalMapping = true);
+		const TensorsToImageSettings& sets);
 
 	static std::vector<std::vector<torch::Tensor>> MergeTensorsToRows(
 		const std::vector<torch::Tensor>& tensors,

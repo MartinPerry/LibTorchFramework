@@ -94,6 +94,8 @@ std::vector<float> VideoSequenceInputLoader::LoadImage(const std::string& p) con
 
 std::pair<torch::Tensor, torch::Tensor> VideoSequenceInputLoader::LoadSequence(const SequenceInfo& si) const
 {
+    const size_t imgSize = sets.imgChannelsCount * sets.imgH * sets.imgW;
+
     std::vector<float> prev = this->CreateEmptySequence(sets.prevSeqLen);
     std::vector<float> fut = this->CreateEmptySequence(sets.futureSeqLen);
 
@@ -106,16 +108,18 @@ std::pair<torch::Tensor, torch::Tensor> VideoSequenceInputLoader::LoadSequence(c
         auto img = this->LoadImage(imgPath);
 
         if (i < sets.prevSeqLen)
-        {
-            prev.insert(prev.end(),
-                std::make_move_iterator(img.begin()),
-                std::make_move_iterator(img.end()));
+        {          
+            std::copy(img.begin(), img.end(), prev.begin() + i * imgSize);
+            //prev.insert(prev.end(),
+            //    std::make_move_iterator(img.begin()),
+            //    std::make_move_iterator(img.end()));
         }
         else
         {
-            fut.insert(fut.end(),
-                std::make_move_iterator(img.begin()),
-                std::make_move_iterator(img.end()));
+            std::copy(img.begin(), img.end(), fut.begin() + (i - sets.prevSeqLen) * imgSize);
+            //fut.insert(fut.end(),
+            //    std::make_move_iterator(img.begin()),
+            //    std::make_move_iterator(img.end()));
         }
     }
 

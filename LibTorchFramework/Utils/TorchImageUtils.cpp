@@ -11,6 +11,7 @@
 #include <memory>
 
 #include <RasterData/ImageResize.h>
+#include <RasterData/ImageDrawing.h>
 #include <RasterData/Colors/ColorSpace.h>
 
 #include <Utils/Logger.h>
@@ -40,14 +41,14 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 
 template <typename T>
 TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
-	const Image2d<uint8_t>& img,
+	Image2d<uint8_t>& img,
 	int chanCount,
 	int w,
 	int h)
 {
 	if (img.GetChannelsCount() == 0)
 	{
-		MY_LOG_ERROR("Failed to load image %s. Return zero tensor.", imgPath.c_str());
+		MY_LOG_ERROR("Failed to load image. Return zero tensor.");
 
 		//failed to load image - return zero tensor
 		if constexpr (std::is_same<T, std::vector<float>>::value)
@@ -67,7 +68,7 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 			auto tmp = ColorSpace::ConvertToRGB(img);
 			if (tmp.has_value() == false)
 			{
-				MY_LOG_ERROR("Failed to convert image %s. Return zero tensor.", imgPath.c_str());
+				MY_LOG_ERROR("Failed to convert image. Return zero tensor.");
 
 				//failed to convert image - return zero tensor
 				if constexpr (std::is_same<T, std::vector<float>>::value)
@@ -86,7 +87,7 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 			auto tmp = ColorSpace::ConvertToGray(img);
 			if (tmp.has_value() == false)
 			{
-				MY_LOG_ERROR("Failed to convert image %s. Return zero tensor.", imgPath.c_str());
+				MY_LOG_ERROR("Failed to convert image. Return zero tensor.");
 
 				//failed to convert image - return zero tensor
 				if constexpr (std::is_same<T, std::vector<float>>::value)
@@ -110,7 +111,7 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 
 	if ((imgFinal.GetWidth() != w) && (imgFinal.GetHeight() == h))
 	{
-		MY_LOG_ERROR("Incorrect image dimension [%d, %d] for %s", imgFinal.GetWidth(), imgFinal.GetHeight(), imgPath.c_str());
+		MY_LOG_ERROR("Incorrect image dimension [%d, %d]", imgFinal.GetWidth(), imgFinal.GetHeight());
 
 		//return zero tensor
 		if constexpr (std::is_same<T, std::vector<float>>::value)
@@ -290,17 +291,18 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 
 
 Image2d<uint8_t> TorchImageUtils::TensorsToImage(at::Tensor t,
-	TorchImageUtils::SequenceFormat seqFormat,
-	int chanCount,
-	int w,
-	int h,
-	int borderSize,
-	uint8_t backgroundValue,
-	bool intervalMapping)
+	const TensorsToImageSettings& sets)
 {	
 	if (t.dim() == 3)
 	{
-		return TorchImageUtils::TensorToImage(t, chanCount, w, h, intervalMapping);
+		if (sets.colorMappingFileName.has_value())
+		{
+			MY_LOG_ERROR("Color pallete mapping can be used only for single channel images");
+		}
+
+		auto img = TorchImageUtils::TensorToImage(t, sets.chanCount, sets.w, sets.h, sets.intervalMapping);
+
+		return img;
 	}
 	
 	std::vector<std::vector<torch::Tensor>> tmpBatch;
@@ -320,7 +322,7 @@ Image2d<uint8_t> TorchImageUtils::TensorsToImage(at::Tensor t,
 	{		
 		//input is tensor (batch, seq, c, h, w)
 
-		if (seqFormat == SequenceFormat::S_B) 
+		if (sets.seqFormat == SequenceFormat::S_B)
 		{
 			t = t.permute({ 1, 0, 2, 3, 4 });  // (B, S, C, H, W)
 		}
@@ -339,66 +341,73 @@ Image2d<uint8_t> TorchImageUtils::TensorsToImage(at::Tensor t,
 		}		
 	}
 
-	return TorchImageUtils::TensorsToImage(tmpBatch,
-		seqFormat,
-		chanCount, w, h,
-		borderSize,
-		backgroundValue,
-		intervalMapping);
+	return TorchImageUtils::TensorsToImage(tmpBatch, sets);		
 }
 
 Image2d<uint8_t> TorchImageUtils::TensorsToImage(const std::vector<std::vector<torch::Tensor>>& t,
-	TorchImageUtils::SequenceFormat seqFormat,
-	int chanCount,
-	int w,
-	int h,
-	int borderSize,
-	uint8_t backgroundValue,
-	bool intervalMapping)
-{
+	const TensorsToImageSettings& sets)
+{		
+	const int chanCount = std::max<int>(t[0][0].size(0), sets.chanCount);
+	const int w = std::max<int>(t[0][0].size(1), sets.w);
+	const int h = std::max<int>(t[0][0].size(2), sets.h);
+
 	
-	int totalW = w;
-	int totalH = h;
-
-	chanCount = std::max<int>(t[0][0].size(0), chanCount);
-	w = std::max<int>(t[0][0].size(1), w);
-	h = std::max<int>(t[0][0].size(2), h);
-
-
 	int maxW = 0;
 	for (int s = 0; s < t[0].size(); s++)
 	{
-		int seqImgW = (w + borderSize) * t[0].size() + borderSize;
+		int seqImgW = (w + sets.borderSize) * t[0].size() + sets.borderSize;
 		if (seqImgW > maxW)
 		{
 			maxW = seqImgW;
 		}
 	}
 
-	totalW = maxW;
-	totalH = (h + borderSize) * t.size() + borderSize;
+	int outputChanCount = chanCount;
+	const int outputW = maxW;
+	const int outputH = (h + sets.borderSize) * t.size() + sets.borderSize;
 
 
-	std::vector<uint8_t> defValues = std::vector<uint8_t>(chanCount, backgroundValue);
+	Image2d<uint8_t> pallete;
+	if (sets.colorMappingFileName.has_value())
+	{
+		if (chanCount > 1)
+		{
+			MY_LOG_ERROR("Color pallete mapping can be used only for single channel images");
+		}
+		else
+		{
+			pallete = Image2d<uint8_t>(sets.colorMappingFileName->c_str());
+			outputChanCount = pallete.GetChannelsCount();
+		}
+	}
 
-	auto colSpace = (chanCount == 1) ? ColorSpace::PixelFormat::GRAY :
-		((chanCount == 3) ? ColorSpace::PixelFormat::RGB : ColorSpace::PixelFormat::RGBA);
-	Image2d<uint8_t> newImage = Image2d<uint8_t>::CreateWithSingleValue(totalW, totalH, defValues.data(), colSpace);
+	const std::vector<uint8_t> defValues = std::vector<uint8_t>(outputChanCount, sets.backgroundValue);
 
-	int offsetY = borderSize;
-	int offsetX = borderSize;
+	const auto colSpace = (outputChanCount == 1) ? ColorSpace::PixelFormat::GRAY :
+		((outputChanCount == 3) ? ColorSpace::PixelFormat::RGB : ColorSpace::PixelFormat::RGBA);
+
+	Image2d<uint8_t> newImage = Image2d<uint8_t>::CreateWithSingleValue(outputW, outputH, defValues.data(), colSpace);
+
+	int offsetY = sets.borderSize;
+	int offsetX = sets.borderSize;
 	for (size_t b = 0; b < t.size(); b++)
 	{
-		offsetX = borderSize;
+		offsetX = sets.borderSize;
 
 		for (size_t s = 0; s < t[b].size(); s++)
 		{
-			auto seqImg = TorchImageUtils::TensorToImage(t[b][s], chanCount, w, h, intervalMapping);
+			auto seqImg = TorchImageUtils::TensorToImage(t[b][s], chanCount, w, h, sets.intervalMapping);
+
+			if (sets.colorMappingFileName.has_value())
+			{
+				seqImg = ImageDrawing::ColorMapping(seqImg, pallete);
+			}
+
 			newImage.SetSubImage(offsetX, offsetY, seqImg);
-			offsetX += w + borderSize;
+			offsetX += w + sets.borderSize;
 		}
 
-		offsetY += h + borderSize;
+		offsetY += h + sets.borderSize;
 	}
 
 	return newImage;
@@ -468,6 +477,17 @@ template torch::Tensor TorchImageUtils::LoadImageAs<torch::Tensor>(
 	int h);
 
 
+template std::vector<float> TorchImageUtils::LoadImageAs<std::vector<float>>(
+	Image2d<uint8_t>& img,
+	int chanCount,
+	int w,
+	int h);
+
+template torch::Tensor TorchImageUtils::LoadImageAs<torch::Tensor>(
+	Image2d<uint8_t>& img,
+	int chanCount,
+	int w,
+	int h);
 
 
 

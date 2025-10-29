@@ -1,6 +1,8 @@
 #ifndef  MRMS_INPUT_LOADER_H
 #define  MRMS_INPUT_LOADER_H
 
+#include <optional>
+
 #include "../../InputProcessing/InputLoaders/VideoSequenceInputLoader.h"
 
 #include "../../core/Structures.h"
@@ -17,6 +19,9 @@ namespace CustomScenarios
                 const std::string& datasetPath,
                 int prevSeqLen,
                 int futureSeqLen);
+
+            void SaveSequence(size_t index, const std::string& outputName,
+                std::optional<std::string> colorMappingFileName = std::nullopt);
 
         protected:
 

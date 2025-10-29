@@ -93,7 +93,9 @@ namespace CustomScenarios::MrmsTraining
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
 		ilw->InitLoaders<MrmsInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } }, "D:\\Datasets\\mrms_lz4", prevCount, futureCount);
 
-		ilw->GetLoader(RunMode::TRAIN)->Load();
+		auto loader = ilw->GetLoader<MrmsInputLoader>(RunMode::TRAIN);
+		loader->Load();
+		loader->SaveSequence(0, "D://seq.png", "D://turbo.png");
 
 
 		auto m = std::make_shared<ModelZoo::SimVPv2::SimVPv2Model>(prevCount, futureCount, imSize);

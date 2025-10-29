@@ -17,6 +17,7 @@ MetricsImage::MetricsImage(MetricsType mType) :
     MetricsDefault(),
     mType(mType),
     keepImages(2),
+    colorMapping(std::nullopt),
     iPosAll(0),
     uPosAll(0),
     iInvAll(0),
@@ -43,6 +44,11 @@ void MetricsImage::Reset()
     runningMse = 0;
 
     pixelsCount = 0;
+}
+
+void MetricsImage::SetColorMappingFileName(std::optional<std::string> colorMappingFileName)
+{
+    this->colorMapping = colorMappingFileName;
 }
 
 std::unordered_map<std::string, float> MetricsImage::GetResultExtended() const 
@@ -177,19 +183,11 @@ void MetricsImage::Save(const std::string& filePath) const
         auto rows = TorchImageUtils::MergeTensorsToRows(toMerge);
 
         
-        //todo
-        //if (!colorMapping.empty()) 
-        //{
-        //    for (size_t r = 0; r < rows.size(); ++r) {
-        //        for (size_t c = 0; c < rows[r].size(); ++c) {
-        //            rows[r][c] = ImageUtils::createColorMapped(rows[r][c], colorMapping);
-        //        }
-        //    }
-        //}        
+        TorchImageUtils::TensorsToImageSettings sets;
+        sets.borderSize = 5;
+        sets.colorMappingFileName = colorMapping;
 
-        auto img = TorchImageUtils::TensorsToImage(rows, TorchImageUtils::SequenceFormat::B_S,
-            -1, -1, -1,
-            5);
+        auto img = TorchImageUtils::TensorsToImage(rows, sets);
         std::string imgPath = this->BuildPath(filePath, static_cast<int>(i), "jpg", false);
         img.Save(imgPath.c_str());
     }

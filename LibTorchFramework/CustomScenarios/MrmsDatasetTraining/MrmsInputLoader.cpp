@@ -45,3 +45,21 @@ std::vector<float> MrmsInputLoader::LoadImage(const std::string& p) const
 
     return v;
 }
+
+void MrmsInputLoader::SaveSequence(size_t index, const std::string& outputName,
+    std::optional<std::string> colorMappingFileName)
+{
+    const auto& si = this->data[index];
+
+    auto seqParts = this->LoadSequence(si);
+
+    auto seq = torch::cat({ seqParts.first, seqParts.second });
+
+    TorchImageUtils::TensorsToImageSettings sets;
+    sets.borderSize = 2;
+    sets.colorMappingFileName = colorMappingFileName;
+         
+    auto img = TorchImageUtils::TensorsToImage(seq, sets);
+   
+    img.Save(outputName.c_str());
+}

@@ -4,6 +4,7 @@
 #include <list>
 #include <tuple>
 #include <unordered_map>
+#include <optional>
 
 #include <torch/torch.h>
 
@@ -22,6 +23,8 @@ public:
 	MetricsImage(MetricsType mType);
 	~MetricsImage() = default;
 
+	void SetColorMappingFileName(std::optional<std::string> colorMappingFileName);
+
 	std::unordered_map<std::string, float> GetResultExtended() const override;
 	void Save(const std::string& filePath) const override;
 
@@ -32,6 +35,8 @@ protected:
 
 	int keepImages;
 	std::list<std::tuple<torch::Tensor, torch::Tensor>> images;
+
+	std::optional<std::string> colorMapping;
 
 	float iPosAll; //intersection all
 	float uPosAll; //union all
