@@ -133,7 +133,7 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 	else
 	{
 		auto t = TorchUtils::make_tensor(imgf.MoveData(),
-			{ static_cast<int>(img.GetChannelsCount()), img.GetHeight(), img.GetWidth() });
+			{ static_cast<int>(imgf.GetChannelsCount()), imgf.GetHeight(), imgf.GetWidth() });
 
 		return t;
 	}
@@ -268,9 +268,8 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 			chData[i] = static_cast<uint8_t>(scaled);
 		}
 
-		// create single-channel Image2d<uint8_t> for this channel		
-		Image2d<uint8_t> imCh(w, h, chData, ColorSpace::PixelFormat::GRAY);
-		channels.push_back(std::move(imCh));
+		// create single-channel Image2d<uint8_t> for this channel				
+		channels.emplace_back(w, h, chData, ColorSpace::PixelFormat::GRAY);
 	}
 
 	// If single channel return that channel image directly

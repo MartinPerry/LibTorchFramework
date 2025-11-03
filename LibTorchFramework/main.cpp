@@ -79,7 +79,9 @@
 
 //=========================================================
 
-#include "./CustomScenarios/MrmsDatasetTraining/setup.h"
+#include "./CustomScenarios/MrmsDatasetTraining/setup_mrms.h"
+#include "./CustomScenarios/U2NetTraining/setup_u2net.h"
+#include "./CustomScenarios/UNetTraining/setup_unet.h"
 
 #include "./Settings.h"
 
@@ -116,6 +118,15 @@ int main()
 
     /*
     at::Tensor t0 = at::ones({ 3, 1, 64, 64 }, at::kFloat);
+    at::Tensor t1 = at::ones({ 3, 1, 64, 64 }, at::kFloat);
+
+    auto loss = torch::nn::functional::mse_loss(t0, t1);
+    auto manual_loss = (t0 - t1).pow(2).mean();
+
+    std::cout << loss << std::endl;
+    */
+
+    /*
     auto img0 = TorchImageUtils::TensorsToImage(t0);
     img0.Save("D://tt_b.png");
 
@@ -127,6 +138,7 @@ int main()
     Settings::PrintCudaInfo();
 
     CustomScenarios::MrmsTraining::setup();
+    //CustomScenarios::UNetTraining::setup();
     return 0;
 
     //torch::nn::MSELoss loss;
@@ -150,7 +162,7 @@ int main()
     //sets.device = torch::kCUDA; //torch::kCUDA;    
     //sets.perf.enableAutoCast = true;
     sets.batchSize = 3;
-    sets.metricsInitFn = [predEval= predEval]() -> auto {
+    sets.metricsInitFn = [predEval = predEval]() -> auto {
         auto metr = std::make_shared<MetricsImage>(MetricsImage::MetricsType::SEGMENTATION);
         metr->SetPredictionEvaluator(predEval);
         return metr;

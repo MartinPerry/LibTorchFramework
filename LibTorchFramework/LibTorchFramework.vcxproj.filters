@@ -100,6 +100,18 @@
     <Filter Include="Header Files\CustomScenarios\MrmsDatasetTraining">
       <UniqueIdentifier>{6736f769-18f4-4d41-a400-119bcecb482c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\CustomScenarios\U2NetTraining">
+      <UniqueIdentifier>{079481ac-2891-4f06-9dbd-6c636796b1c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CustomScenarios\U2NetTraining">
+      <UniqueIdentifier>{b966d226-16c8-4e67-885c-248296ffad2a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CustomScenarios\UNetTraining">
+      <UniqueIdentifier>{e820bec7-f216-4a4a-9669-ef625434b9e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CustomScenarios\UNetTraining">
+      <UniqueIdentifier>{1a442d2d-e379-41a3-b6e1-a1b3e7d3e1d7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -168,7 +180,7 @@
     <ClCompile Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.cpp">
       <Filter>Source Files\InputProcessing\InputLoaders</Filter>
     </ClCompile>
-    <ClCompile Include="CustomScenarios\MrmsDatasetTraining\setup.cpp">
+    <ClCompile Include="CustomScenarios\MrmsDatasetTraining\setup_mrms.cpp">
       <Filter>Source Files\CustomScenarios\MrmsDatasetTraining</Filter>
     </ClCompile>
     <ClCompile Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.cpp">
@@ -176,6 +188,12 @@
     </ClCompile>
     <ClCompile Include="Utils\TrainingHelper.cpp">
       <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomScenarios\U2NetTraining\setup_u2net.cpp">
+      <Filter>Source Files\CustomScenarios\U2NetTraining</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomScenarios\UNetTraining\setup_unet.cpp">
+      <Filter>Source Files\CustomScenarios\UNetTraining</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -278,11 +296,17 @@
     <ClInclude Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.h">
       <Filter>Header Files\InputProcessing\InputLoaders</Filter>
     </ClInclude>
-    <ClInclude Include="CustomScenarios\MrmsDatasetTraining\setup.h">
+    <ClInclude Include="CustomScenarios\MrmsDatasetTraining\setup_mrms.h">
       <Filter>Header Files\CustomScenarios\MrmsDatasetTraining</Filter>
     </ClInclude>
     <ClInclude Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.h">
       <Filter>Header Files\CustomScenarios\MrmsDatasetTraining</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomScenarios\U2NetTraining\setup_u2net.h">
+      <Filter>Header Files\CustomScenarios\U2NetTraining</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomScenarios\UNetTraining\setup_unet.h">
+      <Filter>Header Files\CustomScenarios\UNetTraining</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

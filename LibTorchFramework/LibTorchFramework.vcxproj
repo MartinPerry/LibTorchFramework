@@ -102,7 +102,9 @@
     <ClCompile Include="core\Snapshot\SnapshotSaver.cpp" />
     <ClCompile Include="core\Trainer.cpp" />
     <ClCompile Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.cpp" />
-    <ClCompile Include="CustomScenarios\MrmsDatasetTraining\setup.cpp" />
+    <ClCompile Include="CustomScenarios\MrmsDatasetTraining\setup_mrms.cpp" />
+    <ClCompile Include="CustomScenarios\U2NetTraining\setup_u2net.cpp" />
+    <ClCompile Include="CustomScenarios\UNetTraining\setup_unet.cpp" />
     <ClCompile Include="InputProcessing\DefaultDataset.cpp" />
     <ClCompile Include="InputProcessing\InputLoader.cpp" />
     <ClCompile Include="InputProcessing\InputLoadersWrapper.cpp" />
@@ -137,7 +139,9 @@
     <ClInclude Include="core\Structures.h" />
     <ClInclude Include="core\Trainer.h" />
     <ClInclude Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.h" />
-    <ClInclude Include="CustomScenarios\MrmsDatasetTraining\setup.h" />
+    <ClInclude Include="CustomScenarios\MrmsDatasetTraining\setup_mrms.h" />
+    <ClInclude Include="CustomScenarios\U2NetTraining\setup_u2net.h" />
+    <ClInclude Include="CustomScenarios\UNetTraining\setup_unet.h" />
     <ClInclude Include="InputProcessing\DefaultDataset.h" />
     <ClInclude Include="InputProcessing\InputLoader.h" />
     <ClInclude Include="InputProcessing\DataLoaderData.h" />

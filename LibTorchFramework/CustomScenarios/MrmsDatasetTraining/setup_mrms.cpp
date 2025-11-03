@@ -1,4 +1,4 @@
-#include "./setup.h"
+#include "./setup_mrms.h"
 
 //=========================================================
 // Core
@@ -55,7 +55,7 @@ namespace CustomScenarios::MrmsTraining
 	void setup()
 	{
 		//static std::shared_ptr<PredictionEvaluator> predEval = std::make_shared<PredictionEvaluatorSigmoid>();
-
+		
 		Settings sets;
 		//-----
 		//model debug
@@ -74,7 +74,8 @@ namespace CustomScenarios::MrmsTraining
 			return metr;
 			};
 		sets.lossFn = [&](const auto& output, const auto& targets) {
-			return torch::mse_loss(output[0], targets);
+			auto loss = torch::nn::functional::mse_loss(output[0], targets);						
+			return loss;
 			};
 
 		//if crashes with openMp - disable it

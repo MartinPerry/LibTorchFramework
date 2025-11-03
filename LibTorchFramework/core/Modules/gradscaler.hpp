@@ -88,7 +88,7 @@ public:
 				_lazy_init_scale_growth_tracker(values.device());
 
 			assert(_scale.defined());
-
+			
 			return values * _scale.to(values.device(), true);
 		}
 		if constexpr (is_container<T>::value)
