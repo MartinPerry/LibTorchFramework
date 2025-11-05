@@ -2,13 +2,15 @@
 
 #include "../../core/Modules/WeightsInit/TruncatedNormalInit.h"
 
+#include "../../Utils/TorchUtils.h"
+
 using namespace ModelZoo::SimVPv2;
 
 // ======================================================================================
 // DropPathImpl
 // ======================================================================================
 
-DropPathImpl::DropPathImpl(double drop_prob_, bool scale_by_keep_) :
+DropPathImpl::DropPathImpl(float drop_prob_, bool scale_by_keep_) :
 	drop_prob(drop_prob_),
 	scale_by_keep(scale_by_keep_)
 {
@@ -22,7 +24,7 @@ torch::Tensor DropPathImpl::forward(const torch::Tensor& x)
 		return x;
 	}
 
-	double keep_prob = 1.0 - drop_prob;
+	float keep_prob = 1.0f - drop_prob;
 	// shape = (batch, 1, 1, 1, ...) matching x.ndimension()
 	std::vector<int64_t> shape;
 	shape.push_back(x.size(0));
@@ -48,7 +50,7 @@ DWConvImpl::DWConvImpl(int64_t dim)
 	torch::nn::Conv2dOptions opts = torch::nn::Conv2dOptions(dim, dim, /*kernel_size=*/3)
 		.stride(1).padding(1).bias(true).groups(dim);
 
-	dwconv = register_module("dwconv", torch::nn::Conv2d(opts));	
+	AUTO_REGISTER_NEW_MODULE(dwconv, torch::nn::Conv2d(opts));
 }
 
 torch::Tensor DWConvImpl::forward(const torch::Tensor& x)
@@ -56,30 +58,11 @@ torch::Tensor DWConvImpl::forward(const torch::Tensor& x)
 	return dwconv->forward(x);
 }
 
-void _conv_init(torch::nn::Conv2d& conv)
-{
-	// similar to Python: kaiming normal with fan_out
-	auto w = conv->weight;
-	int64_t k0 = conv->options.kernel_size()->at(0);
-	int64_t k1 = conv->options.kernel_size()->at(1);
-	int64_t fan_out = k0 * k1 * conv->options.out_channels();
-	if (conv->options.groups() != 1)
-	{
-		fan_out = fan_out / conv->options.groups();
-	}
-	double std = std::sqrt(2.0 / static_cast<double>(fan_out));
-	conv->weight.normal_(0.0, std);
-	if (conv->options.bias())
-	{
-		conv->bias.zero_();
-	}
-}
-
 // ======================================================================================
 // MlpImpl
 // ======================================================================================
 
-MlpImpl::MlpImpl(int64_t in_features, int64_t hidden_features, int64_t out_features, double drop_prob)
+MlpImpl::MlpImpl(int64_t in_features, int64_t hidden_features, int64_t out_features, float drop_prob)
 {
 	if (out_features == -1)
 	{
@@ -91,15 +74,17 @@ MlpImpl::MlpImpl(int64_t in_features, int64_t hidden_features, int64_t out_featu
 	}
 
 	// 1x1 conv: emulate Linear with conv kernel=1
-	fc1 = register_module("fc1", torch::nn::Conv2d(torch::nn::Conv2dOptions(in_features, hidden_features, 1).stride(1).padding(0)));
-	dwconv = register_module("dwconv", DWConv(hidden_features));
-	act = register_module("act", torch::nn::GELU());
-	fc2 = register_module("fc2", torch::nn::Conv2d(torch::nn::Conv2dOptions(hidden_features, out_features, 1).stride(1).padding(0)));
-	drop = register_module("drop", torch::nn::Dropout(torch::nn::DropoutOptions(drop_prob)));
-
+	AUTO_REGISTER_NEW_MODULE(fc1, torch::nn::Conv2d(torch::nn::Conv2dOptions(in_features, hidden_features, 1).stride(1).padding(0)));
+	AUTO_REGISTER_NEW_MODULE(dwconv, DWConv(hidden_features));
+	AUTO_REGISTER_NEW_MODULE(act, torch::nn::GELU());
+	AUTO_REGISTER_NEW_MODULE(fc2, torch::nn::Conv2d(torch::nn::Conv2dOptions(hidden_features, out_features, 1).stride(1).padding(0)));
+	AUTO_REGISTER_NEW_MODULE(drop, torch::nn::Dropout(torch::nn::DropoutOptions(drop_prob)));
+	
+	
 	this->apply([&](torch::nn::Module& m){
 		this->_init_weights(m);
 	});	
+	
 }
 
 
@@ -111,18 +96,18 @@ void MlpImpl::_init_weights(torch::nn::Module& m)
 
 		if (linear->bias.defined())
 		{
-			torch::nn::init::constant_(linear->bias, 0);
+			torch::nn::init::constant_(linear->bias, 0.0f);
 		}
 	}
 	else if (auto* layerNorm = dynamic_cast<torch::nn::LayerNormImpl*>(&m))
 	{				
 		if (layerNorm->bias.defined())
 		{
-			torch::nn::init::constant_(layerNorm->bias, 0);
+			torch::nn::init::constant_(layerNorm->bias, 0.0f);
 		}
 		if (layerNorm->weight.defined())
 		{
-			torch::nn::init::constant_(layerNorm->weight, 1.0);
+			torch::nn::init::constant_(layerNorm->weight, 1.0f);
 		}
 	}
 	else if (auto* conv2d = dynamic_cast<torch::nn::Conv2dImpl*>(&m))
@@ -131,12 +116,12 @@ void MlpImpl::_init_weights(torch::nn::Module& m)
 		int64_t fan_out = ks->at(0) * ks->at(1) * conv2d->options.out_channels();
 		fan_out /= conv2d->options.groups();
 
-		conv2d->weight.data().normal_(0, std::sqrt(2.0 / static_cast<double>(fan_out)));
+		conv2d->weight.data().normal_(0.0f, std::sqrt(2.0f / static_cast<float>(fan_out)));
 
 		if (conv2d->bias.defined())
 		{
 			conv2d->bias.data().zero_();
-		}
+		}		
 	}
 	else
 	{
@@ -178,9 +163,9 @@ AttentionModuleImpl::AttentionModuleImpl(int64_t dim, int64_t kernel_size, int64
 	int64_t dd_p = (dilation * (dd_k - 1) / 2);
 
 	// depthwise convs
-	conv0 = register_module("conv0", torch::nn::Conv2d(torch::nn::Conv2dOptions(dim, dim, d_k).padding(d_p).groups(dim)));
-	conv_spatial = register_module("conv_spatial", torch::nn::Conv2d(torch::nn::Conv2dOptions(dim, dim, dd_k).stride(1).padding(dd_p).groups(dim).dilation(dilation)));
-	conv1 = register_module("conv1", torch::nn::Conv2d(torch::nn::Conv2dOptions(dim, dim * 2, 1)));
+	AUTO_REGISTER_NEW_MODULE(conv0, torch::nn::Conv2d(torch::nn::Conv2dOptions(dim, dim, d_k).padding(d_p).groups(dim)));
+	AUTO_REGISTER_NEW_MODULE(conv_spatial, torch::nn::Conv2d(torch::nn::Conv2dOptions(dim, dim, dd_k).stride(1).padding(dd_p).groups(dim).dilation(dilation)));
+	AUTO_REGISTER_NEW_MODULE(conv1, torch::nn::Conv2d(torch::nn::Conv2dOptions(dim, dim * 2, 1)));
 
 	/*
 	reduction = std::max<int64_t>(dim / 16, 4);
@@ -217,11 +202,11 @@ torch::Tensor AttentionModuleImpl::forward(const torch::Tensor& x)
 
 SpatialAttentionImpl::SpatialAttentionImpl(int64_t d_model, int64_t kernel_size)	
 {	
-	proj_1 = register_module("proj_1", torch::nn::Conv2d(torch::nn::Conv2dOptions(d_model, d_model, 1)));
-	spatial_gating_unit = register_module("spatial_gating_unit", AttentionModule(d_model, kernel_size));
-	proj_2 = register_module("proj_2", torch::nn::Conv2d(torch::nn::Conv2dOptions(d_model, d_model, 1)));
+	AUTO_REGISTER_NEW_MODULE(proj_1, torch::nn::Conv2d(torch::nn::Conv2dOptions(d_model, d_model, 1)));
+	AUTO_REGISTER_NEW_MODULE(spatial_gating_unit, AttentionModule(d_model, kernel_size));
+	AUTO_REGISTER_NEW_MODULE(proj_2, torch::nn::Conv2d(torch::nn::Conv2dOptions(d_model, d_model, 1)));
 
-	activation = register_module("activation", torch::nn::GELU());
+	AUTO_REGISTER_NEW_MODULE(activation, torch::nn::GELU());
 	
 }
 
@@ -240,25 +225,25 @@ torch::Tensor SpatialAttentionImpl::forward(const torch::Tensor& x)
 // GASubBlockImpl
 // ======================================================================================
 
-GASubBlockImpl::GASubBlockImpl(int64_t dim, int64_t kernel_size, double mlp_ratio, double drop, double drop_path_prob)
+GASubBlockImpl::GASubBlockImpl(int64_t dim, int64_t kernel_size, float mlp_ratio, float drop, float drop_path_prob)
 {
-	norm1 = register_module("norm1", torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(dim)));
-	attn = register_module("attn", SpatialAttention(dim, kernel_size));
-	if (drop_path_prob > 0.0)
+	AUTO_REGISTER_NEW_MODULE(norm1, torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(dim)));
+	AUTO_REGISTER_NEW_MODULE(attn, SpatialAttention(dim, kernel_size));
+	if (drop_path_prob > 0.0f)
 	{
-		drop_path = register_module("drop_path", DropPath(drop_path_prob));
+		 AUTO_REGISTER_NEW_MODULE(drop_path, DropPath(drop_path_prob));
 	}
 	else
 	{
-		drop_path = register_module("drop_path", DropPath(0.0));
+		AUTO_REGISTER_NEW_MODULE(drop_path, DropPath(0.0f));
 	}
 
-	norm2 = register_module("norm2", torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(dim)));
+	AUTO_REGISTER_NEW_MODULE(norm2, torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(dim)));
 	int64_t mlp_hidden_dim = static_cast<int64_t>(dim * mlp_ratio);
-	mlp = register_module("mlp", Mlp(dim, mlp_hidden_dim, -1, drop));
+	AUTO_REGISTER_NEW_MODULE(mlp, Mlp(dim, mlp_hidden_dim, -1, drop));
 
 	// layer scale parameters (initialized to small constant)
-	double init_val = 1e-2;
+	float init_val = static_cast<float>(1e-2);
 	layer_scale_1 = register_parameter("layer_scale_1", torch::full({ dim }, init_val));
 	layer_scale_2 = register_parameter("layer_scale_2", torch::full({ dim }, init_val));
 
@@ -296,7 +281,7 @@ void GASubBlockImpl::_init_weights(torch::nn::Module& m)
 		int64_t fan_out = ks->at(0) * ks->at(1) * conv2d->options.out_channels();		
 		fan_out /= conv2d->options.groups();
 
-		conv2d->weight.data().normal_(0, std::sqrt(2.0 / static_cast<double>(fan_out)));
+		conv2d->weight.data().normal_(0, std::sqrt(2.0f / static_cast<float>(fan_out)));
 
 		if (conv2d->bias.defined())
 		{

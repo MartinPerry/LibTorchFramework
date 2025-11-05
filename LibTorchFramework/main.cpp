@@ -137,6 +137,8 @@ int main()
     auto img = TorchImageUtils::TensorsToImage(t);
     img.Save("D://tt_seq.png");
     */
+    
+    //torch::set_default_dtype(torch::scalarTypeToTypeMeta(torch::kFloat32));
 
     Settings::PrintCudaInfo();
 

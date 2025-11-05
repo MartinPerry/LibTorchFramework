@@ -177,6 +177,11 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 
 	t = t.cpu().contiguous();
 
+	if (t.dtype() != torch::kFloat32)
+	{
+		t = t.to(torch::kFloat32);
+	}
+
 	const float* rawData = t.const_data_ptr<float>();
 
 	std::vector<float> flat(rawData, rawData + t.numel());

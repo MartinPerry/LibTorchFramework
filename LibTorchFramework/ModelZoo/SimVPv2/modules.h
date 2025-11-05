@@ -15,10 +15,10 @@ namespace ModelZoo {
 		// ---------------------------
 		struct DropPathImpl : public torch::nn::Module
 		{
-			double drop_prob;
+			float drop_prob;
 			bool scale_by_keep;
 
-			DropPathImpl(double drop_prob_ = 0.0, bool scale_by_keep_ = true);
+			DropPathImpl(float drop_prob_ = 0.0f, bool scale_by_keep_ = true);
 
 			torch::Tensor forward(const torch::Tensor& x);
 		};
@@ -49,7 +49,7 @@ namespace ModelZoo {
 			torch::nn::Dropout drop{ nullptr };
 
 			MlpImpl(int64_t in_features, int64_t hidden_features = -1, int64_t out_features = -1,
-				double drop_prob = 0.0);
+				float drop_prob = 0.0f);
 
 			torch::Tensor forward(const torch::Tensor& x);
 
@@ -117,8 +117,8 @@ namespace ModelZoo {
 			torch::Tensor layer_scale_1;
 			torch::Tensor layer_scale_2;
 
-			GASubBlockImpl(int64_t dim, int64_t kernel_size = 21, double mlp_ratio = 4.0,
-				double drop = 0.0, double drop_path_prob = 0.1);
+			GASubBlockImpl(int64_t dim, int64_t kernel_size = 21, float mlp_ratio = 4.0f,
+				float drop = 0.0f, float drop_path_prob = 0.1f);
 
 			torch::Tensor forward(const torch::Tensor& x);
 

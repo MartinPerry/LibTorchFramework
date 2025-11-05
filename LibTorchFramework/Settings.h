@@ -42,6 +42,10 @@ struct Settings
 
 	std::optional<int> gradientAccumulationCount = std::nullopt;
 
+	Settings()
+	{		
+	}
+
 	static void PrintCudaInfo()
 	{
 		MY_LOG_INFO("CUDA device count: %d", torch::cuda::device_count());

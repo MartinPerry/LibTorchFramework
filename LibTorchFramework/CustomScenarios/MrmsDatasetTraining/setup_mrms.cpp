@@ -70,6 +70,7 @@ namespace CustomScenarios::MrmsTraining
 		sets.batchSize = 2;
 		sets.metricsInitFn = []() -> auto {
 			auto metr = std::make_shared<MetricsImage>(MetricsImage::MetricsType::UNKNOWN);
+			metr->SetColorMappingFileName("D://turbo.png");
 			//metr->SetPredictionEvaluator(predEval);
 			return metr;
 			};
