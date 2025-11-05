@@ -29,25 +29,31 @@ Runner::~Runner()
 
 torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch)
 {    
+    
     if (sets.perf.enableAutoCast)
     {                        
         at::autocast::set_autocast_enabled(sets.device, true);
     }
     auto result = model->RunForward(batch);
-
-    if (sets.perf.enableAutoCast)
-    {
-        at::autocast::clear_cache();        
-        at::autocast::set_autocast_enabled(sets.device, false);
-    }
-
+    
     torch::Tensor loss;
 
     if (sets.lossFn)
     {
         loss = sets.lossFn(result, batch.target);
+        
+        if ((sets.gradientAccumulationCount.has_value()) and (*sets.gradientAccumulationCount > 0))
+        {
+            loss = loss / *sets.gradientAccumulationCount;
+        }
     }
-    
+
+    if (sets.perf.enableAutoCast)
+    {
+        at::autocast::clear_cache();
+        at::autocast::set_autocast_enabled(sets.device, false);
+    }
+
     if (this->metrics)
     {
         //???

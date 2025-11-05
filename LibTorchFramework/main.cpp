@@ -117,13 +117,16 @@ int main()
     //std::cout << tensor << std::endl;
 
     /*
-    at::Tensor t0 = at::ones({ 3, 1, 64, 64 }, at::kFloat);
-    at::Tensor t1 = at::ones({ 3, 1, 64, 64 }, at::kFloat);
+    at::Tensor t0 = at::rand({ 3, 1, 64, 64 }, at::kFloat);
+    at::Tensor t1 = at::rand({ 3, 1, 64, 64 }, at::kFloat);
 
     auto loss = torch::nn::functional::mse_loss(t0, t1);
+    auto loss2 = loss.mean();
     auto manual_loss = (t0 - t1).pow(2).mean();
 
     std::cout << loss << std::endl;
+    std::cout << loss2 << std::endl;
+    std::cout << manual_loss << std::endl;
     */
 
     /*
