@@ -20,14 +20,14 @@ struct FocalFrequencyLossImpl : public torch::nn::Module
     
     explicit FocalFrequencyLossImpl(
         float loss_weight = 1.0f,
-        float alpha = 1.0,
+        float alpha = 1.0f,
         int patch_factor = 1,
         bool ave_spectrum = false,
         bool log_matrix = false,
         bool batch_matrix = false
     );
 
-    torch::Tensor forward(const std::vector<torch::Tensor>& pred, const torch::Tensor& target);
+    torch::Tensor forward(const torch::Tensor& pred, const torch::Tensor& target);
 
 protected:
     float loss_weight = 1.0f;

@@ -48,14 +48,18 @@
 //=========================================================
 
 #include "./MrmsInputLoader.h"
+#include "./MrmsLoss.h"
 
 
 namespace CustomScenarios::MrmsTraining
 {
+	
 	void setup()
 	{
 		//static std::shared_ptr<PredictionEvaluator> predEval = std::make_shared<PredictionEvaluatorSigmoid>();
 		
+		CustomSimVpLoss simVpLoss(3);
+
 		Settings sets;
 		//-----
 		//model debug
@@ -75,7 +79,7 @@ namespace CustomScenarios::MrmsTraining
 			return metr;
 			};
 		sets.lossFn = [&](const auto& output, const auto& targets) {
-			auto loss = torch::nn::functional::mse_loss(output[0], targets);						
+			auto loss = simVpLoss(output[0], targets);
 			return loss;
 			};
 

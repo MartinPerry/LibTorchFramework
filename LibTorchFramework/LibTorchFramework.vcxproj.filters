@@ -213,6 +213,9 @@
     <ClCompile Include="core\Modules\Convolutions\ConvGRU.cpp">
       <Filter>Source Files\core\Modules\Convolutions</Filter>
     </ClCompile>
+    <ClCompile Include="CustomScenarios\MrmsDatasetTraining\MrmsLoss.cpp">
+      <Filter>Source Files\CustomScenarios\MrmsDatasetTraining</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InputProcessing\DefaultDataset.h">
@@ -334,6 +337,9 @@
     </ClInclude>
     <ClInclude Include="core\Modules\Convolutions\ConvGRU.h">
       <Filter>Header Files\core\Modules\Convolutions</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomScenarios\MrmsDatasetTraining\MrmsLoss.h">
+      <Filter>Header Files\CustomScenarios\MrmsDatasetTraining</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -127,11 +127,9 @@ torch::Tensor FocalFrequencyLossImpl::LossFormulation(const torch::Tensor& recon
 
 //=====================================================================
 
-torch::Tensor FocalFrequencyLossImpl::forward(const std::vector<torch::Tensor>& preds, const torch::Tensor& target)
+torch::Tensor FocalFrequencyLossImpl::forward(const torch::Tensor& pred, const torch::Tensor& target)
 {
-    // We assume preds[0] = prediction tensor, preds may support multiple inputs
-    torch::Tensor pred = preds[0];
-
+   
     torch::Tensor pred_freq = this->Tensor2Freq(pred);
     torch::Tensor target_freq = this->Tensor2Freq(target);
 
