@@ -95,6 +95,9 @@
     <ClCompile Include="core\AbstractModel.cpp" />
     <ClCompile Include="core\Metrics\MetricsDefault.cpp" />
     <ClCompile Include="core\Metrics\MetricsImage.cpp" />
+    <ClCompile Include="core\Modules\Convolutions\ConvGRU.cpp" />
+    <ClCompile Include="core\Modules\LossFunctions\FocalFrequencyLoss.cpp" />
+    <ClCompile Include="core\Modules\LossFunctions\SSIMLoss.cpp" />
     <ClCompile Include="core\Modules\WeightsInit\TruncatedNormalInit.cpp" />
     <ClCompile Include="core\Runner.cpp" />
     <ClCompile Include="core\Snapshot\PretrainedManager.cpp" />
@@ -125,10 +128,13 @@
     <ClInclude Include="core\Metrics\MetricsDefault.h" />
     <ClInclude Include="core\Metrics\MetricsImage.h" />
     <ClInclude Include="core\Metrics\PredictionEvaluators.h" />
+    <ClInclude Include="core\Modules\Convolutions\ConvGRU.h" />
     <ClInclude Include="core\Modules\DownSample2d.h" />
     <ClInclude Include="core\Modules\gradscaler.hpp" />
     <ClInclude Include="core\Modules\LossFunctions\DiceLoss.h" />
+    <ClInclude Include="core\Modules\LossFunctions\FocalFrequencyLoss.h" />
     <ClInclude Include="core\Modules\LossFunctions\MultiBceLoss.h" />
+    <ClInclude Include="core\Modules\LossFunctions\SSIMLoss.h" />
     <ClInclude Include="core\Modules\UpSample2d.h" />
     <ClInclude Include="core\Modules\WeightsInit\TruncatedNormalInit.h" />
     <ClInclude Include="core\Runner.h" />

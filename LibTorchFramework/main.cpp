@@ -44,6 +44,8 @@
 
 #include "./core/Modules/LossFunctions/DiceLoss.h"
 #include "./core/Modules/LossFunctions/MultiBceLoss.h"
+#include "./core/Modules/LossFunctions/SSIMLoss.h"
+#include "./core/Modules/LossFunctions/FocalFrequencyLoss.h"
 
 #include "./core/Snapshot/PretrainedManager.h"
 #include "./core/Snapshot/SnapshotSaver.h"
@@ -155,6 +157,7 @@ int main()
     BceDiceLoss bceLoss;
     MultiBceLoss multiLoss;
 
+    
     Settings sets;
     //-----
     //model debug

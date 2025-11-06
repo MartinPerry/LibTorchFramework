@@ -112,6 +112,15 @@
     <Filter Include="Header Files\CustomScenarios\UNetTraining">
       <UniqueIdentifier>{1a442d2d-e379-41a3-b6e1-a1b3e7d3e1d7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\core\Modules\LossFunctions">
+      <UniqueIdentifier>{2859d789-0c19-436d-95b8-ef9b773711ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules\Convolutions">
+      <UniqueIdentifier>{71e190c8-3670-4db8-8043-a75c6ede1b76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Modules\Convolutions">
+      <UniqueIdentifier>{0352b28f-de50-46a2-98c5-10f7348b8a84}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -194,6 +203,15 @@
     </ClCompile>
     <ClCompile Include="CustomScenarios\UNetTraining\setup_unet.cpp">
       <Filter>Source Files\CustomScenarios\UNetTraining</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\LossFunctions\FocalFrequencyLoss.cpp">
+      <Filter>Source Files\core\Modules\LossFunctions</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\LossFunctions\SSIMLoss.cpp">
+      <Filter>Source Files\core\Modules\LossFunctions</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\ConvGRU.cpp">
+      <Filter>Source Files\core\Modules\Convolutions</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -307,6 +325,15 @@
     </ClInclude>
     <ClInclude Include="CustomScenarios\UNetTraining\setup_unet.h">
       <Filter>Header Files\CustomScenarios\UNetTraining</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\LossFunctions\FocalFrequencyLoss.h">
+      <Filter>Header Files\core\Modules\LossFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\LossFunctions\SSIMLoss.h">
+      <Filter>Header Files\core\Modules\LossFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\ConvGRU.h">
+      <Filter>Header Files\core\Modules\Convolutions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

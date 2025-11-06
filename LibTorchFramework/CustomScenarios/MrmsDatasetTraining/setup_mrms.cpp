@@ -90,7 +90,7 @@ namespace CustomScenarios::MrmsTraining
 		int futureCount = 12;
 
 		InputLoaderSettings loaderSets;
-		loaderSets.subsetSize = 200;
+		//loaderSets.subsetSize = 200;
 
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
 		ilw->InitLoaders<MrmsInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } }, "D:\\Datasets\\mrms_lz4", prevCount, futureCount);
