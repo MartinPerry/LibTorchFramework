@@ -5,6 +5,7 @@
 
 #include "../../core/Modules/WeightsInit/TruncatedNormalInit.h"
 
+#include "../../core/Modules/ModulesOptions.h"
 #include "../../core/Modules/UpSample2d.h"
 #include "../../core/Modules/DownSample2d.h"
 
@@ -46,11 +47,11 @@ BasicConv2dImpl::BasicConv2dImpl(int64_t in_channels, int64_t out_channels,
     if (upsampling)
     {
         int64_t upscaleFactor = 2;
-        AUTO_REGISTER_NEW_MODULE(conv, UpSample2d(in_channels, out_channels, upscaleFactor, kernel_size, padding, dilation));
+        AUTO_REGISTER_NEW_MODULE(conv, UpSample2d(ResampleOptions(in_channels, out_channels, upscaleFactor).kernelSize(kernel_size).padding(padding).dilation(dilation)));
     }
     else if (stride > 1)
     {
-        AUTO_REGISTER_NEW_MODULE(conv, DownSample2d(in_channels, out_channels, stride, kernel_size, padding, dilation));
+        AUTO_REGISTER_NEW_MODULE(conv, DownSample2d(ResampleOptions(in_channels, out_channels, stride).kernelSize(kernel_size).padding(padding).dilation(dilation)));
     }
     else
     {

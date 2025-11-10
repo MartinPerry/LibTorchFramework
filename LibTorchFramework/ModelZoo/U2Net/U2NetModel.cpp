@@ -4,6 +4,8 @@
 
 #include "../../InputProcessing/DataLoaderData.h"
 
+#include "../../core/Modules/Convolutions/CoordConv.h"
+
 using namespace torch::nn;
 using namespace ModelZoo::u2net;
 
@@ -35,22 +37,31 @@ REBNCONVImpl::REBNCONVImpl(int in_ch, int out_ch, int dirate, ConvType convType)
     
     // For DEFORMABLE / COORD, in this translation we fall back to normal conv;
     // replace with actual implementations if available.
-    if (convType == ConvType::DEFORMABLE || convType == ConvType::COORD) 
+    if (convType == ConvType::DEFORMABLE) 
     {
         use_bias = true; // match original python where custom conv used bias=True
         // TODO: replace with DeformConv2d or CoordConv2d implementations if you have them
         MY_LOG_ERROR("Not supported");
     }
+    else if (convType == ConvType::COORD)
+    {
+        conv = register_module("conv", 
+            CoordConv2d(Conv2dOptions(in_ch, out_ch, 3).padding(dirate).dilation(dirate).bias(use_bias)));        
+    }
+    else
+    {
+        conv = register_module("conv", 
+            Conv2d(Conv2dOptions(in_ch, out_ch, 3).padding(dirate).dilation(dirate).bias(use_bias)));
+    }
 
-    conv = register_module("conv", Conv2d(Conv2dOptions(in_ch, out_ch, 3).padding(dirate).dilation(dirate).bias(use_bias)));
     bn = register_module("bn", BatchNorm2d(out_ch));
     relu = register_module("relu", ReLU(ReLUOptions().inplace(true)));
 }
 
 torch::Tensor REBNCONVImpl::forward(const torch::Tensor& x) 
 {
-    auto hx = x;
-    auto y = conv->forward(hx);
+    auto hx = x;    
+    auto y = conv.forward(hx);
     y = bn->forward(y);
     y = relu->forward(y);
     return y;

@@ -1,6 +1,8 @@
 #include "./UNetModel.h"
 
+#include "../../core/Modules/ModulesOptions.h"
 #include "../../core/Modules/UpSample2d.h"
+
 #include "../../InputProcessing/DataLoaderData.h"
 
 #include "../../Utils/TorchImageUtils.h"
@@ -104,7 +106,7 @@ DecoderImpl::DecoderImpl(const std::vector<int>& chs, bool use_padding) :
 
     for (size_t i = 0; i < chs.size() - 1; i++) 
     {
-        upconvs->push_back(UpSample2d(chs[i], chs[i + 1], 2));
+        upconvs->push_back(UpSample2d(ResampleOptions(chs[i], chs[i + 1], 2)));
         dec_blocks->push_back(SimpleUNetBlock(chs[i], chs[i + 1], use_padding));
     }
 }

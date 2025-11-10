@@ -3,6 +3,8 @@
 
 #include <torch/torch.h>
 
+#include "./ModulesOptions.h"
+
 struct DownSample2dImpl : public torch::nn::Module
 {
     enum class SampleType: int
@@ -17,37 +19,28 @@ struct DownSample2dImpl : public torch::nn::Module
     // settings
     int64_t scaleFactor;
     SampleType modeType;    
-
-    DownSample2dImpl(int64_t in_channels,
-        int64_t out_channels,
-        int64_t scaleFactor,
-        int64_t kernel_size = 1,
-        int64_t padding = 0,
-        int64_t dilation = 1,
-        torch::nn::AnyModule normType = {}, // optional normalization layer
-        SampleType modeType = SampleType::CLASSIC)
-    {
-        this->scaleFactor = scaleFactor;
-        this->modeType = modeType;
-        
+    
+    DownSample2dImpl(const ResampleOptions& opts,
+        torch::nn::BatchNorm2d normType = { nullptr }, // optional normalization layer
+        SampleType modeType = SampleType::CLASSIC) : 
+        scaleFactor(opts.scaleFactor()),
+        modeType(modeType)
+    {        
         if (this->modeType == SampleType::CLASSIC)
         {
             torch::nn::Sequential seq;
 
-            seq->push_back(torch::nn::Conv2d(torch::nn::Conv2dOptions(in_channels, out_channels, kernel_size)
+            seq->push_back(torch::nn::Conv2d(
+                torch::nn::Conv2dOptions(opts.inChannels(), opts.outChannels(), opts.kernelSize())
                 .stride(scaleFactor)
-                .padding(padding)
-                .dilation(dilation)
+                .padding(opts.padding())
+                .dilation(opts.dilation())
                 .bias(false)));
 
             if (!normType.is_empty())
             {
                 seq->push_back(normType);
-            }
-            else
-            {
-                seq->push_back(torch::nn::Identity());
-            }
+            }            
 
             downSample = register_module("downSample", seq);
         }
@@ -56,16 +49,14 @@ struct DownSample2dImpl : public torch::nn::Module
             torch::nn::Sequential seq;
 
             // For SUBPIXEL, input channels are multiplied by scaleFactor^2
-            seq->push_back(torch::nn::Conv2d(torch::nn::Conv2dOptions(in_channels * scaleFactor * scaleFactor, out_channels, 1)));
+            seq->push_back(torch::nn::Conv2d(
+                torch::nn::Conv2dOptions(opts.inChannels() * opts.scaleFactor() * opts.scaleFactor(), opts.outChannels(), 1))
+            );
 
             if (!normType.is_empty())
             {
                 seq->push_back(normType);
-            }
-            else
-            {
-                seq->push_back(torch::nn::Identity());
-            }
+            }            
 
             downSample = register_module("downSample", seq);
         }

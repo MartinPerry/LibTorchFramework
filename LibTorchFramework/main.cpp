@@ -47,6 +47,13 @@
 #include "./core/Modules/LossFunctions/SSIMLoss.h"
 #include "./core/Modules/LossFunctions/FocalFrequencyLoss.h"
 
+#include "./core/Modules/Convolutions/ConvGRU.h"
+#include "./core/Modules/Convolutions/CoordConv.h"
+
+#include "./core/Modules/DownSample2d.h"
+#include "./core/Modules/UpSample2d.h"
+#include "./core/Modules/ResNetBlock.h"
+
 #include "./core/Snapshot/PretrainedManager.h"
 #include "./core/Snapshot/SnapshotSaver.h"
 #include "./core/Snapshot/SnapshotLoader.h"
@@ -70,6 +77,7 @@
 #include "./ModelZoo/UNet/UNetModel.h"
 #include "./ModelZoo/U2Net/U2NetModel.h"
 #include "./ModelZoo/SimVPv2/SimVPv2Model.h"
+#include "./ModelZoo/ResNet/ResNetModel.h"
 
 //=========================================================
 // Utils
@@ -112,8 +120,17 @@ int main()
     log->Enable(MyUtils::Logger::LogType::Warning, MyUtils::Logger::LogOutput::StdOut);
     log->Enable(MyUtils::Logger::LogType::Info, MyUtils::Logger::LogOutput::StdOut);
 
+    ResNetBlock<torch::nn::ReLU, torch::nn::BatchNorm2d, DownSample2d> rbDown{ nullptr };
+    //ResNetBlock<torch::nn::ReLU, torch::nn::BatchNorm2d, UpSample2d> rbUp{ nullptr };
+           
+    rbDown = ResNetBlock<torch::nn::ReLU, torch::nn::BatchNorm2d, DownSample2d>(
+        3, 3, 1, 1, 1
+    );
 
-        
+    at::Tensor t0 = at::rand({ 3, 1, 64, 64 }, at::kFloat);
+    auto ress = rbDown->forward(t0);
+    printf("x");
+
     //std::cout << "Hello World!\n";
     //at::Tensor tensor = at::ones({ 3, 7, 2 }, at::kInt);
     //std::cout << tensor << std::endl;

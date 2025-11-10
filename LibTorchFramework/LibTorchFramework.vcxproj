@@ -96,6 +96,7 @@
     <ClCompile Include="core\Metrics\MetricsDefault.cpp" />
     <ClCompile Include="core\Metrics\MetricsImage.cpp" />
     <ClCompile Include="core\Modules\Convolutions\ConvGRU.cpp" />
+    <ClCompile Include="core\Modules\Convolutions\CoordConv.cpp" />
     <ClCompile Include="core\Modules\LossFunctions\FocalFrequencyLoss.cpp" />
     <ClCompile Include="core\Modules\LossFunctions\SSIMLoss.cpp" />
     <ClCompile Include="core\Modules\WeightsInit\TruncatedNormalInit.cpp" />
@@ -115,6 +116,7 @@
     <ClCompile Include="InputProcessing\InputLoaders\SegmentationInputLoader.cpp" />
     <ClCompile Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ModelZoo\ResNet\ResNetModel.cpp" />
     <ClCompile Include="ModelZoo\SimVPv2\modules.cpp" />
     <ClCompile Include="ModelZoo\SimVPv2\SimVPv2Model.cpp" />
     <ClCompile Include="ModelZoo\U2Net\U2NetModel.cpp" />
@@ -130,12 +132,15 @@
     <ClInclude Include="core\Metrics\MetricsImage.h" />
     <ClInclude Include="core\Metrics\PredictionEvaluators.h" />
     <ClInclude Include="core\Modules\Convolutions\ConvGRU.h" />
+    <ClInclude Include="core\Modules\Convolutions\CoordConv.h" />
     <ClInclude Include="core\Modules\DownSample2d.h" />
     <ClInclude Include="core\Modules\gradscaler.hpp" />
     <ClInclude Include="core\Modules\LossFunctions\DiceLoss.h" />
     <ClInclude Include="core\Modules\LossFunctions\FocalFrequencyLoss.h" />
     <ClInclude Include="core\Modules\LossFunctions\MultiBceLoss.h" />
     <ClInclude Include="core\Modules\LossFunctions\SSIMLoss.h" />
+    <ClInclude Include="core\Modules\ModulesOptions.h" />
+    <ClInclude Include="core\Modules\ResNetBlock.h" />
     <ClInclude Include="core\Modules\UpSample2d.h" />
     <ClInclude Include="core\Modules\WeightsInit\TruncatedNormalInit.h" />
     <ClInclude Include="core\Runner.h" />
@@ -156,6 +161,7 @@
     <ClInclude Include="InputProcessing\InputLoadersWrapper.h" />
     <ClInclude Include="InputProcessing\InputLoaders\SegmentationInputLoader.h" />
     <ClInclude Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.h" />
+    <ClInclude Include="ModelZoo\ResNet\ResNetModel.h" />
     <ClInclude Include="ModelZoo\SimVPv2\modules.h" />
     <ClInclude Include="ModelZoo\SimVPv2\SimVPv2Model.h" />
     <ClInclude Include="ModelZoo\U2Net\U2NetModel.h" />

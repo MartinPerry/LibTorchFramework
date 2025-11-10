@@ -29,7 +29,7 @@ namespace ModelZoo
 
         struct REBNCONVImpl : public torch::nn::Module 
         {
-            torch::nn::Conv2d conv{ nullptr };
+            torch::nn::AnyModule conv;
             torch::nn::BatchNorm2d bn{ nullptr };
             torch::nn::ReLU relu{ nullptr };
 

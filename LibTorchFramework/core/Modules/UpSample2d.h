@@ -3,6 +3,8 @@
 
 #include <torch/torch.h>
 
+#include "./ModulesOptions.h"
+
 struct UpSample2dImpl : public torch::nn::Module 
 {
     enum class SampleType : int 
@@ -18,24 +20,15 @@ struct UpSample2dImpl : public torch::nn::Module
     torch::nn::ConvTranspose2d conv_transpose{ nullptr };
     torch::nn::PixelShuffle pixel_shuffle{ nullptr };
 
-    // settings
-    int in_channels;
-    int out_channels;
-    int scaleFactor;
+    // settings      
     SampleType modeType;
+    int64_t scaleFactor;
 
     // Constructor
-    UpSample2dImpl(int in_channels_,
-        int out_channels_,
-        int scaleFactor_,
-        int kernel_size = 1,
-        int padding = 0,
-        int dilation = 1,
-        SampleType modeType_ = SampleType::NEAREST_NEIGHBOR)
-        : in_channels(in_channels_),
-        out_channels(out_channels_),
-        scaleFactor(scaleFactor_),
-        modeType(modeType_)
+    UpSample2dImpl(const ResampleOptions& opts,
+        SampleType modeType = SampleType::NEAREST_NEIGHBOR) : 
+        scaleFactor(opts.scaleFactor()),
+        modeType(modeType)
     {
         using namespace torch::nn;
 
@@ -45,11 +38,13 @@ struct UpSample2dImpl : public torch::nn::Module
             //multiple channels to form a block of pixels in s single image
 
             // conv -> pixelshuffle(scaleFactor)
-            Conv2dOptions conv_opts(in_channels, out_channels * scaleFactor * scaleFactor, kernel_size);
-            conv_opts.stride(1).padding(padding).dilation(dilation);
+            Conv2dOptions conv_opts(opts.inChannels(), 
+                opts.outChannels() * opts.scaleFactor() * opts.scaleFactor(), 
+                opts.kernelSize());
+            conv_opts.stride(1).padding(opts.padding()).dilation(opts.dilation());
             conv = register_module("conv", Conv2d(conv_opts));
 
-            PixelShuffleOptions ps_opts(scaleFactor);
+            PixelShuffleOptions ps_opts(opts.scaleFactor());
             pixel_shuffle = register_module("pixel_shuffle", PixelShuffle(ps_opts));
         }
         else if (modeType == SampleType::CONV_TRANPOSE) 
@@ -70,15 +65,15 @@ struct UpSample2dImpl : public torch::nn::Module
              (for example if kernel is 3, outPadding should be 1 to get the same size)
             */
 
-            ConvTranspose2dOptions ct_opts(in_channels, out_channels, kernel_size);
-            ct_opts.stride(scaleFactor).padding(padding).dilation(dilation).output_padding(0);
+            ConvTranspose2dOptions ct_opts(opts.inChannels(), opts.outChannels(), opts.kernelSize());
+            ct_opts.stride(scaleFactor).padding(opts.padding()).dilation(opts.dilation()).output_padding(0);
             conv_transpose = register_module("conv_transpose", ConvTranspose2d(ct_opts));
         }
         else 
         {
             // NEAREST_NEIGHBOR or BILINEAR: we'll apply interpolate in forward and then conv
-            Conv2dOptions conv_opts(in_channels, out_channels, kernel_size);
-            conv_opts.stride(1).padding(padding).dilation(dilation);
+            Conv2dOptions conv_opts(opts.inChannels(), opts.outChannels(), opts.kernelSize());
+            conv_opts.stride(1).padding(opts.padding()).dilation(opts.dilation());
             conv = register_module("conv", Conv2d(conv_opts));
         }
     }
