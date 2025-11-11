@@ -44,7 +44,8 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 	Image2d<uint8_t>& img,
 	int chanCount,
 	int w,
-	int h)
+	int h,
+	const MappingRange& range)
 {
 	if (img.GetChannelsCount() == 0)
 	{
@@ -125,7 +126,7 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 	}
 
 	
-	auto imgf = imgFinal.CreateAsMapped<float>(0, 255, 0.0f, 1.0f);
+	auto imgf = imgFinal.CreateAsMapped<float>(range.dataMin, range.dataMax, range.minMapTo, range.maxMapTo);
 	if constexpr (std::is_same<T, std::vector<float>>::value)
 	{
 		return imgf.MoveData();
@@ -139,6 +140,90 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 	}
 }
 
+
+template <typename T>
+TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
+	Image2d<float>& img,
+	int chanCount,
+	int w,
+	int h)
+{
+	if (img.GetChannelsCount() == 0)
+	{
+		MY_LOG_ERROR("Failed to load image. Return zero tensor.");
+
+		//failed to load image - return zero tensor
+		if constexpr (std::is_same<T, std::vector<float>>::value)
+		{
+			return std::vector<float>(chanCount * h * w, 0);
+		}
+		else
+		{
+			return at::zeros({ chanCount, h, w }, at::kFloat);
+		}
+	}
+
+	if (chanCount != img.GetChannelsCount())
+	{
+		if ((chanCount == 3) && (img.GetChannelsCount() == 1))
+		{
+			img = ColorSpace::ConvertGrayToRgb(img);			
+		}		
+		else if ((chanCount == 1) && (img.GetChannelsCount() == 3))
+		{
+			img = ColorSpace::ConvertRgbToGray(img);			
+		}
+		else
+		{
+			MY_LOG_ERROR("Channels count %d not supported", chanCount);
+		}
+	}
+
+	auto imgFinal = ImageResize<float>::ResizeBilinear(img, ImageDimension(w, h));
+
+	if ((imgFinal.GetWidth() != w) && (imgFinal.GetHeight() == h))
+	{
+		MY_LOG_ERROR("Incorrect image dimension [%d, %d]", imgFinal.GetWidth(), imgFinal.GetHeight());
+
+		//return zero tensor
+		if constexpr (std::is_same<T, std::vector<float>>::value)
+		{
+			return std::vector<float>(chanCount * h * w, 0);
+		}
+		else
+		{
+			return at::zeros({ chanCount, h, w }, at::kFloat);
+		}
+	}
+
+	
+	if constexpr (std::is_same<T, std::vector<float>>::value)
+	{
+		return imgFinal.MoveData();
+	}
+	else
+	{
+		auto t = TorchUtils::make_tensor(imgFinal.MoveData(),
+			{ static_cast<int>(imgFinal.GetChannelsCount()), imgFinal.GetHeight(), imgFinal.GetWidth() });
+
+		return t;
+	}
+}
+
+/// <summary>
+/// Convert tensor to uint8_t image
+/// If chanCount, w, h are -1 => dimensions taken from tensor
+/// If intervalMapping is set, find min and max val in tensor
+/// and use it to map [tensorMin, tensorMax] => [0, 1] => which is mapped to [0, 255]
+/// If no intervalMapping is set, treat tensor as [0, 1] range (clamp values outside the range)
+/// and map [0, 1] => [0, 255]
+/// </summary>
+/// <param name="t"></param>
+/// <param name="chanCount"></param>
+/// <param name="w"></param>
+/// <param name="h"></param>
+/// <param name="intervalMapping"></param>
+/// <returns></returns>
 Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 	int chanCount,
 	int w,
@@ -485,10 +570,24 @@ template std::vector<float> TorchImageUtils::LoadImageAs<std::vector<float>>(
 	Image2d<uint8_t>& img,
 	int chanCount,
 	int w,
-	int h);
+	int h,
+	const MappingRange& range);
 
 template torch::Tensor TorchImageUtils::LoadImageAs<torch::Tensor>(
 	Image2d<uint8_t>& img,
+	int chanCount,
+	int w,
+	int h,
+	const MappingRange& range);
+
+template std::vector<float> TorchImageUtils::LoadImageAs<std::vector<float>>(
+	Image2d<float>& img,
+	int chanCount,
+	int w,
+	int h);
+
+template torch::Tensor TorchImageUtils::LoadImageAs<torch::Tensor>(
+	Image2d<float>& img,
 	int chanCount,
 	int w,
 	int h);

@@ -43,6 +43,14 @@ public:
 		S_B = 1 
 	};
 
+	struct MappingRange 
+	{
+		uint8_t dataMin = 0;
+		uint8_t dataMax = 255;
+		float minMapTo = 0.0f;
+		float maxMapTo = 1.0f;
+	};
+
 	struct TensorsToImageSettings
 	{
 		SequenceFormat seqFormat = SequenceFormat::B_S;
@@ -65,6 +73,14 @@ public:
 	template <typename T>
 	static TENSOR_VEC_RET_VAL(T) LoadImageAs(
 		Image2d<uint8_t>& img,
+		int chanCount,
+		int w,
+		int h,
+		const MappingRange& range = {});
+
+	template <typename T>
+	static TENSOR_VEC_RET_VAL(T) LoadImageAs(
+		Image2d<float>& img,
 		int chanCount,
 		int w,
 		int h);

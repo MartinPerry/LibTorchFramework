@@ -120,20 +120,7 @@ int main()
     log->Enable(MyUtils::Logger::LogType::Warning, MyUtils::Logger::LogOutput::StdOut);
     log->Enable(MyUtils::Logger::LogType::Info, MyUtils::Logger::LogOutput::StdOut);
 
-    ResNetBlock<torch::nn::ReLU, torch::nn::BatchNorm2d, DownSample2d> rbDown{ nullptr };
-    //ResNetBlock<torch::nn::ReLU, torch::nn::BatchNorm2d, UpSample2d> rbUp{ nullptr };
-           
-    rbDown = ResNetBlock<torch::nn::ReLU, torch::nn::BatchNorm2d, DownSample2d>(
-        ResidualBlockOptions(3, 3).outExpansion(1)
-    );
-
-    auto resnet = std::make_shared<ModelZoo::resnet::ResNetModel>(3, 64, 64, 8);
-
-    at::Tensor t0 = at::rand({ 1, 3, 64, 64 }, at::kFloat);
-    //auto ress = rbDown->forward(t0);
-    auto rrsa = resnet->forward(t0);
-    printf("x");
-
+    
     //std::cout << "Hello World!\n";
     //at::Tensor tensor = at::ones({ 3, 7, 2 }, at::kInt);
     //std::cout << tensor << std::endl;
