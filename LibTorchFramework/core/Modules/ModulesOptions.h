@@ -22,4 +22,24 @@ struct ResampleOptions
 	TORCH_ARG(int64_t, dilation) = 1;
 };
 
+//=============================================================
+
+struct ResidualBlockOptions
+{
+	ResidualBlockOptions(int64_t inChannels, int64_t outChannels) :
+		inChannels_(inChannels),
+		outChannels_(outChannels)
+	{
+	}
+
+	TORCH_ARG(int64_t, inChannels);
+
+	TORCH_ARG(int64_t, outChannels);
+
+
+	TORCH_ARG(int64_t, stride) = 1;
+	TORCH_ARG(int64_t, dilation) = 1;
+	TORCH_ARG(int64_t, outExpansion) = 0;
+};
+
 #endif

@@ -26,11 +26,7 @@ template <typename Activation, typename Normalization, typename ResampleType>
 class ResNetBlockImpl : public torch::nn::Module
 {
 public:
-    ResNetBlockImpl(int64_t in_channels,
-        int64_t out_channels,
-        int64_t stride = 1,        
-        int64_t dilation = 1,
-        int64_t out_expansion = 1);
+    ResNetBlockImpl(const ResidualBlockOptions& opts);
 
     torch::Tensor forward(torch::Tensor x);
 
@@ -66,23 +62,17 @@ public:
 //=======================================================================================
 
 template <typename Activation, typename Normalization, typename ResampleType>
-ResNetBlockImpl<Activation, Normalization, ResampleType>::ResNetBlockImpl(
-    int64_t in_channels,
-    int64_t out_channels,
-    int64_t stride,    
-    int64_t dilation,
-    int64_t out_expansion
-)
+ResNetBlockImpl<Activation, Normalization, ResampleType>::ResNetBlockImpl(const ResidualBlockOptions& opts)
 {
-    int64_t finalOutChannels = out_channels * out_expansion;
+    int64_t finalOutChannels = opts.outChannels() * opts.outExpansion();
     
     // conv1
     conv1 = torch::nn::Sequential(
-        torch::nn::Conv2d(torch::nn::Conv2dOptions(in_channels, out_channels, 1)
+        torch::nn::Conv2d(torch::nn::Conv2dOptions(opts.inChannels(), opts.outChannels(), 1)
             .stride(1)
             .bias(false)
         ),
-        Normalization(out_channels),
+        Normalization(opts.outChannels()),
         Activation());
     register_module("conv1", conv1);
 
@@ -90,13 +80,13 @@ ResNetBlockImpl<Activation, Normalization, ResampleType>::ResNetBlockImpl(
     if constexpr (std::is_same<ResampleType, void>::value)
     {
         conv2 = torch::nn::Sequential(
-            torch::nn::Conv2d(torch::nn::Conv2dOptions(out_channels, out_channels, 3)
+            torch::nn::Conv2d(torch::nn::Conv2dOptions(opts.outChannels(), opts.outChannels(), 3)
                 .stride(1)
-                .padding(dilation)
-                .dilation(dilation)
+                .padding(opts.dilation())
+                .dilation(opts.dilation())
                 .bias(false)
             ),
-            Normalization(out_channels),
+            Normalization(opts.outChannels()),
             Activation()
         );
     }
@@ -104,8 +94,9 @@ ResNetBlockImpl<Activation, Normalization, ResampleType>::ResNetBlockImpl(
     {
         conv2 = torch::nn::Sequential(
             ResampleType(
-                ResampleOptions(out_channels, out_channels, stride).kernelSize(3).padding(dilation).dilation(dilation), 
-                Normalization(out_channels)
+                ResampleOptions(opts.outChannels(), opts.outChannels(), opts.stride()).
+                    kernelSize(3).padding(opts.dilation()).dilation(opts.dilation()),
+                Normalization(opts.outChannels())
             ),
             Activation()
         );        
@@ -114,7 +105,7 @@ ResNetBlockImpl<Activation, Normalization, ResampleType>::ResNetBlockImpl(
     
     // conv3
     conv3 = torch::nn::Sequential(
-        torch::nn::Conv2d(torch::nn::Conv2dOptions(out_channels, finalOutChannels, 1)
+        torch::nn::Conv2d(torch::nn::Conv2dOptions(opts.outChannels(), finalOutChannels, 1)
             .stride(1)
             .bias(false)
         ),
@@ -130,7 +121,7 @@ ResNetBlockImpl<Activation, Normalization, ResampleType>::ResNetBlockImpl(
     {
         resample = register_module("resample", 
             ResampleType(
-                ResampleOptions(in_channels, finalOutChannels, stride), 
+                ResampleOptions(opts.inChannels(), finalOutChannels, opts.stride()),
                 Normalization(finalOutChannels)
             )
         );
