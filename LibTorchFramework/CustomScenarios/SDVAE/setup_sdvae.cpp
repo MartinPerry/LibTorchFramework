@@ -50,6 +50,24 @@
 
 namespace CustomScenarios::SDVAETraining
 {
+	void runEncodeDecode(std::shared_ptr<ModelZoo::sdvae::SDVAEModel> m, std::shared_ptr<InputLoader> loader)
+	{
+		loader->Load();
+
+		DataLoaderData ld(0);
+		loader->FillData(0, ld);
+		
+		//add batch
+		ld.Unsqueeze(0);
+
+		auto encoded = m->encoder->forward(ld.input);
+
+		auto decoded = m->decoder->forward(std::get<0>(encoded));
+		
+		auto img = TorchImageUtils::TensorsToImage(decoded);
+		img.Save("D://decoded.png");
+	}
+
 	void setup()
 	{
 				
@@ -86,9 +104,12 @@ namespace CustomScenarios::SDVAETraining
 
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
 		ilw->InitLoaders<EncoderDecoderInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } }, "D:\\Datasets\\Skyfinder");
-	
-		
+				
 		auto m = std::make_shared<ModelZoo::sdvae::SDVAEModel>();
+
+		
+		runEncodeDecode(m, ilw->GetLoader(RunMode::TRAIN));
+
 
 		m->CreateOptimizer<torch::optim::Adam>(torch::optim::AdamOptions(0.0001));
 

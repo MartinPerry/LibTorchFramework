@@ -92,10 +92,10 @@ public:
 		bool intervalMapping = true);
 
 	static Image2d<uint8_t> TensorsToImage(at::Tensor t, 
-		const TensorsToImageSettings& sets);
+		const TensorsToImageSettings& sets = {});
 
 	static Image2d<uint8_t> TensorsToImage(const std::vector<std::vector<torch::Tensor>>& t,
-		const TensorsToImageSettings& sets);
+		const TensorsToImageSettings& sets = {});
 
 	static std::vector<std::vector<torch::Tensor>> MergeTensorsToRows(
 		const std::vector<torch::Tensor>& tensors,

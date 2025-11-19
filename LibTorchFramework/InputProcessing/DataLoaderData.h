@@ -54,6 +54,17 @@ struct DataLoaderData
         return index.size();
     }
 
+    void Unsqueeze(size_t dim)
+    {
+        input = input.unsqueeze(dim);
+        target = target.unsqueeze(dim);
+
+        for (auto& [k, v] : additionalData)
+        {
+            v = v.unsqueeze(dim);
+        }
+    }
+
     friend struct torch::data::transforms::Stack<DataLoaderData>;
 
 protected:
