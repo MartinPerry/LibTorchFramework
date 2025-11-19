@@ -127,6 +127,18 @@
     <Filter Include="Source Files\ModelZoo\ResNet">
       <UniqueIdentifier>{dcf9bd90-5e5e-4234-9ccc-543adde775af}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\ModelZoo\SDVAE">
+      <UniqueIdentifier>{e99612c6-8f13-4be7-a276-62c05841cf2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ModelZoo\SDVAE">
+      <UniqueIdentifier>{721f6c59-dd1c-4dc7-a06e-7177000a0ed6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CustomScenarios\SDVAE">
+      <UniqueIdentifier>{aaa3cb09-16ec-4a3b-a777-afbc23ebc11c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CustomScenarios\SDVAE">
+      <UniqueIdentifier>{aac52b6e-4cf7-469a-b77d-0a8916a2fe4b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -227,6 +239,24 @@
     </ClCompile>
     <ClCompile Include="ModelZoo\ResNet\ResNetModel.cpp">
       <Filter>Source Files\ModelZoo\ResNet</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelZoo\SDVAE\SDVAEModel.cpp">
+      <Filter>Source Files\ModelZoo\SDVAE</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelZoo\SDVAE\attention.cpp">
+      <Filter>Source Files\ModelZoo\SDVAE</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelZoo\SDVAE\decoder.cpp">
+      <Filter>Source Files\ModelZoo\SDVAE</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelZoo\SDVAE\encoder.cpp">
+      <Filter>Source Files\ModelZoo\SDVAE</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomScenarios\SDVAE\setup_sdvae.cpp">
+      <Filter>Source Files\CustomScenarios\SDVAE</Filter>
+    </ClCompile>
+    <ClCompile Include="InputProcessing\InputLoaders\EncoderDecoderInputLoader.cpp">
+      <Filter>Source Files\InputProcessing\InputLoaders</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -364,6 +394,24 @@
     </ClInclude>
     <ClInclude Include="core\Modules\ModulesOptions.h">
       <Filter>Header Files\core\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelZoo\SDVAE\SDVAEModel.h">
+      <Filter>Header Files\ModelZoo\SDVAE</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelZoo\SDVAE\attention.h">
+      <Filter>Header Files\ModelZoo\SDVAE</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelZoo\SDVAE\decoder.h">
+      <Filter>Header Files\ModelZoo\SDVAE</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelZoo\SDVAE\encoder.h">
+      <Filter>Header Files\ModelZoo\SDVAE</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomScenarios\SDVAE\setup_sdvae.h">
+      <Filter>Header Files\CustomScenarios\SDVAE</Filter>
+    </ClInclude>
+    <ClInclude Include="InputProcessing\InputLoaders\EncoderDecoderInputLoader.h">
+      <Filter>Header Files\InputProcessing\InputLoaders</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

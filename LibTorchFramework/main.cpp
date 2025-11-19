@@ -78,6 +78,7 @@
 #include "./ModelZoo/U2Net/U2NetModel.h"
 #include "./ModelZoo/SimVPv2/SimVPv2Model.h"
 #include "./ModelZoo/ResNet/ResNetModel.h"
+#include "./ModelZoo/SDVAE/SDVAEModel.h"
 
 //=========================================================
 // Utils
@@ -92,6 +93,7 @@
 #include "./CustomScenarios/MrmsDatasetTraining/setup_mrms.h"
 #include "./CustomScenarios/U2NetTraining/setup_u2net.h"
 #include "./CustomScenarios/UNetTraining/setup_unet.h"
+#include "./CustomScenarios/SDVAE/setup_sdvae.h"
 
 #include "./Settings.h"
 
@@ -151,7 +153,9 @@ int main()
 
     Settings::PrintCudaInfo();
 
-    CustomScenarios::MrmsTraining::setup();
+    CustomScenarios::SDVAETraining::setup();
+
+    //CustomScenarios::MrmsTraining::setup();
     //CustomScenarios::UNetTraining::setup();
     return 0;
 

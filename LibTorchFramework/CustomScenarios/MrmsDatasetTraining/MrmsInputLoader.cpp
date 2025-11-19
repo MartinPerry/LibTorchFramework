@@ -41,12 +41,9 @@ std::vector<float> MrmsInputLoader::LoadImage(const std::string& p) const
 
     Image2d<uint8_t> img(256, 256, std::move(buf), ColorSpace::PixelFormat::GRAY);
     
-    TorchImageUtils::MappingRange mapRange;
-    img.FindMinMax(0, mapRange.dataMin, mapRange.dataMax);
-
+   
     auto v = TorchImageUtils::LoadImageAs<std::vector<float>>(img, 
-        sets.imgChannelsCount, sets.imgW, sets.imgH, 
-        mapRange);
+        sets.imgChannelsCount, sets.imgW, sets.imgH);
 
     return v;
 }
