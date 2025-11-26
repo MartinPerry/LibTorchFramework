@@ -1,6 +1,8 @@
 #include "./SnapshotLoader.h"
 
 #include <unordered_set>
+#include <string>
+#include <regex>
 
 #include <FileUtils/Reading/RawFileReader.h>
 #include <Utils/Logger.h>
@@ -43,20 +45,37 @@ bool SnapshotLoader::Load(const std::variant<std::string, std::shared_ptr<Pretra
 
     MY_LOG_INFO("Loading trained model from %s", path.c_str());
 
-    this->LoadParametersFromSerialized(path);
-
-    //this->LoadParametersFromDict(path);
+    if (this->LoadParametersFromSerialized(path) == false)
+    {
+        //try to load from pickled pytorch
+        this->LoadParametersFromDict(path);        
+    }
                 
     this->UpdateFreeze(freezeInfo);
 
     return true;
 }
 
-void SnapshotLoader::LoadParametersFromSerialized(const std::string& path)
+bool SnapshotLoader::LoadParametersFromSerialized(const std::string& path)
 {
+    
     torch::serialize::InputArchive archive;
-    archive.load_from(path);
-
+    try
+    {
+        archive.load_from(path);
+    }
+    catch (const c10::Error& e)
+    {
+        // parameter not found in archive or other libtorch error
+        MY_LOG_ERROR("Failed to load InputArchive: %s", path.c_str(), e.what());
+        return false;
+    }
+    catch (const std::exception& e)
+    {
+        MY_LOG_ERROR("Failed to load InputArchive: %s", path.c_str(), e.what());
+        return false;
+    }
+    
     // Read each parameter we have in model (safe: read only those present)
     torch::OrderedDict<std::string, at::Tensor> modelParams = model->named_parameters();
 
@@ -85,32 +104,62 @@ void SnapshotLoader::LoadParametersFromSerialized(const std::string& path)
         }
         catch (const std::exception& e) 
         {
-            MY_LOG_ERROR("Error reading '%s': %s", name.c_str(), e.what());
+            MY_LOG_ERROR("Error reading '%s': %s", name.c_str(), e.what());            
         }
     }
 
+    return true;
 }
 
 /// <summary>
+/// To use this, pytorch muset save with:
+/// 
+/// torch.save(checkpoint['state_dict'], "weights.pth")
+/// or
+/// torch.save(model.state_dict(), "weights.pth")
+/// 
 /// https://github.com/pytorch/pytorch/issues/36577
 /// </summary>
 /// <param name="ptPath"></param>
-void SnapshotLoader::LoadParametersFromDict(const std::string& path)
+bool SnapshotLoader::LoadParametersFromDict(const std::string& path)
 {
     std::vector<char> f;
 
     RawFileReader rf(path.c_str(), "rb");
     rf.ReadAll(f);
     rf.Close();
-    
-    c10::Dict<c10::IValue, c10::IValue> weights = torch::pickle_load(f).toGenericDict();
+        
+    torch::IValue pickle;
+        
+    try
+    {
+        pickle = torch::pickle_load(f);
+    }
+    catch (const c10::Error& e)
+    {
+        // parameter not found in archive or other libtorch error
+        MY_LOG_ERROR("Failed to pickle_load: %s", path.c_str(), e.what());
+        return false;
+    }
+    catch (const std::exception& e)
+    {
+        MY_LOG_ERROR("Failed to pickle_load: %s", path.c_str(), e.what());
+        return false;
+    }
+
+    if (pickle.isGenericDict() == false)
+    {
+        return false;
+    }
+
+    c10::Dict<c10::IValue, c10::IValue> weights = pickle.toGenericDict();
     
     torch::OrderedDict<std::string, at::Tensor> modelParams = model->named_parameters();
     
-    std::vector<std::string> paramNames;
+    std::unordered_set<std::string> paramNames;
     for (auto const& w : modelParams)
     {
-        paramNames.push_back(w.key());
+        paramNames.emplace(w.key());
     }
 
     torch::NoGradGuard no_grad;
@@ -118,18 +167,35 @@ void SnapshotLoader::LoadParametersFromDict(const std::string& path)
     {
         std::string name = w.key().toStringRef();
         torch::Tensor param = w.value().toTensor();
-
-        if (std::find(paramNames.begin(), paramNames.end(), name) != paramNames.end())
-        {
+        
+        if (paramNames.find(name) != paramNames.end())
+        {            
             modelParams.find(name)->copy_(param);
         }
         else 
         {
-            MY_LOG_WARNING("[%s] does not exist among model parameters", name.c_str());
+            //try to replace ".[number]. with .seq.[number].
+            //since in pyhton some modules can inherit from sequential module
+            //in our code, we rewrite it with 
+            //torch::nn::Sequential seq;
+
+            std::regex pattern(R"(\.(\d+)\.)");
+            std::string replacement = ".seq.$1.";
+            auto updatedName = std::regex_replace(name, pattern, replacement);
+
+            if (paramNames.find(updatedName) != paramNames.end())
+            {
+                modelParams.find(updatedName)->copy_(param);
+            }
+            else
+            {
+                MY_LOG_WARNING("[%s] does not exist among model parameters", name.c_str());
+            }
         }
     }
-}
 
+    return true;
+}
 
 void SnapshotLoader::UpdateFreeze(std::shared_ptr<FreezeInfo> freezeInfo)
 {

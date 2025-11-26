@@ -100,57 +100,60 @@ torch::Tensor VAE_ResidualBlockImpl::forward(torch::Tensor x)
 //
 VAE_DecoderImpl::VAE_DecoderImpl()
 {
-    seq = register_module("seq", torch::nn::Sequential());
-    
-    // (Batch_Size, 4, H/8, W/8) -> (Batch_Size, 4, H/8, W/8)
-    seq->push_back("conv_in_1", torch::nn::Conv2d(torch::nn::Conv2dOptions(4, 4, /*kernel_size=*/1).padding(0)));
+    seq = torch::nn::Sequential(
 
-    // (Batch_Size, 4, H/8, W/8) -> (Batch_Size, 512, H/8, W/8)
-    seq->push_back("conv_in_2", torch::nn::Conv2d(torch::nn::Conv2dOptions(4, 512, /*kernel_size=*/3).padding(1)));
+        // (Batch_Size, 4, H/8, W/8) -> (Batch_Size, 4, H/8, W/8)
+        torch::nn::Conv2d(torch::nn::Conv2dOptions(4, 4, /*kernel_size=*/1).padding(0)),
 
-    // Residual + Attention + many blocks...
-    seq->push_back("res_512_1", VAE_ResidualBlock(512, 512));
-    seq->push_back("attn_512", VAE_AttentionBlock(512));
-    seq->push_back("res_512_2", VAE_ResidualBlock(512, 512));
-    seq->push_back("res_512_3", VAE_ResidualBlock(512, 512));
-    seq->push_back("res_512_4", VAE_ResidualBlock(512, 512));
-    seq->push_back("res_512_5", VAE_ResidualBlock(512, 512));
+        // (Batch_Size, 4, H/8, W/8) -> (Batch_Size, 512, H/8, W/8)
+        torch::nn::Conv2d(torch::nn::Conv2dOptions(4, 512, /*kernel_size=*/3).padding(1)),
 
-    // Upsample x2 (H/8 -> H/4)
-    seq->push_back("upsample_1", torch::nn::Upsample(torch::nn::UpsampleOptions().scale_factor(std::vector<double>{2.0, 2.0}).mode(torch::kNearest)));
+        // Residual + Attention + many blocks...
+        VAE_ResidualBlock(512, 512),
+        VAE_AttentionBlock(512),
+        VAE_ResidualBlock(512, 512),
+        VAE_ResidualBlock(512, 512),
+        VAE_ResidualBlock(512, 512),
+        VAE_ResidualBlock(512, 512),
 
-    seq->push_back("conv_ups_1", torch::nn::Conv2d(torch::nn::Conv2dOptions(512, 512, /*kernel_size=*/3).padding(1)));
+        // Upsample x2 (H/8 -> H/4)
+        torch::nn::Upsample(torch::nn::UpsampleOptions().scale_factor(std::vector<double>{2.0, 2.0}).mode(torch::kNearest)),
 
-    seq->push_back("res_512_6", VAE_ResidualBlock(512, 512));
-    seq->push_back("res_512_7", VAE_ResidualBlock(512, 512));
-    seq->push_back("res_512_8", VAE_ResidualBlock(512, 512));
+        torch::nn::Conv2d(torch::nn::Conv2dOptions(512, 512, /*kernel_size=*/3).padding(1)),
 
-    // Upsample x2 (H/4 -> H/2)
-    seq->push_back("upsample_2", torch::nn::Upsample(torch::nn::UpsampleOptions().scale_factor(std::vector<double>{2.0, 2.0}).mode(torch::kNearest)));
+        VAE_ResidualBlock(512, 512),
+        VAE_ResidualBlock(512, 512),
+        VAE_ResidualBlock(512, 512),
 
-    seq->push_back("conv_ups_2", torch::nn::Conv2d(torch::nn::Conv2dOptions(512, 512, /*kernel_size=*/3).padding(1)));
+        // Upsample x2 (H/4 -> H/2)
+        torch::nn::Upsample(torch::nn::UpsampleOptions().scale_factor(std::vector<double>{2.0, 2.0}).mode(torch::kNearest)),
 
-    // Reduce channels 512 -> 256
-    seq->push_back("res_512_to_256", VAE_ResidualBlock(512, 256));
-    seq->push_back("res_256_1", VAE_ResidualBlock(256, 256));
-    seq->push_back("res_256_2", VAE_ResidualBlock(256, 256));
+        torch::nn::Conv2d(torch::nn::Conv2dOptions(512, 512, /*kernel_size=*/3).padding(1)),
 
-    // Upsample x2 (H/2 -> H)
-    seq->push_back("upsample_3", torch::nn::Upsample(torch::nn::UpsampleOptions().scale_factor(std::vector<double>{2.0, 2.0}).mode(torch::kNearest)));
+        // Reduce channels 512 -> 256
+        VAE_ResidualBlock(512, 256),
+        VAE_ResidualBlock(256, 256),
+        VAE_ResidualBlock(256, 256),
 
-    seq->push_back("conv_final_mid", torch::nn::Conv2d(torch::nn::Conv2dOptions(256, 256, /*kernel_size=*/3).padding(1)));
+        // Upsample x2 (H/2 -> H)
+        torch::nn::Upsample(torch::nn::UpsampleOptions().scale_factor(std::vector<double>{2.0, 2.0}).mode(torch::kNearest)),
 
-    seq->push_back("res_256_to_128", VAE_ResidualBlock(256, 128));
-    seq->push_back("res_128_1", VAE_ResidualBlock(128, 128));
-    seq->push_back("res_128_2", VAE_ResidualBlock(128, 128));
+        torch::nn::Conv2d(torch::nn::Conv2dOptions(256, 256, /*kernel_size=*/3).padding(1)),
 
-    // Final normalization + activation + conv to 3 channels
-    seq->push_back("groupnorm_final", torch::nn::GroupNorm(torch::nn::GroupNormOptions(32, 128)));
-    seq->push_back("silu_final", torch::nn::SiLU());
-    seq->push_back("conv_out", torch::nn::Conv2d(torch::nn::Conv2dOptions(128, 3, /*kernel_size=*/3).padding(1)));
+        VAE_ResidualBlock(256, 128),
+        VAE_ResidualBlock(128, 128),
+        VAE_ResidualBlock(128, 128),
 
-    // Note: The original Python forward iterates modules in order manually. Using Sequential's forward is equivalent.
+        // Final normalization + activation + conv to 3 channels
+        torch::nn::GroupNorm(torch::nn::GroupNormOptions(32, 128)),
+        torch::nn::SiLU(),
+        torch::nn::Conv2d(torch::nn::Conv2dOptions(128, 3, /*kernel_size=*/3).padding(1))
+    );
+
+
+    seq = register_module("seq", seq);
 }
+
 
 torch::Tensor VAE_DecoderImpl::forward(torch::Tensor x)
 {

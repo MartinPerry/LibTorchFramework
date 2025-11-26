@@ -49,7 +49,7 @@ namespace ModelZoo {
             torch::Tensor forward(torch::Tensor x);
 
         private:
-            torch::nn::Sequential seq{ nullptr };
+            torch::nn::Sequential seq;
         };
         TORCH_MODULE(VAE_Decoder);
 

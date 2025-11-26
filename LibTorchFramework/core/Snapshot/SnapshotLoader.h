@@ -24,9 +24,9 @@ public:
 
 private:
 
-    void LoadParametersFromSerialized(const std::string& path);
-    void LoadParametersFromDict(const std::string& path);
-    
+    bool LoadParametersFromSerialized(const std::string& path);
+    bool LoadParametersFromDict(const std::string& path);
+        
     void UpdateFreeze(std::shared_ptr<FreezeInfo> freezeInfo);
 
     const AbstractModel* model;

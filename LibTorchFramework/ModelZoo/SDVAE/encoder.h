@@ -10,7 +10,7 @@ namespace ModelZoo {
 
         struct VAE_EncoderImpl : torch::nn::Module
         {
-            torch::nn::Sequential layers;
+            torch::nn::Sequential seq;
 
             VAE_EncoderImpl();
 

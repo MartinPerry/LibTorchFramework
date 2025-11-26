@@ -29,7 +29,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> SDVAEModel::forward(
 {
     
     // If encoder first conv has 1 input channel -> reduce image to 1 channel
-    const auto conv0 = encoder->layers->ptr(0)->as<torch::nn::Conv2d>();
+    const auto conv0 = encoder->seq->ptr(0)->as<torch::nn::Conv2d>();
     
     if (conv0 != nullptr)
     {

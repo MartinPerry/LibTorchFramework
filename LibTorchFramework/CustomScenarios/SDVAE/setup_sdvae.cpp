@@ -52,6 +52,13 @@ namespace CustomScenarios::SDVAETraining
 {
 	void runEncodeDecode(std::shared_ptr<ModelZoo::sdvae::SDVAEModel> m, std::shared_ptr<InputLoader> loader)
 	{
+		//"d://python//nnframework//data//models//SDVAE//converted.pt"
+
+		SnapshotLoader sloader(m.get());
+		//sloader.Load("d://python//nnframework//data//models//SDVAE//converted.pt");
+		sloader.Load("D://weights.pkl");
+		//sloader.Load("d://python//nnframework//data//models//SDVAE//data.pkl");
+
 		loader->Load();
 
 		DataLoaderData ld(0);

@@ -6,7 +6,7 @@ using namespace ModelZoo::sdvae;
 
 VAE_EncoderImpl::VAE_EncoderImpl()
 {
-    layers = torch::nn::Sequential(
+    seq = torch::nn::Sequential(
         torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 128, 3).padding(1)),
 
         VAE_ResidualBlock(128, 128),
@@ -39,13 +39,13 @@ VAE_EncoderImpl::VAE_EncoderImpl()
         torch::nn::Conv2d(torch::nn::Conv2dOptions(8, 8, 1))
     );
 
-    layers = register_module("layers", layers);
+    seq = register_module("seq", seq);
 }
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> VAE_EncoderImpl::forward(
     torch::Tensor x, torch::Tensor noise)
 {
-    for (auto& layer : *layers)
+    for (auto& layer : *seq)
     {
         // detect Conv2d with stride==2        
         auto conv = std::dynamic_pointer_cast<torch::nn::Conv2d>(layer.ptr());        
