@@ -17,3 +17,10 @@ void InputLoader::ApplyTransform()
 {
     
 }
+
+DataLoaderData InputLoader::GetData(size_t index)
+{
+    DataLoaderData ld(index);
+    this->FillData(index, ld);
+    return ld;
+}

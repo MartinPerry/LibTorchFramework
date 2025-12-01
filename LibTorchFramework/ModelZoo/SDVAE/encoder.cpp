@@ -48,10 +48,10 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> VAE_EncoderImpl::forward
     for (auto& layer : *seq)
     {
         // detect Conv2d with stride==2        
-        auto conv = std::dynamic_pointer_cast<torch::nn::Conv2d>(layer.ptr());        
+        auto conv = std::dynamic_pointer_cast<torch::nn::Conv2dImpl>(layer.ptr());        
         if (conv != nullptr)
         {            
-            if (conv->get()->options.stride()->at(0) == 2 && conv->get()->options.stride()->at(1) == 2)
+            if (conv->options.stride()->at(0) == 2 && conv->options.stride()->at(1) == 2)
             {
                 // asymmetric padding: (left, right, top, bottom)
                 x = torch::constant_pad_nd(x, { 0, 1, 0, 1 }, 0);

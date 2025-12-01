@@ -310,7 +310,7 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 					// values already in [0,1] -> keep
 				}
 			}
-			else
+			else if ((minVal != 0.0f) && (diff != 1.0f))
 			{
 				for (auto& v : flat)
 				{
@@ -340,11 +340,11 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 		std::vector<uint8_t> chData;
 		chData.resize(w * h);
 
-		size_t base = static_cast<size_t>(c) * w * h;
+		float* channelData = &flat[static_cast<size_t>(c)];
 
-		for (size_t i = 0; i < chData.size(); ++i)
+		for (size_t i = 0, j = 0; i < chData.size(); i++, j += chanCount)
 		{
-			float fv = flat[base + i];
+			float fv = channelData[j];
 			
 			// guard NaNs (converted earlier) and clamp
 			if (std::isnan(fv)) fv = 0.0f;
@@ -359,7 +359,7 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 		}
 
 		// create single-channel Image2d<uint8_t> for this channel				
-		channels.emplace_back(w, h, chData, ColorSpace::PixelFormat::GRAY);
+		channels.emplace_back(w, h, std::move(chData), ColorSpace::PixelFormat::GRAY);
 	}
 
 	// If single channel return that channel image directly

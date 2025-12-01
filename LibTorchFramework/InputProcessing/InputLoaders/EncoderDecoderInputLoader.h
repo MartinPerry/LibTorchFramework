@@ -24,8 +24,7 @@ protected:
     struct Settings
     {
         std::string datasetPath;
-        int imgChannelsCount;
-        int maskChannelsCount = 1;
+        int imgChannelsCount;        
         int imgW;
         int imgH;
     };
@@ -57,17 +56,11 @@ protected:
             }
             return *this;
         }
-
-        std::string GetMaskFileName(const std::string& dataRoot) const
-        {
-            return std::format("{}/{}.png", dataRoot, dirId);
-        }
     };
 
     Settings sets;
     std::vector<FileInfo> data;
-  
-    virtual torch::Tensor LoadImageAsTensor(const std::string& p, int reqChannelsCount) const;
+      
 };
 
 #endif

@@ -65,6 +65,8 @@ public:
 
     //==============
 
+    DataLoaderData GetData(size_t index);
+
     template <typename DatasetType>
     auto BuildDataLoader(const Settings& sets);
 

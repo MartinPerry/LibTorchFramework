@@ -66,8 +66,7 @@ protected:
     std::vector<FileInfo> data;
 
     bool IsNumeric(const std::string& s) const;
-
-    virtual torch::Tensor LoadImageAsTensor(const std::string& p, int reqChannelsCount) const;
+    
 };
 
 #endif

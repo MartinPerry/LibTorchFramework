@@ -85,22 +85,18 @@ void SegmentationInputLoader::Load()
     MY_LOG_INFO("Loaded %d, dataset size: %d", static_cast<int>(this->type), this->data.size());
 }
 
-torch::Tensor SegmentationInputLoader::LoadImageAsTensor(const std::string& p, int reqChannelsCount) const
-{
-    return TorchImageUtils::LoadImageAs<torch::Tensor>(p, reqChannelsCount, sets.imgW, sets.imgH);
-}
 
 void SegmentationInputLoader::FillData(size_t index, DataLoaderData& ld)
 {    
     const auto& fi = this->data[index];
     auto maskName = fi.GetMaskFileName(sets.datasetPath);
 
-    auto mask = this->LoadImageAsTensor(maskName, sets.maskChannelsCount);
+    auto mask = TorchImageUtils::LoadImageAs<torch::Tensor>(maskName, sets.maskChannelsCount, sets.imgW, sets.imgH);    
     //create binary mask:
     //mask[mask > 0.5] = 1.
     //mask[mask <= 0.5] = 0.
     mask = torch::where(mask > 0.5, torch::ones_like(mask), torch::zeros_like(mask));
 
-    ld.input = this->LoadImageAsTensor(fi.fn, sets.imgChannelsCount);
+    ld.input = TorchImageUtils::LoadImageAs<torch::Tensor>(fi.fn, sets.imgChannelsCount, sets.imgW, sets.imgH);        
     ld.target = mask;     
 }

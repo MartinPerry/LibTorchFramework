@@ -57,13 +57,17 @@ namespace CustomScenarios::SDVAETraining
 		SnapshotLoader sloader(m.get());
 		//sloader.Load("d://python//nnframework//data//models//SDVAE//converted.pt");
 		sloader.Load("D://weights.pkl");
-		//sloader.Load("d://python//nnframework//data//models//SDVAE//data.pkl");
-
-		loader->Load();
-
-		DataLoaderData ld(0);
-		loader->FillData(0, ld);
 		
+		//loader->Load();
+		//DataLoaderData ld = loader->GetData(0);		
+				
+		DataLoaderData ld(0);
+		ld.input = TorchImageUtils::LoadImageAs<torch::Tensor>("d://sdvae_input.png", 3, 256, 256);
+		ld.target = ld.input;
+
+		auto imgInput = TorchImageUtils::TensorsToImage(ld.input);
+		imgInput.Save("D://input.png");
+
 		//add batch
 		ld.Unsqueeze(0);
 
@@ -71,7 +75,10 @@ namespace CustomScenarios::SDVAETraining
 
 		auto decoded = m->decoder->forward(std::get<0>(encoded));
 		
-		auto img = TorchImageUtils::TensorsToImage(decoded);
+		TorchImageUtils::TensorsToImageSettings sets;
+		sets.intervalMapping = false;
+
+		auto img = TorchImageUtils::TensorsToImage(decoded, sets);
 		img.Save("D://decoded.png");
 	}
 

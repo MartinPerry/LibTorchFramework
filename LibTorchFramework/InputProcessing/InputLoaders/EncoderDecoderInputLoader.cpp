@@ -73,16 +73,11 @@ void EncoderDecoderInputLoader::Load()
     MY_LOG_INFO("Loaded %d, dataset size: %d", static_cast<int>(this->type), this->data.size());
 }
 
-torch::Tensor EncoderDecoderInputLoader::LoadImageAsTensor(const std::string& p, int reqChannelsCount) const
-{
-    return TorchImageUtils::LoadImageAs<torch::Tensor>(p, reqChannelsCount, sets.imgW, sets.imgH);
-}
 
 void EncoderDecoderInputLoader::FillData(size_t index, DataLoaderData& ld)
 {
     const auto& fi = this->data[index];
-    auto maskName = fi.GetMaskFileName(sets.datasetPath);
-    
-    ld.input = this->LoadImageAsTensor(fi.fn, sets.imgChannelsCount);
+        
+    ld.input = TorchImageUtils::LoadImageAs<torch::Tensor>(fi.fn, sets.imgChannelsCount, sets.imgW, sets.imgH);
     ld.target = ld.input;
 }

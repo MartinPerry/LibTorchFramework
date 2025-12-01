@@ -43,10 +43,12 @@ bool SnapshotLoader::Load(const std::variant<std::string, std::shared_ptr<Pretra
         return false;
     }
 
-    MY_LOG_INFO("Loading trained model from %s", path.c_str());
+    MY_LOG_INFO("Loading serialized trained model from %s", path.c_str());
 
     if (this->LoadParametersFromSerialized(path) == false)
     {
+        MY_LOG_INFO("Loading pickled trained model from %s", path.c_str());
+
         //try to load from pickled pytorch
         this->LoadParametersFromDict(path);        
     }
