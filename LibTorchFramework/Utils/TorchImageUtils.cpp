@@ -125,16 +125,22 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 		}
 	}
 
+		
+	//image at input is stored as RGB/RGB/RGB
+	//we need output as RRR/GGG/BBB (CHW)
+
+	std::vector<float> d = TorchImageUtils::ImageToVector_CHW(imgFinal, range);	
 	
-	auto imgf = imgFinal.CreateAsMapped<float>(range.dataMin, range.dataMax, range.minMapTo, range.maxMapTo);
+	//auto imgf = imgFinal.CreateAsMapped<float>(range.dataMin, range.dataMax, range.minMapTo, range.maxMapTo);
+
 	if constexpr (std::is_same<T, std::vector<float>>::value)
 	{
-		return imgf.MoveData();
+		return d;//imgf.MoveData();
 	}
 	else
 	{
-		auto t = TorchUtils::make_tensor(imgf.MoveData(),
-			{ static_cast<int>(imgf.GetChannelsCount()), imgf.GetHeight(), imgf.GetWidth() });
+		auto t = TorchUtils::make_tensor(std::move(d), //imgf.MoveData(),
+			{ static_cast<int>(imgFinal.GetChannelsCount()), imgFinal.GetHeight(), imgFinal.GetWidth() });
 
 		return t;
 	}
@@ -196,18 +202,60 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 		}
 	}
 
-	
+	//image at input is stored as RGB/RGB/RGB
+	//we need output as RRR/GGG/BBB (CHW)
+
+	std::vector<float> d = TorchImageUtils::ImageToVector_CHW(imgFinal, {});
+
 	if constexpr (std::is_same<T, std::vector<float>>::value)
 	{
-		return imgFinal.MoveData();
+		return d; //imgFinal.MoveData();
 	}
 	else
 	{
-		auto t = TorchUtils::make_tensor(imgFinal.MoveData(),
+		auto t = TorchUtils::make_tensor(std::move(d), //imgFinal.MoveData(),
 			{ static_cast<int>(imgFinal.GetChannelsCount()), imgFinal.GetHeight(), imgFinal.GetWidth() });
 
 		return t;
 	}
+}
+
+
+template <typename T>
+static std::vector<float> TorchImageUtils::ImageToVector_CHW(
+	const Image2d<T>& v,
+	const MappingRange& range)
+{
+	//image at input is stored as RGB/RGB/RGB
+	//we need output as RRR/GGG/BBB (CHW)
+
+	const auto& data = v.GetData();
+
+	std::vector<float> d;
+	d.resize(data.size());
+
+	size_t outIndex = 0;
+	float mappedVal = 0;
+
+	for (size_t c = 0; c < v.GetChannelsCount(); c++)
+	{
+		for (size_t i = c; i < data.size(); i += v.GetChannelsCount())
+		{
+			if constexpr (std::is_same<T, float>::value)
+			{
+				mappedVal = data[i];
+			}
+			else
+			{
+				mappedVal = Image2d<uint8_t>::MapRange(range.dataMin, range.dataMax, range.minMapTo, range.maxMapTo, data[i]);
+			}
+
+			d[outIndex] = mappedVal;
+			outIndex++;
+		}
+	}
+
+	return d;
 }
 
 /// <summary>
@@ -551,7 +599,9 @@ std::vector<std::vector<torch::Tensor>> TorchImageUtils::MergeTensorsToRows(
 	return rows;
 }
 
-
+//============================================================================================
+//============================================================================================
+//============================================================================================
 
 template std::vector<float> TorchImageUtils::LoadImageAs<std::vector<float>>(
 	const std::string& imgPath,
@@ -592,7 +642,13 @@ template torch::Tensor TorchImageUtils::LoadImageAs<torch::Tensor>(
 	int w,
 	int h);
 
+template std::vector<float> TorchImageUtils::ImageToVector_CHW(
+	const Image2d<uint8_t>& v,
+	const MappingRange& range);
 
+template std::vector<float> TorchImageUtils::ImageToVector_CHW(
+	const Image2d<float>& v,
+	const MappingRange& range);
 
 
 

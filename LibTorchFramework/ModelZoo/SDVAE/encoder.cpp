@@ -58,6 +58,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> VAE_EncoderImpl::forward
             }
         }
 
+        //std::cout << x << std::endl;
         x = layer.forward(x);
     }
 

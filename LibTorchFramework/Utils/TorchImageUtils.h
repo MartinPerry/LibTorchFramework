@@ -85,6 +85,11 @@ public:
 		int w,
 		int h);
 
+	template <typename T>
+	static std::vector<float> ImageToVector_CHW(
+		const Image2d<T>& v,
+		const MappingRange& range);
+
 	static Image2d<uint8_t> TensorToImage(at::Tensor t,
 		int chanCount = -1,
 		int w = -1,
