@@ -386,17 +386,12 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 		for (size_t i = 0, j = 0; i < chData.size(); i++, j += chanCount)
 		{
 			float fv = channelData[j];
+						
+			//fv is in (0,1)
+
+			float scaled = 255.0f * fv + 0.5f;			
 			
-			// guard NaNs (converted earlier) and clamp
-			if (std::isnan(fv)) fv = 0.0f;
-			if (fv < 0.0f) fv = 0.0f;
-			if (fv > 1.0f) fv = 1.0f;
-
-			float scaled = 255.0f * fv + 0.5f;
-			if (scaled < 0.0f) scaled = 0.0f;
-			if (scaled > 255.0f) scaled = 255.0f;
-
-			chData[i] = static_cast<uint8_t>(scaled);
+			chData[i] = static_cast<uint8_t>(static_cast<int>(scaled));
 		}
 
 		// create single-channel Image2d<uint8_t> for this channel				
