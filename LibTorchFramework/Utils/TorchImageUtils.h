@@ -43,7 +43,20 @@ public:
 		S_B = 1 
 	};
 
-	struct MappingRange 
+	template <typename T>
+	struct MappingRange;
+
+	template <>
+	struct MappingRange<float>
+	{
+		float dataMin = 0.0f;
+		float dataMax = 1.0f;
+		float minMapTo = 0.0f;
+		float maxMapTo = 1.0f;
+	};
+
+	template <>
+	struct MappingRange<uint8_t>
 	{
 		uint8_t dataMin = 0;
 		uint8_t dataMax = 255;
@@ -76,7 +89,7 @@ public:
 		int chanCount,
 		int w,
 		int h,
-		const MappingRange& range = {});
+		const MappingRange<uint8_t>& range = {});
 
 	template <typename T>
 	static TENSOR_VEC_RET_VAL(T) LoadImageAs(
@@ -88,7 +101,7 @@ public:
 	template <typename T>
 	static std::vector<float> ImageToVector_CHW(
 		const Image2d<T>& v,
-		const MappingRange& range);
+		const MappingRange<T>& range);
 
 	static Image2d<uint8_t> TensorToImage(at::Tensor t,
 		int chanCount = -1,

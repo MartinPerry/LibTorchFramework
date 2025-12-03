@@ -45,7 +45,7 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 	int chanCount,
 	int w,
 	int h,
-	const MappingRange& range)
+	const MappingRange<uint8_t>& range)
 {
 	if (img.GetChannelsCount() == 0)
 	{
@@ -224,7 +224,7 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 template <typename T>
 static std::vector<float> TorchImageUtils::ImageToVector_CHW(
 	const Image2d<T>& v,
-	const MappingRange& range)
+	const MappingRange<T>& range)
 {
 	//image at input is stored as RGB/RGB/RGB
 	//we need output as RRR/GGG/BBB (CHW)
@@ -241,15 +241,8 @@ static std::vector<float> TorchImageUtils::ImageToVector_CHW(
 	{
 		for (size_t i = c; i < data.size(); i += v.GetChannelsCount())
 		{
-			if constexpr (std::is_same<T, float>::value)
-			{
-				mappedVal = data[i];
-			}
-			else
-			{
-				mappedVal = Image2d<uint8_t>::MapRange(range.dataMin, range.dataMax, range.minMapTo, range.maxMapTo, data[i]);
-			}
-
+			mappedVal = Image2d<uint8_t>::MapRange(range.dataMin, range.dataMax, range.minMapTo, range.maxMapTo, data[i]);
+			
 			d[outIndex] = mappedVal;
 			outIndex++;
 		}
@@ -621,14 +614,14 @@ template std::vector<float> TorchImageUtils::LoadImageAs<std::vector<float>>(
 	int chanCount,
 	int w,
 	int h,
-	const MappingRange& range);
+	const MappingRange<uint8_t>& range);
 
 template torch::Tensor TorchImageUtils::LoadImageAs<torch::Tensor>(
 	Image2d<uint8_t>& img,
 	int chanCount,
 	int w,
 	int h,
-	const MappingRange& range);
+	const MappingRange<uint8_t>& range);
 
 template std::vector<float> TorchImageUtils::LoadImageAs<std::vector<float>>(
 	Image2d<float>& img,
@@ -644,11 +637,11 @@ template torch::Tensor TorchImageUtils::LoadImageAs<torch::Tensor>(
 
 template std::vector<float> TorchImageUtils::ImageToVector_CHW(
 	const Image2d<uint8_t>& v,
-	const MappingRange& range);
+	const MappingRange<uint8_t>& range);
 
 template std::vector<float> TorchImageUtils::ImageToVector_CHW(
 	const Image2d<float>& v,
-	const MappingRange& range);
+	const MappingRange<float>& range);
 
 
 
