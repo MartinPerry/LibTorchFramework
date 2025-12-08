@@ -20,7 +20,7 @@
 
 /// <summary>
 /// Load image from uin8_t format and convert it to 
-/// [0, 1] float tensor
+/// [0, 1] float tensor of format CHW
 /// If error occured, return tensor filled with zeroes
 /// </summary>
 /// <param name="imgPath"></param>
@@ -130,16 +130,14 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 	//we need output as RRR/GGG/BBB (CHW)
 
 	std::vector<float> d = TorchImageUtils::ImageToVector_CHW(imgFinal, range);	
-	
-	//auto imgf = imgFinal.CreateAsMapped<float>(range.dataMin, range.dataMax, range.minMapTo, range.maxMapTo);
-
+		
 	if constexpr (std::is_same<T, std::vector<float>>::value)
 	{
 		return d;//imgf.MoveData();
 	}
 	else
 	{
-		auto t = TorchUtils::make_tensor(std::move(d), //imgf.MoveData(),
+		auto t = TorchUtils::make_tensor(std::move(d),
 			{ static_cast<int>(imgFinal.GetChannelsCount()), imgFinal.GetHeight(), imgFinal.GetWidth() });
 
 		return t;
@@ -209,11 +207,11 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 
 	if constexpr (std::is_same<T, std::vector<float>>::value)
 	{
-		return d; //imgFinal.MoveData();
+		return d;
 	}
 	else
 	{
-		auto t = TorchUtils::make_tensor(std::move(d), //imgFinal.MoveData(),
+		auto t = TorchUtils::make_tensor(std::move(d),
 			{ static_cast<int>(imgFinal.GetChannelsCount()), imgFinal.GetHeight(), imgFinal.GetWidth() });
 
 		return t;
@@ -310,14 +308,14 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 
 	const float* rawData = t.const_data_ptr<float>();
 
-	std::vector<float> flat(rawData, rawData + t.numel());
+	std::vector<float> flatCHW(rawData, rawData + t.numel());
 
 	// interval mapping / clamping
 	if (intervalMapping)
 	{
 		float minVal = std::numeric_limits<float>::infinity();
 		float maxVal = -std::numeric_limits<float>::infinity();
-		for (float v : flat)
+		for (float v : flatCHW)
 		{
 			if (std::isnan(v))
 			{
@@ -330,7 +328,7 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 		if (minVal == std::numeric_limits<float>::infinity())
 		{
 			// all NaNs? set to zero
-			std::fill(flat.begin(), flat.end(), 0.0f);
+			std::fill(flatCHW.begin(), flatCHW.end(), 0.0f);
 		}
 		else
 		{
@@ -340,7 +338,7 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 				// if both are inside [0,1] keep values, otherwise map to zero-based
 				if ((minVal < 0.0f) || (maxVal > 1.0f))
 				{
-					for (auto& v : flat)
+					for (auto& v : flatCHW)
 					{
 						v = v - minVal;
 					}
@@ -353,7 +351,7 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 			}
 			else if ((minVal != 0.0f) && (diff != 1.0f))
 			{
-				for (auto& v : flat)
+				for (auto& v : flatCHW)
 				{
 					v = (v - minVal) / diff;
 				}
@@ -363,7 +361,7 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 	else
 	{
 		// clamp to [0,1]
-		for (auto& v : flat)
+		for (auto& v : flatCHW)
 		{
 			if (std::isnan(v)) v = 0.0f;
 			else if (v < 0.0f) v = 0.0f;
@@ -381,11 +379,11 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 		std::vector<uint8_t> chData;
 		chData.resize(w * h);
 
-		float* channelData = &flat[static_cast<size_t>(c)];
+		float* channelData = &flatCHW[static_cast<size_t>(c) * w * h];
 
-		for (size_t i = 0, j = 0; i < chData.size(); i++, j += chanCount)
+		for (size_t i = 0; i < chData.size(); i++)
 		{
-			float fv = channelData[j];
+			float fv = channelData[i];
 						
 			//fv is in (0,1)
 
