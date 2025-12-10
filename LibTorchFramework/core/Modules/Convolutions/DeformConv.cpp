@@ -56,6 +56,7 @@ DeformConv2dImpl::DeformConv2dImpl(
             .stride({ stride.first, stride.second })
             .padding({ padding.first, padding.second })
             .dilation({ dilation.first, dilation.second })
+            .padding_mode(torch::kReplicate)
             .bias(true)
         );
         register_module("convOffsetFromX", convOffsetFromX);
@@ -67,6 +68,7 @@ DeformConv2dImpl::DeformConv2dImpl(
             .stride({ stride.first, stride.second })
             .padding({ padding.first, padding.second })
             .dilation({ dilation.first, dilation.second })
+            .padding_mode(torch::kReplicate)
             .bias(true)
         );
         register_module("convDirs", convDirs);
