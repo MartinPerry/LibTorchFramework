@@ -1,6 +1,8 @@
 #ifndef SDVAE_ENCODER_H
 #define SDVAE_ENCODER_H
 
+#include <tuple>
+
 #include <torch/torch.h>
 
 #include "./attention.h"

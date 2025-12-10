@@ -114,6 +114,8 @@
 //===================================================================
 //===================================================================
 
+#include "./core/Modules/Convolutions/DeformConv.h"
+#include "./core/Modules/Convolutions/DeformConvImpl/deform_conv2d.h"
 
 int main()
 {
@@ -152,6 +154,42 @@ int main()
     //torch::set_default_dtype(torch::scalarTypeToTypeMeta(torch::kFloat32));
 
     Settings::PrintCudaInfo();
+
+    auto device = torch::kCUDA; // or torch::kCPU
+
+    int N = 1, C_in = 3, C_out = 2;    
+    int H = 8, W = 8;
+    
+    int kH = 3, kW = 3;
+    int stride_h = 1, stride_w = 1;
+    int pad_h = 1, pad_w = 1;
+    int dilation_h = 1, dilation_w = 1;
+    int groups = 1, offset_groups = 1;
+    bool use_mask = true;
+
+    // Output size formula
+    int out_h = (H + 2 * pad_h - dilation_h * (kH - 1) - 1) / stride_h + 1;
+    int out_w = (W + 2 * pad_w - dilation_w * (kW - 1) - 1) / stride_w + 1;
+
+    torch::Tensor input = torch::rand({ N, C_in, H, W }, device);
+    torch::Tensor weight = torch::rand({ C_out, C_in, kH, kW }, device);
+    torch::Tensor offset = torch::rand({ N, 2 * kH * kW, out_h, out_w }, device);
+    torch::Tensor mask = torch::rand({ N, kH * kW, out_h, out_w }, device);
+    torch::Tensor bias = torch::rand({ C_out }, device);
+
+    auto out = vision::ops::deform_conv2d(
+        input, weight, offset, mask, bias,
+        stride_h, stride_w,
+        pad_h, pad_w,
+        dilation_h, dilation_w,
+        groups, offset_groups,
+        use_mask
+    );
+
+
+    auto df = DeformConv2d(C_in, C_out);
+    auto out2 = df->forward(input);
+    
 
     CustomScenarios::SDVAETraining::setup();
 

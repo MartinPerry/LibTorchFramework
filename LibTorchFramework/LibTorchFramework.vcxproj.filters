@@ -139,6 +139,12 @@
     <Filter Include="Header Files\CustomScenarios\SDVAE">
       <UniqueIdentifier>{aac52b6e-4cf7-469a-b77d-0a8916a2fe4b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\core\Modules\Convolutions\DeformConvImpl">
+      <UniqueIdentifier>{054955da-7310-4921-9c24-4736e5feb914}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules\Convolutions\DeformConvImpl">
+      <UniqueIdentifier>{bac52e76-758c-49e6-be7d-56fed0198ffe}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -257,6 +263,21 @@
     </ClCompile>
     <ClCompile Include="InputProcessing\InputLoaders\EncoderDecoderInputLoader.cpp">
       <Filter>Source Files\InputProcessing\InputLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel_autocast.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel_autograd.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConv.cpp">
+      <Filter>Source Files\core\Modules\Convolutions</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -413,10 +434,24 @@
     <ClInclude Include="InputProcessing\InputLoaders\EncoderDecoderInputLoader.h">
       <Filter>Header Files\InputProcessing\InputLoaders</Filter>
     </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\cuda_helpers.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConv.h">
+      <Filter>Header Files\core\Modules\Convolutions</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Libtorch.natvis">
       <Filter>Resource Files</Filter>
     </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel.cu">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

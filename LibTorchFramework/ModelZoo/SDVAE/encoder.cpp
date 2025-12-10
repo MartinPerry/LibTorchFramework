@@ -1,5 +1,7 @@
 #include "./encoder.h"
 
+#include <memory>
+
 #include "./decoder.h"
 
 using namespace ModelZoo::sdvae;

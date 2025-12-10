@@ -1,8 +1,14 @@
 #include "./setup_sdvae.h"
 
+#include <memory>
+#include <string>
+#include <tuple>
+
 //=========================================================
 // Core
 //=========================================================
+
+#include "../../Settings.h"
 
 #include "../../core/Structures.h"
 #include "../../core/Runner.h"
@@ -50,7 +56,7 @@
 
 namespace CustomScenarios::SDVAETraining
 {
-	void runEncodeDecode(std::shared_ptr<ModelZoo::sdvae::SDVAEModel> m, std::shared_ptr<InputLoader> loader)
+	static void runEncodeDecode(std::shared_ptr<ModelZoo::sdvae::SDVAEModel> m, std::shared_ptr<InputLoader> loader)
 	{
 		//"d://python//nnframework//data//models//SDVAE//converted.pt"
 
