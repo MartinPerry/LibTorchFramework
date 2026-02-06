@@ -125,10 +125,18 @@ torch::Tensor DeformConv2dImpl::forward(
         offset = torch::zeros_like(x);
     }
 
-    if ((maskConv.is_empty() == false) && (mask.has_value() == false))
+    if (mask.has_value() == false)
     {
-        mask = maskConv->forward(x);
-        mask = torch::sigmoid(*mask);
+        if (maskConv.is_empty() == false)
+        {
+            mask = maskConv->forward(x);
+            mask = torch::sigmoid(*mask);
+        }
+        else
+        {
+            // Fallback
+            mask = torch::zeros_like(x);
+        }
     }
 
     // DeformConv placeholder

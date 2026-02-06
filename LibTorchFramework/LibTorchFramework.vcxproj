@@ -34,7 +34,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.8.props" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 13.0.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -48,12 +48,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)..\libtorch\Debug\libtorch_2.9.0\include;$(ProjectDir)..\libtorch\Debug\libtorch_2.9.0\include\torch\csrc\api\include;$(PLAYGROUND_PATH)\Playground;$(PLAYGROUND_PATH)\include;$(VCPKG_INSTALL_DIR)\x64-windows\include;D:\opencv\build\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\libtorch\Debug\libtorch_2.9.0\lib;$(PLAYGROUND_PATH)\libs_x64;D:\opencv\build\x64\vc15\lib;$(VCPKG_INSTALL_DIR)\x64-windows\debug\lib;$(ProjectDir)..\x64\Debug_lib_md;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\libtorch\Debug\libtorch_2.10.0\include;$(ProjectDir)..\libtorch\Debug\libtorch_2.10.0\include\torch\csrc\api\include;$(PLAYGROUND_PATH)\Playground;$(PLAYGROUND_PATH)\include;$(VCPKG_INSTALL_DIR)\x64-windows\include;D:\opencv\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\libtorch\Debug\libtorch_2.10.0\lib;$(PLAYGROUND_PATH)\libs_x64;D:\opencv\build\x64\vc15\lib;$(VCPKG_INSTALL_DIR)\x64-windows\debug\lib;$(ProjectDir)..\x64\Debug_lib_md;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)..\libtorch\Release\libtorch_2.9.0\include;$(ProjectDir)..\libtorch\Release\libtorch_2.9.0\include\torch\csrc\api\include;$(PLAYGROUND_PATH)\Playground;$(PLAYGROUND_PATH)\include;$(VCPKG_INSTALL_DIR)\x64-windows\include;D:\opencv\build\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\libtorch\Release\libtorch_2.9.0\lib;$(PLAYGROUND_PATH)\libs_x64;D:\opencv\build\x64\vc15\lib;$(VCPKG_INSTALL_DIR)\x64-windows\lib;$(ProjectDir)..\x64\Release_lib_md;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\libtorch\Release\libtorch_2.10.0\include;$(ProjectDir)..\libtorch\Release\libtorch_2.10.0\include\torch\csrc\api\include;$(PLAYGROUND_PATH)\Playground;$(PLAYGROUND_PATH)\include;$(VCPKG_INSTALL_DIR)\x64-windows\include;D:\opencv\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\libtorch\Release\libtorch_2.10.0\lib;$(PLAYGROUND_PATH)\libs_x64;D:\opencv\build\x64\vc15\lib;$(VCPKG_INSTALL_DIR)\x64-windows\lib;$(ProjectDir)..\x64\Release_lib_md;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -208,6 +208,6 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.8.targets" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 13.0.targets" />
   </ImportGroup>
 </Project>

@@ -155,7 +155,8 @@ int main()
 
     Settings::PrintCudaInfo();
 
-    auto device = torch::kCUDA; // or torch::kCPU
+    //auto device = torch::kCUDA;
+    auto device = torch::kCPU;
 
     int N = 1, C_in = 3, C_out = 2;    
     int H = 8, W = 8;
