@@ -130,6 +130,7 @@
     <ClCompile Include="InputProcessing\InputLoaders\SegmentationInputLoader.cpp" />
     <ClCompile Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ModelZoo\LLMs\llama.cpp" />
     <ClCompile Include="ModelZoo\ResNet\ResNetModel.cpp" />
     <ClCompile Include="ModelZoo\SDVAE\attention.cpp" />
     <ClCompile Include="ModelZoo\SDVAE\decoder.cpp" />
@@ -184,6 +185,7 @@
     <ClInclude Include="InputProcessing\InputLoaders\EncoderDecoderInputLoader.h" />
     <ClInclude Include="InputProcessing\InputLoaders\SegmentationInputLoader.h" />
     <ClInclude Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.h" />
+    <ClInclude Include="ModelZoo\LLMs\llama.h" />
     <ClInclude Include="ModelZoo\ResNet\ResNetModel.h" />
     <ClInclude Include="ModelZoo\SDVAE\attention.h" />
     <ClInclude Include="ModelZoo\SDVAE\decoder.h" />

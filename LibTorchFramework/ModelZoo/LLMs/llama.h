@@ -1,0 +1,154 @@
+#ifndef LLAMA_MODEL_H
+#define LLAMA_MODEL_H
+
+#include <cstdint>
+#include <utility>
+#include <optional>
+
+#include <torch/torch.h>
+
+#include "../../core/Modules/ModulesOptions.h"
+
+#include "../../core/AbstractModel.h"
+
+namespace ModelZoo
+{
+    namespace llama
+    {
+
+        struct RMSNormImpl : torch::nn::Module 
+        {
+        public:            
+            explicit RMSNormImpl(int64_t dim, double eps = 1e-6);
+            torch::Tensor forward(const torch::Tensor& x);
+
+        private:
+            torch::Tensor weight;
+            double eps;
+        };
+        TORCH_MODULE(RMSNorm);
+
+        //========================================================================
+
+
+        struct MLPImpl : torch::nn::Module 
+        {            
+        public:
+            MLPImpl(int64_t dim, int64_t hidden_dim);
+            torch::Tensor forward(const torch::Tensor& x);
+
+        private:
+            torch::nn::Linear gate_proj{ nullptr };
+            torch::nn::Linear up_proj{ nullptr };
+            torch::nn::Linear down_proj{ nullptr };
+
+        };
+        TORCH_MODULE(MLP);
+
+        //========================================================================
+
+        struct AttentionImpl : torch::nn::Module 
+        {       
+        public:
+            AttentionImpl(int64_t dim, int64_t n_heads, std::optional<int64_t> n_kv_heads_opt = std::nullopt);
+            torch::Tensor forward(const torch::Tensor& x, const torch::Tensor& cos, const torch::Tensor& sin,
+                const torch::Tensor& attn_mask);
+
+        protected:
+            int64_t dim;
+            int64_t n_heads;
+            int64_t n_kv_heads;
+            int64_t head_dim;
+            torch::nn::Linear q_proj{ nullptr };
+            torch::nn::Linear k_proj{ nullptr };
+            torch::nn::Linear v_proj{ nullptr };
+            torch::nn::Linear o_proj{ nullptr };
+
+            torch::Tensor apply_rope(const torch::Tensor& x, const torch::Tensor& cos,
+                const torch::Tensor& sin);
+        };
+        TORCH_MODULE(Attention);
+
+        //========================================================================
+
+        struct BlockImpl : torch::nn::Module 
+        {
+        public:
+            BlockImpl(int64_t dim, int64_t n_heads, int64_t hidden_dim, std::optional<int64_t> n_kv_heads = std::nullopt,
+                double rms_eps = 1e-6);
+            torch::Tensor forward(const torch::Tensor& x, const torch::Tensor& cos, const torch::Tensor& sin,
+                const torch::Tensor& attn_mask, bool use_ckpt = false);
+        private:
+            RMSNorm attn_norm{ nullptr };
+            RMSNorm ffn_norm{ nullptr };
+            Attention attn{ nullptr };
+            MLP mlp{ nullptr };
+
+        };
+        TORCH_MODULE(Block);
+
+        //========================================================================
+
+        struct LlamaConfig 
+        {
+            int64_t vocab_size = 32000;
+            int64_t hidden_size = 4096;
+            int64_t num_hidden_layers = 32;
+            int64_t num_attention_heads = 32;
+            std::optional<int64_t> num_key_value_heads = std::nullopt;
+            std::optional<int64_t> intermediate_size = std::nullopt;
+            double rms_norm_eps = 1e-6;
+            double rope_theta = 10000.0;
+            bool tie_word_embeddings = true;
+        };
+
+        //========================================================================
+
+        struct LlamaForCausalLM : public AbstractModel
+        {
+        public:
+                       
+            explicit LlamaForCausalLM(const LlamaConfig& cfg);
+
+            const char* GetName() const override;
+
+            torch::Tensor get_attn_mask(int64_t T, const torch::Device& device, torch::ScalarType dtype);
+            std::pair<torch::Tensor, torch::Tensor> get_rope(int64_t T, const torch::Device& device, torch::ScalarType dtype);
+
+            std::vector<torch::Tensor> RunForward(DataLoaderData& batch) override;
+
+            torch::Tensor forward(const torch::Tensor& input_ids, bool use_ckpt = false);
+
+        protected:
+            LlamaConfig cfg;
+            int64_t vocab_size;
+            int64_t dim;
+            int64_t n_layers;
+            int64_t n_heads;
+            int64_t n_kv_heads;
+            int64_t hidden_dim;
+            double rms_eps;
+
+            torch::nn::Embedding tok_emb{ nullptr };
+            torch::nn::ModuleList layers;
+            RMSNorm norm{ nullptr };
+            torch::nn::Linear lm_head{ nullptr };
+
+            torch::Tensor _attn_mask_cache;
+            torch::Tensor _rope_cos;
+            torch::Tensor _rope_sin;
+            int64_t _mask_len = 0;
+            int64_t _rope_len = 0;
+
+            std::pair<torch::Tensor, torch::Tensor> precompute_rope_frequencies(int64_t dim,
+                int64_t max_seq_len,
+                double base = 10000.0,
+                torch::Device device = torch::kCPU,
+                std::optional<torch::ScalarType> dtype = std::nullopt);
+            
+        };
+       
+    }  // namespace llama
+}
+
+#endif

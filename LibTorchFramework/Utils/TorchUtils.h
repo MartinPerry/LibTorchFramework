@@ -14,6 +14,12 @@
 #define AUTO_REGISTER_EXISTING_MODULE(var) \
     var = register_module(#var, var)
 
+#define AUTO_REGISTER_NEW_PARAMETER(var, ...) \
+    var = register_parameter(#var __VA_OPT__(,) __VA_ARGS__)
+
+#define AUTO_REGISTER_NEW_BUFFER(var, ...) \
+    var = register_buffer(#var __VA_OPT__(,) __VA_ARGS__)
+
 //===============================================================================
 
 // traits classes for PyTorch tensor type constants

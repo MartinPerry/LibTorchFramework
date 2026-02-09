@@ -145,6 +145,12 @@
     <Filter Include="Header Files\core\Modules\Convolutions\DeformConvImpl">
       <UniqueIdentifier>{bac52e76-758c-49e6-be7d-56fed0198ffe}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\ModelZoo\LLMs">
+      <UniqueIdentifier>{f13dd225-2f16-46e5-931f-8d28f2a04751}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ModelZoo\LLMs">
+      <UniqueIdentifier>{33c6292c-65b5-41a1-b867-2ce44db2db04}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -278,6 +284,9 @@
     </ClCompile>
     <ClCompile Include="core\Modules\Convolutions\DeformConv.cpp">
       <Filter>Source Files\core\Modules\Convolutions</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelZoo\LLMs\llama.cpp">
+      <Filter>Source Files\ModelZoo\LLMs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -442,6 +451,9 @@
     </ClInclude>
     <ClInclude Include="core\Modules\Convolutions\DeformConv.h">
       <Filter>Header Files\core\Modules\Convolutions</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelZoo\LLMs\llama.h">
+      <Filter>Header Files\ModelZoo\LLMs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
