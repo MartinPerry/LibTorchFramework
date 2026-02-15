@@ -100,6 +100,9 @@ namespace ModelZoo
             double rms_norm_eps = 1e-6;
             double rope_theta = 10000.0;
             bool tie_word_embeddings = true;
+
+            static LlamaConfig FromJsonString(const std::string& jsonText);
+            static LlamaConfig FromJsonFile(const std::string& filePath);
         };
 
         //========================================================================
@@ -111,6 +114,8 @@ namespace ModelZoo
             explicit LlamaForCausalLM(const LlamaConfig& cfg);
 
             const char* GetName() const override;
+
+            const LlamaConfig& GetConfig() const;
 
             torch::Tensor get_attn_mask(int64_t T, const torch::Device& device, torch::ScalarType dtype);
             std::pair<torch::Tensor, torch::Tensor> get_rope(int64_t T, const torch::Device& device, torch::ScalarType dtype);

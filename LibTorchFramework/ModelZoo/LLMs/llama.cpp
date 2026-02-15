@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <limits>
 
+#include <FileUtils/Reading/TextFileReader.h>
+#include <Utils/cJSON.h>
+
 #include "../../InputProcessing/DataLoaderData.h"
 
 #include "../../Utils/TorchUtils.h"
@@ -15,6 +18,111 @@ using torch::indexing::Slice;
 
 //========================================================================
 
+bool TryReadInt64(cJSON* root, const char* key, int64_t& outValue)
+{
+	cJSON* node = cJSON_GetObjectItemCaseSensitive(root, key);
+	if (!cJSON_IsNumber(node))
+	{
+		return false;
+	}
+	outValue = static_cast<int64_t>(node->valuedouble);
+	return true;
+}
+
+bool TryReadDouble(cJSON* root, const char* key, double& outValue)
+{
+	cJSON* node = cJSON_GetObjectItemCaseSensitive(root, key);
+	if (!cJSON_IsNumber(node))
+	{
+		return false;
+	}
+	outValue = node->valuedouble;
+	return true;
+}
+
+bool TryReadBool(cJSON* root, const char* key, bool& outValue)
+{
+	cJSON* node = cJSON_GetObjectItemCaseSensitive(root, key);
+	if (!cJSON_IsBool(node))
+	{
+		return false;
+	}
+	outValue = cJSON_IsTrue(node);
+	return true;
+}
+
+LlamaConfig LlamaConfig::FromJsonString(const std::string& jsonText)
+{
+	cJSON* root = cJSON_Parse(jsonText.c_str());
+	if (root == nullptr)
+	{
+		throw std::runtime_error("Failed to parse LlamaConfig JSON");
+	}
+
+	LlamaConfig cfg;
+	try
+	{
+		int64_t intValue = 0;
+		double doubleValue = 0.0;
+		bool boolValue = false;
+
+		if (TryReadInt64(root, "vocab_size", intValue))
+		{
+			cfg.vocab_size = intValue;
+		}
+		if (TryReadInt64(root, "hidden_size", intValue))
+		{
+			cfg.hidden_size = intValue;
+		}
+		if (TryReadInt64(root, "num_hidden_layers", intValue))
+		{
+			cfg.num_hidden_layers = intValue;
+		}
+		if (TryReadInt64(root, "num_attention_heads", intValue))
+		{
+			cfg.num_attention_heads = intValue;
+		}
+		if (TryReadInt64(root, "num_key_value_heads", intValue))
+		{
+			cfg.num_key_value_heads = intValue;
+		}
+		if (TryReadInt64(root, "intermediate_size", intValue))
+		{
+			cfg.intermediate_size = intValue;
+		}
+		if (TryReadDouble(root, "rms_norm_eps", doubleValue))
+		{
+			cfg.rms_norm_eps = doubleValue;
+		}
+		if (TryReadDouble(root, "rope_theta", doubleValue))
+		{
+			cfg.rope_theta = doubleValue;
+		}
+		if (TryReadBool(root, "tie_word_embeddings", boolValue))
+		{
+			cfg.tie_word_embeddings = boolValue;
+		}
+	}
+	catch (...)
+	{
+		cJSON_Delete(root);
+		throw;
+	}
+
+	cJSON_Delete(root);
+	return cfg;
+}
+
+LlamaConfig LlamaConfig::FromJsonFile(const std::string& filePath)
+{
+	TextFileReader tf(filePath.c_str());
+	auto data = tf.GetText();
+	tf.Close();
+
+	return FromJsonString(data.c_str());
+}
+
+//========================================================================
 
 // ---- Layers ----
 RMSNormImpl::RMSNormImpl(int64_t dim, double eps) : 
@@ -146,6 +254,7 @@ torch::Tensor BlockImpl::forward(const torch::Tensor& x, const torch::Tensor& co
 LlamaForCausalLM::LlamaForCausalLM(const LlamaConfig& cfg) : 
 	cfg(cfg) 
 {
+	return;
 	vocab_size = cfg.vocab_size;
 	dim = cfg.hidden_size;
 	n_layers = cfg.num_hidden_layers;
@@ -179,6 +288,11 @@ LlamaForCausalLM::LlamaForCausalLM(const LlamaConfig& cfg) :
 const char* LlamaForCausalLM::GetName() const
 {
 	return "LlamaForCausalLM";
+}
+
+const LlamaConfig& LlamaForCausalLM::GetConfig() const
+{
+	return this->cfg;
 }
 
 torch::Tensor LlamaForCausalLM::get_attn_mask(int64_t T, const torch::Device& device, 

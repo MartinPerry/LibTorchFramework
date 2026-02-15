@@ -39,6 +39,7 @@
 //=========================================================
 
 #include "../../ModelZoo/LLMs/llama.h"
+#include "../../ModelZoo/LLMs/LLamaSafeTensorLoader.h"
 
 //=========================================================
 // Utils
@@ -50,12 +51,22 @@
 
 //=========================================================
 
+using namespace ModelZoo::llama;
+
 
 namespace CustomScenarios::LLMs::Llama
 {
 	void setup()
 	{
-		
+		std::string modelDir = "e:\\Programming\\Python\\test\\PythonApplication1\\py_cpt\\Llama-3.2-3B-Instruct\\";
+
+		LlamaConfig cfg = LlamaConfig::FromJsonFile(modelDir + "config.json");
+
+		LlamaForCausalLM llama(cfg);
+
+		LLamaSafeTensorLoader tl;
+		tl.LoadFromHfSafetensors(llama, modelDir);
+
 		auto bpe = TokenizerBPE("d://tokenizer.json");
 		bpe.Load();
 

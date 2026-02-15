@@ -114,6 +114,7 @@
     <ClCompile Include="core\Modules\WeightsInit\TruncatedNormalInit.cpp" />
     <ClCompile Include="core\Runner.cpp" />
     <ClCompile Include="core\Snapshot\PretrainedManager.cpp" />
+    <ClCompile Include="core\Snapshot\SafeTensorLoader.cpp" />
     <ClCompile Include="core\Snapshot\SnapshotLoader.cpp" />
     <ClCompile Include="core\Snapshot\SnapshotSaver.cpp" />
     <ClCompile Include="core\Tokenizers\Strings\UnicodeRegex.cpp" />
@@ -135,6 +136,7 @@
     <ClCompile Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModelZoo\LLMs\llama.cpp" />
+    <ClCompile Include="ModelZoo\LLMs\LLamaSafeTensorLoader.cpp" />
     <ClCompile Include="ModelZoo\ResNet\ResNetModel.cpp" />
     <ClCompile Include="ModelZoo\SDVAE\attention.cpp" />
     <ClCompile Include="ModelZoo\SDVAE\decoder.cpp" />
@@ -170,8 +172,10 @@
     <ClInclude Include="core\Modules\UpSample2d.h" />
     <ClInclude Include="core\Modules\WeightsInit\TruncatedNormalInit.h" />
     <ClInclude Include="core\Runner.h" />
+    <ClInclude Include="core\Snapshot\3rdParty\safetensors.hpp" />
     <ClInclude Include="core\Snapshot\FreezeInfo.h" />
     <ClInclude Include="core\Snapshot\PretrainedManager.h" />
+    <ClInclude Include="core\Snapshot\SafeTensorLoader.h" />
     <ClInclude Include="core\Snapshot\SnapshotLoader.h" />
     <ClInclude Include="core\Snapshot\SnapshotSaver.h" />
     <ClInclude Include="core\Structures.h" />
@@ -196,6 +200,7 @@
     <ClInclude Include="InputProcessing\InputLoaders\SegmentationInputLoader.h" />
     <ClInclude Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.h" />
     <ClInclude Include="ModelZoo\LLMs\llama.h" />
+    <ClInclude Include="ModelZoo\LLMs\LLamaSafeTensorLoader.h" />
     <ClInclude Include="ModelZoo\ResNet\ResNetModel.h" />
     <ClInclude Include="ModelZoo\SDVAE\attention.h" />
     <ClInclude Include="ModelZoo\SDVAE\decoder.h" />
