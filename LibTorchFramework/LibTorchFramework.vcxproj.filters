@@ -151,6 +151,24 @@
     <Filter Include="Source Files\ModelZoo\LLMs">
       <UniqueIdentifier>{33c6292c-65b5-41a1-b867-2ce44db2db04}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\core\Tokenizers">
+      <UniqueIdentifier>{2cfb3261-2284-49cc-a8c1-a5cacc083e95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Tokenizers">
+      <UniqueIdentifier>{4e142882-785a-492a-963a-80f07bb23c64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Tokenizers\Strings">
+      <UniqueIdentifier>{310f2355-4329-4110-9ce6-4f36e9988d1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Tokenizers\Strings">
+      <UniqueIdentifier>{c5cc3dc3-138e-48b8-accd-a53a5530e5ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CustomScenarios\LLMs">
+      <UniqueIdentifier>{2cfdbefd-2f06-44e1-8535-a562f45edd3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CustomScenarios\LLMs">
+      <UniqueIdentifier>{74aa1bef-6bf3-4fb8-a103-192c0fc96582}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -287,6 +305,18 @@
     </ClCompile>
     <ClCompile Include="ModelZoo\LLMs\llama.cpp">
       <Filter>Source Files\ModelZoo\LLMs</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Tokenizers\TokenizerBPE.cpp">
+      <Filter>Source Files\core\Tokenizers</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Tokenizers\TokenizerJsonLoader.cpp">
+      <Filter>Source Files\core\Tokenizers</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Tokenizers\Strings\UnicodeRegex.cpp">
+      <Filter>Source Files\core\Tokenizers\Strings</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomScenarios\LLMs\setup_llama.cpp">
+      <Filter>Source Files\CustomScenarios\LLMs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -454,6 +484,24 @@
     </ClInclude>
     <ClInclude Include="ModelZoo\LLMs\llama.h">
       <Filter>Header Files\ModelZoo\LLMs</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Tokenizers\TokenizerBPE.h">
+      <Filter>Header Files\core\Tokenizers</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Tokenizers\TokenizerJsonLoader.h">
+      <Filter>Header Files\core\Tokenizers</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Tokenizers\Tokenizers.h">
+      <Filter>Header Files\core\Tokenizers</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Tokenizers\Strings\UnicodeRegex.h">
+      <Filter>Header Files\core\Tokenizers\Strings</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Tokenizers\Strings\UnicodeStringUtils.h">
+      <Filter>Header Files\core\Tokenizers\Strings</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomScenarios\LLMs\setup_llama.h">
+      <Filter>Header Files\CustomScenarios\LLMs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

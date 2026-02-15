@@ -1,0 +1,184 @@
+#ifndef TOKENIZER_JSON_LOADER_H
+#define TOKENIZER_JSON_LOADER_H
+
+struct cJSON;
+
+#include <cstdint>
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <memory>
+
+#include "./Tokenizers.h"
+
+class TokenizerJsonLoader 
+{
+public:
+	struct ModelInfo
+	{
+		std::string tokenType;
+		std::string dropout;
+		std::string unk_token;
+		std::string continuing_subword_prefix;
+		std::string end_of_word_suffix;
+		bool fuse_unk;
+		bool byte_fallback;
+		bool ignore_merges;
+	};
+
+	//=============================================================
+	
+	struct AddedToken : public Token
+	{		
+		using Token::Token;
+	};
+
+	//=============================================================
+
+	struct SplitType;
+	struct ByteLevelType;
+	struct TemplateProcessingType;
+
+	struct IType
+	{
+		std::string type;
+
+		IType(const char* type) : 
+			type(type)
+		{}
+		virtual ~IType() = default;
+
+		virtual const SplitType* GetSplitType() const { return nullptr; }
+		virtual const ByteLevelType* GetByteLevelType() const { return nullptr; }
+		virtual const TemplateProcessingType* GetTemplateProcessingType() const { return nullptr; }
+	};
+
+	struct SplitType : public IType
+	{
+		std::string regex;
+		std::string behavior;
+		bool invert;
+
+		SplitType(const char* regex, const char* behavior, bool invert) :
+			IType("Split"),
+			regex(regex),
+			behavior(behavior),
+			invert(invert)
+		{}
+
+		const SplitType* GetSplitType() const override { return this; }
+	};
+
+	struct ByteLevelType : public IType
+	{
+		bool add_prefix_space;
+		bool trim_offsets;
+		bool use_regex;
+
+		ByteLevelType(bool add_prefix_space, bool trim_offsets, bool use_regex) :
+			IType("ByteLevel"),
+			add_prefix_space(add_prefix_space),
+			trim_offsets(trim_offsets),
+			use_regex(use_regex)
+		{}
+
+		const ByteLevelType* GetByteLevelType() const override { return this; }
+	};
+
+	struct TemplateProcessingType : public IType
+	{
+		TokenMap single;
+		TokenMap pair;
+		std::unordered_map<StringUtf8, std::vector<TokenId>> special;
+
+		TemplateProcessingType() : 
+			IType("TemplateProcessing")
+		{}
+
+		const TemplateProcessingType* GetTemplateProcessingType() const override { return this; }
+	};
+
+	//=============================================================
+
+	TokenizerJsonLoader(const std::string& jsonPath);
+	virtual ~TokenizerJsonLoader();
+
+	const ModelInfo& GetModelInfo() const;
+
+	const std::vector<AddedToken>& AddedTokens() const;
+	const TokenHashMap& GetVocab() const;
+	const ReverseTokenMap& GetVocabReversed() const;
+	const std::vector<StringUtf8>& GetMerges() const;
+
+	const std::vector<std::shared_ptr<IType>>& GetPreTokenizers() const;
+	const std::vector<std::shared_ptr<IType>>& GetPostProcessors() const;
+
+	template <typename Type>
+	std::shared_ptr<Type> GetPretokenizerType() const
+	{
+		for (auto p : this->preTokenizers)
+		{
+			auto tmp = std::dynamic_pointer_cast<Type>(p);
+			if (tmp)
+			{
+				return tmp;
+			}
+		}
+
+		return nullptr;
+	}
+
+	template <typename Type>
+	std::shared_ptr<Type> GetPostProcessorType() const
+	{
+		for (auto p : this->postProcessors)
+		{
+			auto tmp = std::dynamic_pointer_cast<Type>(p);
+			if (tmp)
+			{
+				return tmp;
+			}
+		}
+
+		return nullptr;
+	}
+
+	void Load();
+
+protected:
+	std::string jsonPath;
+	
+	ModelInfo mi;
+
+	std::vector<AddedToken> addedTokens;
+	TokenHashMap vocabData;
+	ReverseTokenMap vocabDataReverse;
+	std::vector<StringUtf8> merges;
+
+	std::vector<std::shared_ptr<IType>> preTokenizers;
+	std::vector<std::shared_ptr<IType>> postProcessors;
+	
+	//------------
+
+	std::vector<char> LoadFile();
+
+	void LoadAddedTokens(cJSON* json);
+
+	void LoadPreTokenizer(cJSON* json);	
+	void LoadPostProcessor(cJSON* json);
+
+	std::vector<std::shared_ptr<IType>> LoadSequenceType(cJSON* json);
+
+	std::shared_ptr<SplitType> LoadSplitType(cJSON* json);
+	std::shared_ptr<ByteLevelType> LoadByteLevelType(cJSON* json);
+	std::shared_ptr<TemplateProcessingType> LoadTemplateProcessingType(cJSON* json);
+	
+	Token LoadSpecialTokenOrSequence(cJSON* json);
+
+
+	void LoadModelInfo(cJSON* json);
+	void LoadModelVocab(cJSON* json);
+	void LoadModelMerges(cJSON* json);
+};
+
+#endif

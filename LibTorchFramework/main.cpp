@@ -94,6 +94,7 @@
 #include "./CustomScenarios/U2NetTraining/setup_u2net.h"
 #include "./CustomScenarios/UNetTraining/setup_unet.h"
 #include "./CustomScenarios/SDVAE/setup_sdvae.h"
+#include "./CustomScenarios/LLMs/setup_llama.h"
 
 #include "./Settings.h"
 
@@ -192,8 +193,9 @@ int main()
     auto out2 = df->forward(input);
     
 
-    CustomScenarios::SDVAETraining::setup();
+    CustomScenarios::LLMs::Llama::setup();
 
+    //CustomScenarios::SDVAETraining::setup();
     //CustomScenarios::MrmsTraining::setup();
     //CustomScenarios::UNetTraining::setup();
     return 0;
