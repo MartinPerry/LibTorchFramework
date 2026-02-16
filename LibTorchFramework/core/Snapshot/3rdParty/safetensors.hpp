@@ -427,7 +427,7 @@ namespace safetensors
                                                info.shape,
                                                options)
                                                .clone(); // Clone to own the data
-
+                
                 if (is_big_endian() && (dtype == torch::kFloat16 || dtype == torch::kFloat32 || dtype == torch::kFloat64))
                 {
                     auto data_ptr = static_cast<char *>(cpu_tensor.data_ptr());

@@ -54,8 +54,7 @@ namespace ModelZoo
             torch::Tensor forward(const torch::Tensor& x, const torch::Tensor& cos, const torch::Tensor& sin,
                 const torch::Tensor& attn_mask);
 
-        protected:
-            int64_t dim;
+        protected:            
             int64_t n_heads;
             int64_t n_kv_heads;
             int64_t head_dim;
@@ -125,14 +124,8 @@ namespace ModelZoo
             torch::Tensor forward(const torch::Tensor& input_ids, bool use_ckpt = false);
 
         protected:
-            LlamaConfig cfg;
-            int64_t vocab_size;
-            int64_t dim;
-            int64_t n_layers;
-            int64_t n_heads;
-            int64_t n_kv_heads;
-            int64_t hidden_dim;
-            double rms_eps;
+            LlamaConfig cfg;            
+                                                      
 
             torch::nn::Embedding tok_emb{ nullptr };
             torch::nn::ModuleList layers;

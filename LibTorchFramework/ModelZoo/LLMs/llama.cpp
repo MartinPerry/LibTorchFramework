@@ -154,8 +154,7 @@ torch::Tensor MLPImpl::forward(const torch::Tensor& x)
 
 //========================================================================
 
-AttentionImpl::AttentionImpl(int64_t dim, int64_t n_heads, std::optional<int64_t> n_kv_heads_opt) :
-	dim(dim),
+AttentionImpl::AttentionImpl(int64_t dim, int64_t n_heads, std::optional<int64_t> n_kv_heads_opt) :	
 	n_heads(n_heads),
 	n_kv_heads(n_kv_heads_opt.has_value() ? n_kv_heads_opt.value() : n_heads),
 	head_dim(dim / n_heads) 
@@ -253,27 +252,22 @@ torch::Tensor BlockImpl::forward(const torch::Tensor& x, const torch::Tensor& co
 
 LlamaForCausalLM::LlamaForCausalLM(const LlamaConfig& cfg) : 
 	cfg(cfg) 
-{
-	return;
-	vocab_size = cfg.vocab_size;
-	dim = cfg.hidden_size;
-	n_layers = cfg.num_hidden_layers;
-	n_heads = cfg.num_attention_heads;
-	n_kv_heads = cfg.num_key_value_heads.has_value() ? cfg.num_key_value_heads.value() : n_heads;
-	hidden_dim = cfg.intermediate_size.has_value() ? cfg.intermediate_size.value() : 4 * dim;
-	rms_eps = cfg.rms_norm_eps;
-
-	AUTO_REGISTER_NEW_MODULE(tok_emb, torch::nn::Embedding(vocab_size, dim));
+{		
+	
+	int64_t n_kv_heads = cfg.num_key_value_heads.has_value() ? cfg.num_key_value_heads.value() : cfg.num_attention_heads;
+	int64_t hidden_dim = cfg.intermediate_size.has_value() ? cfg.intermediate_size.value() : 4 * cfg.hidden_size;
+	
+	AUTO_REGISTER_NEW_MODULE(tok_emb, torch::nn::Embedding(cfg.vocab_size, cfg.hidden_size));
 	
 	AUTO_REGISTER_NEW_MODULE(layers, torch::nn::ModuleList());
-	for (int64_t i = 0; i < n_layers; ++i) 
-	{
-		layers->push_back(Block(dim, n_heads, hidden_dim, n_kv_heads, rms_eps));
+	for (int64_t i = 0; i < cfg.num_hidden_layers; ++i)
+	{		
+		layers->push_back(Block(cfg.hidden_size, cfg.num_attention_heads, hidden_dim, n_kv_heads, cfg.rms_norm_eps));
 	}
 
-	AUTO_REGISTER_NEW_MODULE(norm, RMSNorm(dim, rms_eps));
+	AUTO_REGISTER_NEW_MODULE(norm, RMSNorm(cfg.hidden_size, cfg.rms_norm_eps));
 
-	AUTO_REGISTER_NEW_MODULE(lm_head, torch::nn::Linear(torch::nn::LinearOptions(dim, vocab_size).bias(false)));
+	AUTO_REGISTER_NEW_MODULE(lm_head, torch::nn::Linear(torch::nn::LinearOptions(cfg.hidden_size, cfg.vocab_size).bias(false)));
 
 	if (cfg.tie_word_embeddings) 
 	{
@@ -319,7 +313,8 @@ std::pair<torch::Tensor, torch::Tensor> LlamaForCausalLM::precompute_rope_freque
 {
 	auto inv_freq = 1.0 / torch::pow(
 		torch::tensor(base, torch::TensorOptions().device(device)),
-		torch::arange(0, dim, 2, torch::TensorOptions().device(device).dtype(torch::kFloat)) / static_cast<double>(dim));
+		torch::arange(0, dim, 2, torch::TensorOptions().device(device).dtype(torch::kFloat)) / static_cast<double>(dim)
+	);
 	auto t = torch::arange(max_seq_len, torch::TensorOptions().device(device).dtype(torch::kFloat));
 	auto freqs = torch::outer(t, inv_freq);
 	auto cos = torch::cos(freqs);
@@ -339,7 +334,7 @@ std::pair<torch::Tensor, torch::Tensor> LlamaForCausalLM::get_rope(int64_t T,
 {
 	if (_rope_len < T || _rope_cos.device() != device) 
 	{
-		auto head_dim = dim / n_heads;
+		auto head_dim = cfg.hidden_size / cfg.num_attention_heads;
 		auto rope = precompute_rope_frequencies(head_dim, T, cfg.rope_theta, device, dtype);
 		_rope_cos = rope.first;
 		_rope_sin = rope.second;
@@ -350,8 +345,7 @@ std::pair<torch::Tensor, torch::Tensor> LlamaForCausalLM::get_rope(int64_t T,
 }
 
 torch::Tensor LlamaForCausalLM::forward(const torch::Tensor& input_ids, bool use_ckpt) 
-{
-	(void)use_ckpt;
+{	
 	auto device = input_ids.device();
 	auto T = input_ids.size(1);
 

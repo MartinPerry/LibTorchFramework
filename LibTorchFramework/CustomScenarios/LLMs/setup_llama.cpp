@@ -56,6 +56,103 @@ using namespace ModelZoo::llama;
 
 namespace CustomScenarios::LLMs::Llama
 {
+    
+    void SmokeTestInference(
+        LlamaForCausalLM& model,
+        TokenizerBPE& bpe,
+        const torch::Device& device,
+        int64_t seqLen,
+        int64_t steps)
+    {
+        torch::NoGradGuard noGrad;
+        model.eval();
+
+        StringUtf8 prompt = u8"Hello! Briefly explain what weather warnings are.\n";
+
+        std::vector<TokenId> ids;
+        try
+        {
+            ids = bpe.Encode(prompt, true, false);
+        }
+        catch (const std::exception& ex)
+        {
+            std::cout << "SMOKE tokenizer call is a dummy placeholder: " << ex.what() << std::endl;
+            model.train();
+            return;
+        }
+
+        if (ids.size() < 4)
+        {
+            throw std::runtime_error("Tokenizer returned too few tokens; special tokens may be wrong.");
+        }
+
+        if (static_cast<int64_t>(ids.size()) > seqLen)
+        {
+            ids.resize(static_cast<size_t>(seqLen));
+        }
+
+        torch::Tensor x = torch::tensor(ids, torch::TensorOptions().dtype(torch::kLong).device(device)).unsqueeze(0);
+        torch::Tensor logits = model.forward(x, false);
+
+        std::cout << "SMOKE logits: " << logits.sizes() << " dtype: " << logits.dtype() << std::endl;
+
+        const int64_t vocabSize = logits.size(-1);
+        
+
+        if (x.size(1) >= 2)
+        {
+            torch::Tensor y = x.index({ torch::indexing::Slice(), torch::indexing::Slice(1, torch::indexing::None) }).contiguous();
+            torch::Tensor shifted = logits.index({ torch::indexing::Slice(), torch::indexing::Slice(0, -1), torch::indexing::Slice() }).contiguous();
+            torch::Tensor loss = torch::nn::functional::cross_entropy(
+                shifted.view({ -1, vocabSize }),
+                y.view({ -1 }));
+
+            std::cout << "SMOKE loss: " << loss.item<double>() << std::endl;
+            if (!torch::isfinite(loss).item<bool>())
+            {
+                throw std::runtime_error("Loss is not finite; weights or dtype issue.");
+            }
+        }
+
+        torch::Tensor generated = x.clone();
+        for (int64_t i = 0; i < steps; ++i)
+        {
+            const int64_t start = std::max<int64_t>(0, generated.size(1) - seqLen);
+            torch::Tensor context = generated.index(
+                { torch::indexing::Slice(), torch::indexing::Slice(start, torch::indexing::None) });
+
+            logits = model.forward(context, false);
+            torch::Tensor nextId = std::get<1>(logits.index({ 0, -1 }).max(-1, true)).view({ 1, 1 });
+            generated = torch::cat({ generated, nextId }, 1);
+
+            if ((bpe.GetEos().id != -1) && (nextId.item<int64_t>() == bpe.GetEos().id))
+            {
+                break;
+            }
+        }
+
+        std::vector<TokenId> outIds(generated.size(1));
+        torch::Tensor generatedCpu = generated.to(torch::kCPU).contiguous();
+        auto* ptr = generatedCpu.data_ptr<int64_t>();
+        for (int64_t i = 0; i < generatedCpu.size(1); ++i)
+        {
+            outIds[static_cast<size_t>(i)] = static_cast<TokenId>(ptr[i]);
+        }
+
+        try
+        {
+            StringUtf8 decoded = bpe.Decode(outIds);
+            std::cout << "\n=== SMOKE GENERATED ===\n" << ((const char*)decoded.c_str()) << "\n======================\n" << std::endl;
+        }
+        catch (const std::exception& ex)
+        {
+            std::cout << "SMOKE decode() is a dummy placeholder: " << ex.what() << std::endl;
+        }
+
+        model.train();
+    }
+
+
 	void setup()
 	{
 		std::string modelDir = "e:\\Programming\\Python\\test\\PythonApplication1\\py_cpt\\Llama-3.2-3B-Instruct\\";
@@ -70,5 +167,12 @@ namespace CustomScenarios::LLMs::Llama
 		auto bpe = TokenizerBPE("d://tokenizer.json");
 		bpe.Load();
 
+        auto device = torch::kCUDA;
+        
+        llama.to(device);
+
+        SmokeTestInference(llama, bpe, device, 256, 40);
+
+        printf("=====");
 	}
 }

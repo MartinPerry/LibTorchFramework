@@ -95,10 +95,6 @@ void SafeTensorLoader::MergeTensorMap(TensorMap& out, const TensorMap& add) cons
 }
 
 
-
-
-
-
 LoadStateDictReport SafeTensorLoader::LoadMappedStateDict(
 	AbstractModel& model,
 	const TensorMap& mappedStateDict,
@@ -110,7 +106,7 @@ LoadStateDictReport SafeTensorLoader::LoadMappedStateDict(
 	auto params = model.named_parameters(true);
 	for (auto& item : params)
 	{
-		targetTensors[item.key()] = &item.value();
+		targetTensors.try_emplace(item.key(), &item.value());
 		allTargetKeys.push_back(item.key());
 	}
 
@@ -130,8 +126,7 @@ LoadStateDictReport SafeTensorLoader::LoadMappedStateDict(
 
 			torch::Tensor& dstTensor = *it->second;
 			if (dstTensor.sizes() != srcTensor.sizes())
-			{
-				std::ostringstream oss;
+			{				
 				MY_LOG_ERROR("Shape mismatch for key '%s'", key.c_str());
 
 				//: model=, checkpoint=

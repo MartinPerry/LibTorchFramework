@@ -21,6 +21,16 @@ TokenizerBPE::~TokenizerBPE()
 {	
 }
 
+const Token& TokenizerBPE::GetBos() const
+{
+	return this->bos;
+}
+
+const Token& TokenizerBPE::GetEos() const
+{
+	return this->eos;
+}
+
 void TokenizerBPE::Load()
 {
 	this->CreateBytesToUnicodeMapping();

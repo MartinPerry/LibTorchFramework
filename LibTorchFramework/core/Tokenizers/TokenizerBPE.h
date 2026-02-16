@@ -15,6 +15,9 @@ public:
 	TokenizerBPE(const std::string& jsonPath);
 	~TokenizerBPE();
 
+	const Token& GetBos() const;
+	const Token& GetEos() const;
+
 	void Load();
 
 	std::vector<TokenId> Encode(const StringUtf8& str, bool addBos, bool addEos);
