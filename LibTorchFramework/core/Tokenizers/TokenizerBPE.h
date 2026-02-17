@@ -30,6 +30,8 @@ protected:
 	Token bos;
 	Token eos;
 
+	std::unordered_map<StringUtf8, TokenId> specialTokenIds;
+
 	std::unordered_map<StringUtf8Hash, std::unordered_map<StringUtf8Hash, int>> bpeRanks;
 
 	std::shared_ptr<UnicodeRegex> splitRx;
@@ -43,6 +45,8 @@ protected:
 	void CreateBytesToUnicodeMapping();
 
 	std::vector<StringUtf8> SplitIsolated(const StringUtf8& str);
+
+	std::vector<std::pair<bool, StringUtf8>> SplitSpecialTokens(const StringUtf8& str) const;
 
 	std::vector<TokenId> EncodePiece(const std::vector<UnicodeCodePoint>& u);
 	

@@ -18,6 +18,7 @@
 #include <cstring>
 #include <algorithm>
 #include <climits>
+#include <functional>
 
 //removed direct mmap with wraper
 #include <fcntl.h>
@@ -356,8 +357,11 @@ namespace safetensors
         return dest.u;
     }
 
-    inline std::unordered_map<std::string, torch::Tensor> load_safetensors(const std::string &filename)
+    
+    inline std::unordered_map<std::string, torch::Tensor> load_safetensors_with_remap(const std::string& filename, 
+        std::function<std::string(const std::string&)> remap)
     {
+        
         auto memFile = MemMapFile(filename.c_str(), O_RDONLY);
         
         if (memFile.IsOpened() == false)
@@ -437,7 +441,14 @@ namespace safetensors
                     }
                 }   
 
-                tensors.try_emplace(name, cpu_tensor);
+                if (remap)
+                {                    
+                    tensors.try_emplace(remap(name), cpu_tensor);
+                }
+                else
+                {
+                    tensors.try_emplace(name, cpu_tensor);
+                }
             }
 
             memFile.Close();
@@ -450,6 +461,12 @@ namespace safetensors
             throw;
         }
     }
+
+    inline std::unordered_map<std::string, torch::Tensor> load_safetensors(const std::string& filename)
+    {
+        return load_safetensors_with_remap(filename, nullptr);
+    }
+
 
     inline void save_safetensors(const std::unordered_map<std::string, torch::Tensor> &tensors, const std::string &filename, const std::unordered_map<std::string, std::string> &metadata = {})
     {

@@ -51,6 +51,17 @@ void TokenizerBPE::Load()
 	eos.id = this->GetSpecialTokenId(eos.content);
 	
 	
+	this->specialTokenIds.clear();
+	
+	
+	const auto& added = json->AddedTokens();
+	for (const auto& it : added)
+	{
+		//StringUtf8Hash h = Token::CalcHash(it.content);
+		this->specialTokenIds.try_emplace(it.content, it.id);
+	}
+	
+
 	splitRx = std::make_shared<UnicodeRegex>(split->regex);
 	
 
@@ -206,6 +217,60 @@ std::vector<StringUtf8> TokenizerBPE::SplitIsolated(const StringUtf8& str)
 }
 
 
+std::vector<std::pair<bool, StringUtf8>> TokenizerBPE::SplitSpecialTokens(const StringUtf8& str) const
+{
+	if (str.empty())
+	{
+		return {};
+	}
+	if (this->specialTokenIds.empty())
+	{
+		return { { false, str } };
+	}
+
+	std::vector<std::pair<bool, StringUtf8>> out;
+	size_t pos = 0;
+	while (pos < str.size())
+	{
+		size_t bestPos = StringUtf8::npos;
+		StringUtf8 bestToken;
+
+		for (const auto& kv : this->specialTokenIds)
+		{
+			const auto& tok = kv.first;
+			
+			size_t found = str.find(tok, pos);
+			if (found == StringUtf8::npos)
+			{
+				continue;
+			}
+
+			if ((bestPos == StringUtf8::npos) || (found < bestPos) || ((found == bestPos) && (tok.size() > bestToken.size())))
+			{
+				bestPos = found;
+				bestToken = tok;
+			}
+		}
+
+		if (bestPos == StringUtf8::npos)
+		{
+			out.emplace_back(false, str.substr(pos));
+			break;
+		}
+
+		if (bestPos > pos)
+		{
+			out.emplace_back(false, str.substr(pos, bestPos - pos));
+		}
+
+		out.emplace_back(true, bestToken);
+		pos = bestPos + bestToken.size();
+	}
+
+	return out;
+}
+
+
 std::vector<TokenId> TokenizerBPE::EncodePiece(const std::vector<UnicodeCodePoint>& unicodes)
 {
 	
@@ -340,21 +405,42 @@ std::vector<TokenId> TokenizerBPE::Encode(const StringUtf8& str, bool addBos, bo
 		ids.push_back(bos.id);
 	}
 
-	for (const auto& p : pieces)
+	auto split = this->SplitSpecialTokens(str);
+	for (const auto& segment : split)
 	{
-		
-		std::vector<UnicodeCodePoint> unicodes;
-		
-		for (auto b : p)
+		if (segment.second.empty())
 		{
-			unicodes.push_back(this->bytesToUnicodeMapping[b]);
+			continue;
 		}
-		
 
-		auto tmp = this->EncodePiece(unicodes);
+		if (segment.first)
+		{
+			auto it = this->specialTokenIds.find(segment.second);
+			if (it != this->specialTokenIds.end())
+			{
+				ids.push_back(it->second);
+			}
+			continue;
+		}
 
-		ids.insert(ids.end(), tmp.begin(), tmp.end());		
+		auto pieces = this->SplitIsolated(segment.second);
+		for (const auto& p : pieces)
+		{
+
+			std::vector<UnicodeCodePoint> unicodes;
+
+			for (auto b : p)
+			{
+				unicodes.push_back(this->bytesToUnicodeMapping[b]);
+			}
+
+
+			auto tmp = this->EncodePiece(unicodes);
+
+			ids.insert(ids.end(), tmp.begin(), tmp.end());
+		}
 	}
+
 
 	if ((addEos) && (eos.id != -1))
 	{

@@ -102,6 +102,9 @@ namespace ModelZoo
 
             static LlamaConfig FromJsonString(const std::string& jsonText);
             static LlamaConfig FromJsonFile(const std::string& filePath);
+
+            static std::u8string InstructPrompt(std::u8string_view userText,
+                std::u8string_view systemText = u8"You are a helpful assistant.");
         };
 
         //========================================================================

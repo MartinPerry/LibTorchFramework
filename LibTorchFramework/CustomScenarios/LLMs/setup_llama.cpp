@@ -67,20 +67,11 @@ namespace CustomScenarios::LLMs::Llama
         torch::NoGradGuard noGrad;
         model.eval();
 
-        StringUtf8 prompt = u8"Hello! Briefly explain what weather warnings are.\n";
+        StringUtf8 prompt = LlamaConfig::InstructPrompt(u8"Hello! Briefly explain what weather warnings are.\n");
 
         std::vector<TokenId> ids;
-        try
-        {
-            ids = bpe.Encode(prompt, true, false);
-        }
-        catch (const std::exception& ex)
-        {
-            std::cout << "SMOKE tokenizer call is a dummy placeholder: " << ex.what() << std::endl;
-            model.train();
-            return;
-        }
-
+        ids = bpe.Encode(prompt, false, false);
+        
         if (ids.size() < 4)
         {
             throw std::runtime_error("Tokenizer returned too few tokens; special tokens may be wrong.");
@@ -114,6 +105,8 @@ namespace CustomScenarios::LLMs::Llama
             }
         }
 
+        //================================================
+        //Greedy generation
         torch::Tensor generated = x.clone();
         for (int64_t i = 0; i < steps; ++i)
         {
@@ -130,6 +123,7 @@ namespace CustomScenarios::LLMs::Llama
                 break;
             }
         }
+        //================================================
 
         std::vector<TokenId> outIds(generated.size(1));
         torch::Tensor generatedCpu = generated.to(torch::kCPU).contiguous();
@@ -139,16 +133,9 @@ namespace CustomScenarios::LLMs::Llama
             outIds[static_cast<size_t>(i)] = static_cast<TokenId>(ptr[i]);
         }
 
-        try
-        {
-            StringUtf8 decoded = bpe.Decode(outIds);
-            std::cout << "\n=== SMOKE GENERATED ===\n" << ((const char*)decoded.c_str()) << "\n======================\n" << std::endl;
-        }
-        catch (const std::exception& ex)
-        {
-            std::cout << "SMOKE decode() is a dummy placeholder: " << ex.what() << std::endl;
-        }
-
+        StringUtf8 decoded = bpe.Decode(outIds);
+        std::cout << "\n=== SMOKE GENERATED ===\n" << ((const char*)decoded.c_str()) << "\n======================\n" << std::endl;
+        
         model.train();
     }
 
@@ -157,6 +144,13 @@ namespace CustomScenarios::LLMs::Llama
 	{
 		std::string modelDir = "e:\\Programming\\Python\\test\\PythonApplication1\\py_cpt\\Llama-3.2-3B-Instruct\\";
 
+        auto bpe = TokenizerBPE("d://tokenizer.json");
+        bpe.Load();
+        StringUtf8 prompt = LlamaConfig::InstructPrompt(u8"Hello! Briefly explain what weather warnings are.\n");
+
+        std::vector<TokenId> ids;
+        ids = bpe.Encode(prompt, false, false);
+
 		LlamaConfig cfg = LlamaConfig::FromJsonFile(modelDir + "config.json");
 
 		LlamaForCausalLM llama(cfg);
@@ -164,9 +158,7 @@ namespace CustomScenarios::LLMs::Llama
 		LLamaSafeTensorLoader tl;
 		tl.LoadFromHfSafetensors(llama, modelDir);
 
-		auto bpe = TokenizerBPE("d://tokenizer.json");
-		bpe.Load();
-
+		
         auto device = torch::kCUDA;
         
         llama.to(device);

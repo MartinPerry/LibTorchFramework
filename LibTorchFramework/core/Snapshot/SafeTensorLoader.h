@@ -27,8 +27,11 @@ public:
 
     TensorMap LoadSafetensorsSharded(const std::filesystem::path& modelDir);
 
+    TensorMap LoadSafetensorsSharded(const std::filesystem::path& modelDir,
+        std::function<std::string(const std::string&)> remap);
+
     
-    LoadStateDictReport LoadMappedStateDict(
+    LoadStateDictReport FillModelStateDict(
         AbstractModel& model,
         const TensorMap& mappedStateDict,
         bool strict = false);
@@ -37,7 +40,8 @@ public:
 protected:
     void MergeTensorMap(TensorMap& out, const TensorMap& add) const;
     
-    TensorMap LoadFromFile(const std::filesystem::path& fileName);
+    TensorMap LoadFromFile(const std::filesystem::path& fileName,
+        std::function<std::string(const std::string&)> remap);
 };
 
 #endif

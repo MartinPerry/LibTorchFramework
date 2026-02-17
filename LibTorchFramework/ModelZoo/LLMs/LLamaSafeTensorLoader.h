@@ -21,15 +21,22 @@ namespace ModelZoo
         {
         public:
 
-            TensorMap MapHfKeysToOurs(
-                const TensorMap& rawStateDict,
-                const LlamaConfig& cfg);
-
             LoadStateDictReport LoadFromHfSafetensors(
                 LlamaForCausalLM& model,                
                 const std::filesystem::path& modelDir,                
                 bool strict = false);
+            
 
+        protected:
+            std::unordered_map<std::string, std::string> mapping;
+
+            void CreateMapping(const LlamaConfig& cfg);
+
+            std::string MappingHfKeysToOurs(const std::string& hfName);
+
+            TensorMap MapHfKeysToOurs(
+                const TensorMap& rawStateDict,
+                const LlamaConfig& cfg);
 
         };
 

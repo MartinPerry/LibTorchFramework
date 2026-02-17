@@ -11,14 +11,21 @@
 #include "../AbstractModel.h"
 
 
-TensorMap SafeTensorLoader::LoadFromFile(const std::filesystem::path& fileName)
+TensorMap SafeTensorLoader::LoadFromFile(const std::filesystem::path& fileName,
+	std::function<std::string(const std::string&)> remap)
 {
-	auto tensors = safetensors::load_safetensors(fileName.string());
+	auto tensors = safetensors::load_safetensors_with_remap(fileName.string(), remap);
 
 	return tensors;
 }
 
 TensorMap SafeTensorLoader::LoadSafetensorsSharded(const std::filesystem::path& modelDir)
+{
+	return LoadSafetensorsSharded(modelDir, nullptr);
+}
+
+TensorMap SafeTensorLoader::LoadSafetensorsSharded(const std::filesystem::path& modelDir,
+	std::function<std::string(const std::string&)> remap)
 {
 	if (!std::filesystem::exists(modelDir))
 	{
@@ -51,7 +58,7 @@ TensorMap SafeTensorLoader::LoadSafetensorsSharded(const std::filesystem::path& 
 		std::sort(shards.begin(), shards.end());
 		for (const auto& shard : shards)
 		{
-			auto shardData = LoadFromFile(shard);
+			auto shardData = LoadFromFile(shard, remap);
 			MergeTensorMap(stateDict, shardData);
 		}
 		return stateDict;
@@ -81,7 +88,7 @@ TensorMap SafeTensorLoader::LoadSafetensorsSharded(const std::filesystem::path& 
 		singlePath = candidates.front();
 	}
 
-	return LoadFromFile(singlePath);
+	return LoadFromFile(singlePath, remap);
 }
 
 
@@ -95,7 +102,7 @@ void SafeTensorLoader::MergeTensorMap(TensorMap& out, const TensorMap& add) cons
 }
 
 
-LoadStateDictReport SafeTensorLoader::LoadMappedStateDict(
+LoadStateDictReport SafeTensorLoader::FillModelStateDict(
 	AbstractModel& model,
 	const TensorMap& mappedStateDict,
 	bool strict)

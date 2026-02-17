@@ -122,6 +122,31 @@ LlamaConfig LlamaConfig::FromJsonFile(const std::string& filePath)
 	return FromJsonString(data.c_str());
 }
 
+std::u8string LlamaConfig::InstructPrompt(std::u8string_view userText, 
+	std::u8string_view systemText)
+{
+	std::u8string out;
+	out.reserve(
+		128 + userText.size() + systemText.size()
+	);
+
+	out += u8"<|begin_of_text|>";
+	out += u8"<|start_header_id|>system<|end_header_id|>\n";
+	out += systemText;
+	out += u8"\n";
+	out += u8"<|eot_id|>";
+	out += u8"<|start_header_id|>user<|end_header_id|>\n";
+	out += userText;
+	out += u8"\n";
+	out += u8"<|eot_id|>";
+	out += u8"<|start_header_id|>assistant<|end_header_id|>\n";
+
+	return out;
+}
+
+
+//========================================================================
+//========================================================================
 //========================================================================
 
 // ---- Layers ----
