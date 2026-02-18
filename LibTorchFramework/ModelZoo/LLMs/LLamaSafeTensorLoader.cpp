@@ -38,6 +38,17 @@ void LLamaSafeTensorLoader::CreateMapping(const LlamaConfig& cfg)
 		const std::string prefixHf = "model.layers." + std::to_string(i) + ".";
 		const std::string prefixOurs = "layers." + std::to_string(i) + ".";
 
+		mapping[prefixHf + "input_layernorm.weight"] = prefixOurs + "attn_norm.weight";
+		mapping[prefixHf + "post_attention_layernorm.weight"] = prefixOurs + "ffn_norm.weight";
+		mapping[prefixHf + "self_attn.q_proj.weight"] = prefixOurs + "attn.q_proj.weight";
+		mapping[prefixHf + "self_attn.k_proj.weight"] = prefixOurs + "attn.k_proj.weight";
+		mapping[prefixHf + "self_attn.v_proj.weight"] = prefixOurs + "attn.v_proj.weight";
+		mapping[prefixHf + "self_attn.o_proj.weight"] = prefixOurs + "attn.o_proj.weight";
+		mapping[prefixHf + "mlp.gate_proj.weight"] = prefixOurs + "mlp.gate_proj.weight";
+		mapping[prefixHf + "mlp.up_proj.weight"] = prefixOurs + "mlp.up_proj.weight";
+		mapping[prefixHf + "mlp.down_proj.weight"] = prefixOurs + "mlp.down_proj.weight";
+
+		/*
 		mapping[prefixOurs + "attn_norm.weight"] = prefixHf + "input_layernorm.weight";
 		mapping[prefixOurs + "ffn_norm.weight"] = prefixHf + "post_attention_layernorm.weight";
 		mapping[prefixOurs + "attn.q_proj.weight"] = prefixHf + "self_attn.q_proj.weight";
@@ -47,6 +58,7 @@ void LLamaSafeTensorLoader::CreateMapping(const LlamaConfig& cfg)
 		mapping[prefixOurs + "mlp.gate_proj.weight"] = prefixHf + "mlp.gate_proj.weight";
 		mapping[prefixOurs + "mlp.up_proj.weight"] = prefixHf + "mlp.up_proj.weight";
 		mapping[prefixOurs + "mlp.down_proj.weight"] = prefixHf + "mlp.down_proj.weight";
+		*/
 	}
 
 }

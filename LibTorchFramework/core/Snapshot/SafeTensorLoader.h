@@ -40,17 +40,12 @@ public:
         AbstractModel& model,
         const TensorMap& mappedStateDict,
         bool strict = false);
-
-    LoadStateDictReport FillModelStateDict(
-        std::unordered_map<std::string, torch::Tensor*> stateDict,
-        const TensorMap& mappedStateDict,
-        bool strict = false);
+   
 
 protected:
     void MergeTensorMap(TensorMap& out, const TensorMap& add) const;
     
-    std::unordered_map<std::string, torch::Tensor*> GetModelParams(AbstractModel& model);
-
+    
     std::vector<std::filesystem::path> LoadShardsFileNames(const std::filesystem::path& modelDir);
 };
 

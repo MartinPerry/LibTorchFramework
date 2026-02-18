@@ -63,10 +63,18 @@ LoadStateDictReport SafeTensorLoader::LoadSafetensors(const std::filesystem::pat
 		return {};
 	}
 
-	auto modelStateDict = this->GetModelParams(model);
+	std::unordered_map<std::string, torch::Tensor*> modelStateDict;
+
+	auto params = model.named_parameters(true);
+	for (auto& item : params)
+	{
+		modelStateDict.try_emplace(item.key(), &item.value());
+	}
 
 	std::unordered_set<std::string> loadedKeys;
 	std::vector<std::string> unexpected;
+
+	torch::NoGradGuard noGrad;
 
 	TensorMap stateDict;
 	for (const auto& shard : shards)
@@ -95,7 +103,7 @@ LoadStateDictReport SafeTensorLoader::LoadSafetensors(const std::filesystem::pat
 				false,
 				false);
 			//.clone() ?
-
+			
 			dstTensor.copy_(converted);
 			loadedKeys.insert(key);
 		});
@@ -202,35 +210,20 @@ void SafeTensorLoader::MergeTensorMap(TensorMap& out, const TensorMap& add) cons
 	}
 }
 
-std::unordered_map<std::string, torch::Tensor*> SafeTensorLoader::GetModelParams(AbstractModel& model)
-{
-	std::unordered_map<std::string, torch::Tensor*> targetTensors;
-	
-	auto params = model.named_parameters(true);
-	for (auto& item : params)
-	{
-		targetTensors.try_emplace(item.key(), &item.value());		
-	}
-
-	return targetTensors;
-}
 
 LoadStateDictReport SafeTensorLoader::FillModelStateDict(
 	AbstractModel& model,
 	const TensorMap& mappedStateDict,
 	bool strict)
 {
-	std::unordered_map<std::string, torch::Tensor*> modelStateDict = this->GetModelParams(model);
+	std::unordered_map<std::string, torch::Tensor*> modelStateDict;
 
-	return this->FillModelStateDict(modelStateDict, mappedStateDict, strict);
-}
-
-LoadStateDictReport SafeTensorLoader::FillModelStateDict(
-	std::unordered_map<std::string, torch::Tensor*> modelStateDict,
-	const TensorMap& mappedStateDict,
-	bool strict)
-{
-
+	auto params = model.named_parameters(true);
+	for (auto& item : params)
+	{
+		modelStateDict.try_emplace(item.key(), &item.value());
+	}
+	
 	std::unordered_set<std::string> loadedKeys;
 	std::vector<std::string> unexpected;
 
