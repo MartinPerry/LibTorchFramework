@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <utility>
 #include <optional>
+#include <vector>
 
 #include <torch/torch.h>
 
@@ -15,6 +16,29 @@ namespace ModelZoo
 {
     namespace llama
     {
+        struct KVCache
+        {
+            torch::Tensor k;
+            torch::Tensor v;
+
+            KVCache() = default;
+
+            KVCache(torch::Tensor k, torch::Tensor v) : 
+                k(std::move(k)), 
+                v(std::move(v)) 
+            {}
+
+            bool defined() const noexcept
+            {
+                return k.defined() && v.defined();
+            }
+
+            void reset() noexcept
+            {
+                k = torch::Tensor();
+                v = torch::Tensor();
+            }
+        };
 
         struct RMSNormImpl : torch::nn::Module 
         {
@@ -50,9 +74,15 @@ namespace ModelZoo
         struct AttentionImpl : torch::nn::Module 
         {       
         public:
+           
             AttentionImpl(int64_t dim, int64_t n_heads, std::optional<int64_t> n_kv_heads_opt = std::nullopt);
-            torch::Tensor forward(const torch::Tensor& x, const torch::Tensor& cos, const torch::Tensor& sin,
-                const torch::Tensor& attn_mask);
+           
+            std::pair<torch::Tensor, std::optional<KVCache>> forward(const torch::Tensor& x,
+                const torch::Tensor& cos, const torch::Tensor& sin,
+                const torch::Tensor& attn_mask, 
+                const std::optional<KVCache>& past_kv = std::nullopt, 
+                bool use_cache = false, 
+                int64_t cache_position = 0);
 
         protected:            
             int64_t n_heads;
@@ -63,8 +93,9 @@ namespace ModelZoo
             torch::nn::Linear v_proj{ nullptr };
             torch::nn::Linear o_proj{ nullptr };
 
-            torch::Tensor apply_rope(const torch::Tensor& x, const torch::Tensor& cos,
-                const torch::Tensor& sin);
+            torch::Tensor apply_rope(const torch::Tensor& x, 
+                const torch::Tensor& cos, const torch::Tensor& sin,
+                int startPos = 0);
         };
         TORCH_MODULE(Attention);
 
@@ -73,10 +104,17 @@ namespace ModelZoo
         struct BlockImpl : torch::nn::Module 
         {
         public:
+            
             BlockImpl(int64_t dim, int64_t n_heads, int64_t hidden_dim, std::optional<int64_t> n_kv_heads = std::nullopt,
                 double rms_eps = 1e-6);
-            torch::Tensor forward(const torch::Tensor& x, const torch::Tensor& cos, const torch::Tensor& sin,
-                const torch::Tensor& attn_mask, bool use_ckpt = false);
+
+            std::pair<torch::Tensor, std::optional<KVCache>> forward(const torch::Tensor& x, 
+                const torch::Tensor& cos, const torch::Tensor& sin,
+                const torch::Tensor& attn_mask, 
+                const std::optional<KVCache>& past_kv = std::nullopt,
+                bool use_cache = false, 
+                int64_t cache_position = 0);
+
         private:
             RMSNorm attn_norm{ nullptr };
             RMSNorm ffn_norm{ nullptr };
@@ -112,23 +150,28 @@ namespace ModelZoo
         struct LlamaForCausalLM : public AbstractModel
         {
         public:
-                       
+                                   
             explicit LlamaForCausalLM(const LlamaConfig& cfg);
 
             const char* GetName() const override;
 
             const LlamaConfig& GetConfig() const;
 
-            torch::Tensor get_attn_mask(int64_t T, const torch::Device& device, torch::ScalarType dtype);
-            std::pair<torch::Tensor, torch::Tensor> get_rope(int64_t T, const torch::Device& device, torch::ScalarType dtype);
+            torch::Tensor get_attn_mask(int64_t q_len, int64_t k_len, torch::ScalarType dtype, int64_t past_len = 0);
+            std::pair<torch::Tensor, torch::Tensor> get_rope(int64_t T, torch::ScalarType dtype);
 
             std::vector<torch::Tensor> RunForward(DataLoaderData& batch) override;
 
-            torch::Tensor forward(const torch::Tensor& input_ids, bool use_ckpt = false);
+            torch::Tensor forward(const torch::Tensor& input_ids);
+
+            std::pair<torch::Tensor, std::vector<KVCache>> forward_with_cache(const torch::Tensor& input_ids, 
+                const std::vector<std::optional<KVCache>>& past_key_values,
+                bool use_cache);
 
         protected:
             LlamaConfig cfg;            
                                                       
+            torch::TensorOptions tOptDevice;
 
             torch::nn::Embedding tok_emb{ nullptr };
             torch::nn::ModuleList layers;
@@ -144,7 +187,6 @@ namespace ModelZoo
             std::pair<torch::Tensor, torch::Tensor> precompute_rope_frequencies(int64_t dim,
                 int64_t max_seq_len,
                 double base,
-                torch::Device device,
                 torch::ScalarType);
             
         };
