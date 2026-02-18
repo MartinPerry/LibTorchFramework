@@ -169,9 +169,6 @@
     <Filter Include="Header Files\CustomScenarios\LLMs">
       <UniqueIdentifier>{74aa1bef-6bf3-4fb8-a103-192c0fc96582}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\core\Snapshot\3rdParty">
-      <UniqueIdentifier>{f5c894ea-ad63-40f5-8965-f4922751731e}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -326,6 +323,9 @@
     </ClCompile>
     <ClCompile Include="ModelZoo\LLMs\LLamaSafeTensorLoader.cpp">
       <Filter>Source Files\ModelZoo\LLMs</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Snapshot\safetensors.cpp">
+      <Filter>Source Files\core\Snapshot</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -518,8 +518,8 @@
     <ClInclude Include="ModelZoo\LLMs\LLamaSafeTensorLoader.h">
       <Filter>Header Files\ModelZoo\LLMs</Filter>
     </ClInclude>
-    <ClInclude Include="core\Snapshot\3rdParty\safetensors.hpp">
-      <Filter>Header Files\core\Snapshot\3rdParty</Filter>
+    <ClInclude Include="core\Snapshot\safetensors.h">
+      <Filter>Header Files\core\Snapshot</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

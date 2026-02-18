@@ -33,10 +33,7 @@ namespace ModelZoo
             void CreateMapping(const LlamaConfig& cfg);
 
             std::string MappingHfKeysToOurs(const std::string& hfName);
-
-            TensorMap MapHfKeysToOurs(
-                const TensorMap& rawStateDict,
-                const LlamaConfig& cfg);
+          
 
         };
 

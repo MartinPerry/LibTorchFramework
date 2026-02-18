@@ -25,10 +25,15 @@ public:
     SafeTensorLoader() = default;
     virtual ~SafeTensorLoader() = default;
 
-    TensorMap LoadSafetensorsSharded(const std::filesystem::path& modelDir);
+    TensorMap LoadSafetensors(const std::filesystem::path& modelDir);
 
-    TensorMap LoadSafetensorsSharded(const std::filesystem::path& modelDir,
-        std::function<std::string(const std::string&)> remap);
+    TensorMap LoadSafetensors(const std::filesystem::path& modelDir,
+        std::function<std::string(const std::string&)> remapName);
+
+    LoadStateDictReport LoadSafetensors(const std::filesystem::path& modelDir,
+        AbstractModel& model,
+        bool strict = false,
+        std::function<std::string(const std::string&)> remapName = nullptr);
 
     
     LoadStateDictReport FillModelStateDict(
@@ -36,12 +41,17 @@ public:
         const TensorMap& mappedStateDict,
         bool strict = false);
 
+    LoadStateDictReport FillModelStateDict(
+        std::unordered_map<std::string, torch::Tensor*> stateDict,
+        const TensorMap& mappedStateDict,
+        bool strict = false);
 
 protected:
     void MergeTensorMap(TensorMap& out, const TensorMap& add) const;
     
-    TensorMap LoadFromFile(const std::filesystem::path& fileName,
-        std::function<std::string(const std::string&)> remap);
+    std::unordered_map<std::string, torch::Tensor*> GetModelParams(AbstractModel& model);
+
+    std::vector<std::filesystem::path> LoadShardsFileNames(const std::filesystem::path& modelDir);
 };
 
 #endif

@@ -115,6 +115,7 @@
     <ClCompile Include="core\Runner.cpp" />
     <ClCompile Include="core\Snapshot\PretrainedManager.cpp" />
     <ClCompile Include="core\Snapshot\SafeTensorLoader.cpp" />
+    <ClCompile Include="core\Snapshot\safetensors.cpp" />
     <ClCompile Include="core\Snapshot\SnapshotLoader.cpp" />
     <ClCompile Include="core\Snapshot\SnapshotSaver.cpp" />
     <ClCompile Include="core\Tokenizers\Strings\UnicodeRegex.cpp" />
@@ -172,10 +173,10 @@
     <ClInclude Include="core\Modules\UpSample2d.h" />
     <ClInclude Include="core\Modules\WeightsInit\TruncatedNormalInit.h" />
     <ClInclude Include="core\Runner.h" />
-    <ClInclude Include="core\Snapshot\3rdParty\safetensors.hpp" />
     <ClInclude Include="core\Snapshot\FreezeInfo.h" />
     <ClInclude Include="core\Snapshot\PretrainedManager.h" />
     <ClInclude Include="core\Snapshot\SafeTensorLoader.h" />
+    <ClInclude Include="core\Snapshot\safetensors.h" />
     <ClInclude Include="core\Snapshot\SnapshotLoader.h" />
     <ClInclude Include="core\Snapshot\SnapshotSaver.h" />
     <ClInclude Include="core\Structures.h" />

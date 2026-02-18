@@ -1,49 +1,150 @@
 #include "./SafeTensorLoader.h"
 
 #include <algorithm>
-#include <stdexcept>
 #include <unordered_set>
 
 #include <Utils/Logger.h>
 
-#include "./3rdParty/safetensors.hpp"
+#include "./safetensors.h"
 
 #include "../AbstractModel.h"
 
-
-TensorMap SafeTensorLoader::LoadFromFile(const std::filesystem::path& fileName,
-	std::function<std::string(const std::string&)> remap)
+/// <summary>
+/// Load safetensor to map and return loaded data
+/// </summary>
+/// <param name="modelDir"></param>
+/// <returns></returns>
+TensorMap SafeTensorLoader::LoadSafetensors(const std::filesystem::path& modelDir)
 {
-	auto tensors = safetensors::load_safetensors_with_remap(fileName.string(), remap);
-
-	return tensors;
+	return this->LoadSafetensors(modelDir, nullptr);
 }
 
-TensorMap SafeTensorLoader::LoadSafetensorsSharded(const std::filesystem::path& modelDir)
+/// <summary>
+/// Load safetensor to map and return loaded data
+/// name of tensors are remaped based on remapName callback
+/// </summary>
+/// <param name="modelDir"></param>
+/// <param name="remapName"></param>
+/// <returns></returns>
+TensorMap SafeTensorLoader::LoadSafetensors(const std::filesystem::path& modelDir,
+	std::function<std::string(const std::string&)> remapName)
 {
-	return LoadSafetensorsSharded(modelDir, nullptr);
+	auto shards = this->LoadShardsFileNames(modelDir);
+	if (shards.size() == 0)
+	{
+		return {};
+	}
+
+	TensorMap stateDict;
+	for (const auto& shard : shards)
+	{
+		safetensors::SafeTensorManager sm;
+		auto shardData = sm.Load(shard.string(), remapName);
+		
+		this->MergeTensorMap(stateDict, shardData);
+	}
+
+	return stateDict;
 }
 
-TensorMap SafeTensorLoader::LoadSafetensorsSharded(const std::filesystem::path& modelDir,
-	std::function<std::string(const std::string&)> remap)
+/// <summary>
+/// Load safetensor and fioll data directly
+/// </summary>
+/// <param name="modelDir"></param>
+/// <param name="fill"></param>
+LoadStateDictReport SafeTensorLoader::LoadSafetensors(const std::filesystem::path& modelDir,
+	AbstractModel& model,
+	bool strict,
+	std::function<std::string(const std::string&)> remapName)
 {
+	auto shards = this->LoadShardsFileNames(modelDir);
+	if (shards.size() == 0)
+	{
+		return {};
+	}
+
+	auto modelStateDict = this->GetModelParams(model);
+
+	std::unordered_set<std::string> loadedKeys;
+	std::vector<std::string> unexpected;
+
+	TensorMap stateDict;
+	for (const auto& shard : shards)
+	{
+		safetensors::SafeTensorManager sm;
+		sm.Load(shard.string(), [&](const std::string& name, const torch::Tensor& t) {
+			auto key = (remapName) ? remapName(name) : name;
+
+			auto it = modelStateDict.find(key);
+			if (it == modelStateDict.end())
+			{
+				unexpected.push_back(key);
+				return;
+			}
+
+			torch::Tensor& dstTensor = *it->second;
+			if (dstTensor.sizes() != t.sizes())
+			{
+				MY_LOG_ERROR("Shape mismatch for key '%s'", key.c_str());
+				return;
+			}
+
+			torch::Tensor converted = t.to(
+				dstTensor.device(),
+				dstTensor.scalar_type(),
+				false,
+				false);
+			//.clone() ?
+
+			dstTensor.copy_(converted);
+			loadedKeys.insert(key);
+		});
+	}	
+
+	std::vector<std::string> missing;
+	missing.reserve(modelStateDict.size());
+	for (const auto& [key, _] : modelStateDict)
+	{
+		if (loadedKeys.find(key) == loadedKeys.end())
+		{
+			missing.push_back(key);
+		}
+	}
+
+	if (strict && (!missing.empty() || !unexpected.empty()))
+	{
+		MY_LOG_ERROR("Strict state-dict load failed");
+
+		//Missing=" << missing.size() ", Unexpected=" << unexpected.size();	
+		// 
+		return {};
+	}
+
+	return { missing, unexpected };
+}
+
+//======================
+
+std::vector<std::filesystem::path> SafeTensorLoader::LoadShardsFileNames(const std::filesystem::path& modelDir)
+{	
 	if (!std::filesystem::exists(modelDir))
 	{
 		MY_LOG_ERROR("Model directory does not exist: %s", modelDir.string().c_str());
-		throw std::runtime_error("Model directory does not exist: " + modelDir.string());
+		return {};
 	}
 	if (!std::filesystem::is_directory(modelDir))
 	{
 		MY_LOG_ERROR("Model path is not a directory: %s", modelDir.string().c_str());
-		throw std::runtime_error("Model path is not a directory: " + modelDir.string());
+		return {};
 	}
+
+	std::vector<std::filesystem::path> shards;
 
 	const std::filesystem::path indexPath = modelDir / "model.safetensors.index.json";
 	TensorMap stateDict;
 
 	if (std::filesystem::exists(indexPath))
-	{
-		std::vector<std::filesystem::path> shards;
+	{		
 		for (const auto& entry : std::filesystem::directory_iterator(modelDir))
 		{
 			if (!entry.is_regular_file())
@@ -56,16 +157,12 @@ TensorMap SafeTensorLoader::LoadSafetensorsSharded(const std::filesystem::path& 
 			}
 		}
 		std::sort(shards.begin(), shards.end());
-		for (const auto& shard : shards)
-		{
-			auto shardData = LoadFromFile(shard, remap);
-			MergeTensorMap(stateDict, shardData);
-		}
-		return stateDict;
+		
+		return shards;
 	}
 
 	std::filesystem::path singlePath = modelDir / "model.safetensors";
-	if (!std::filesystem::exists(singlePath))
+	if (std::filesystem::exists(singlePath) == false)
 	{
 		std::vector<std::filesystem::path> candidates;
 		for (const auto& entry : std::filesystem::directory_iterator(modelDir))
@@ -82,16 +179,20 @@ TensorMap SafeTensorLoader::LoadSafetensorsSharded(const std::filesystem::path& 
 		if (candidates.empty())
 		{
 			MY_LOG_ERROR("No .safetensors files found in: %s", modelDir.string().c_str());
-			throw std::runtime_error("No .safetensors files found in: " + modelDir.string());
+			return {};
 		}
 		std::sort(candidates.begin(), candidates.end());
 		singlePath = candidates.front();
+
+		shards.push_back(singlePath);
+	}
+	else 
+	{
+		shards.push_back(singlePath);
 	}
 
-	return LoadFromFile(singlePath, remap);
+	return shards;
 }
-
-
 
 void SafeTensorLoader::MergeTensorMap(TensorMap& out, const TensorMap& add) const
 {
@@ -101,21 +202,34 @@ void SafeTensorLoader::MergeTensorMap(TensorMap& out, const TensorMap& add) cons
 	}
 }
 
+std::unordered_map<std::string, torch::Tensor*> SafeTensorLoader::GetModelParams(AbstractModel& model)
+{
+	std::unordered_map<std::string, torch::Tensor*> targetTensors;
+	
+	auto params = model.named_parameters(true);
+	for (auto& item : params)
+	{
+		targetTensors.try_emplace(item.key(), &item.value());		
+	}
+
+	return targetTensors;
+}
 
 LoadStateDictReport SafeTensorLoader::FillModelStateDict(
 	AbstractModel& model,
 	const TensorMap& mappedStateDict,
 	bool strict)
 {
-	std::unordered_map<std::string, torch::Tensor*> targetTensors;
-	std::vector<std::string> allTargetKeys;
+	std::unordered_map<std::string, torch::Tensor*> modelStateDict = this->GetModelParams(model);
 
-	auto params = model.named_parameters(true);
-	for (auto& item : params)
-	{
-		targetTensors.try_emplace(item.key(), &item.value());
-		allTargetKeys.push_back(item.key());
-	}
+	return this->FillModelStateDict(modelStateDict, mappedStateDict, strict);
+}
+
+LoadStateDictReport SafeTensorLoader::FillModelStateDict(
+	std::unordered_map<std::string, torch::Tensor*> modelStateDict,
+	const TensorMap& mappedStateDict,
+	bool strict)
+{
 
 	std::unordered_set<std::string> loadedKeys;
 	std::vector<std::string> unexpected;
@@ -124,8 +238,8 @@ LoadStateDictReport SafeTensorLoader::FillModelStateDict(
 		torch::NoGradGuard noGrad;
 		for (const auto& [key, srcTensor] : mappedStateDict)
 		{
-			auto it = targetTensors.find(key);
-			if (it == targetTensors.end())
+			auto it = modelStateDict.find(key);
+			if (it == modelStateDict.end())
 			{
 				unexpected.push_back(key);
 				continue;
@@ -139,7 +253,7 @@ LoadStateDictReport SafeTensorLoader::FillModelStateDict(
 				//: model=, checkpoint=
 				//	dstTensor.sizes(), srcTensor.sizes());
 				
-				throw std::runtime_error("Shape mismatch");
+				continue;
 			}
 
 			torch::Tensor converted = srcTensor.to(
@@ -154,8 +268,8 @@ LoadStateDictReport SafeTensorLoader::FillModelStateDict(
 	}
 
 	std::vector<std::string> missing;
-	missing.reserve(allTargetKeys.size());
-	for (const auto& key : allTargetKeys)
+	missing.reserve(modelStateDict.size());
+	for (const auto& [key, _] : modelStateDict)
 	{
 		if (loadedKeys.find(key) == loadedKeys.end())
 		{
@@ -169,7 +283,7 @@ LoadStateDictReport SafeTensorLoader::FillModelStateDict(
 
 		//Missing=" << missing.size() ", Unexpected=" << unexpected.size();	
 		// 
-		throw std::runtime_error("Strict state-dict load failed");	
+		return {};
 	}
 
 	return { missing, unexpected };

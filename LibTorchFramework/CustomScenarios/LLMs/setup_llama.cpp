@@ -142,7 +142,8 @@ namespace CustomScenarios::LLMs::Llama
 
 	void setup()
 	{
-		std::string modelDir = "e:\\Programming\\Python\\test\\PythonApplication1\\py_cpt\\Llama-3.2-3B-Instruct\\";
+		//std::string modelDir = "e:\\Programming\\Python\\test\\PythonApplication1\\py_cpt\\Llama-3.2-3B-Instruct\\";
+        std::string modelDir = "e:\\_models_\\Llama-3.2-3B-Instruct\\";
 
         auto bpe = TokenizerBPE("d://tokenizer.json");
         bpe.Load();
