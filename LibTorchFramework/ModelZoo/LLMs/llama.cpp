@@ -317,10 +317,11 @@ const LlamaConfig& LlamaForCausalLM::GetConfig() const
 torch::Tensor LlamaForCausalLM::get_attn_mask(int64_t T, const torch::Device& device, 
 	torch::ScalarType dtype) 
 {
-	if (_mask_len < T || _attn_mask_cache.device() != device) 
-	{
-		auto m = torch::full({ T, T }, -std::numeric_limits<float>::infinity(),
-			torch::TensorOptions().device(device).dtype(dtype));
+	if (_mask_len < T || _attn_mask_cache.device() != device || _attn_mask_cache.scalar_type() != dtype)
+	{		
+		auto minValue = std::numeric_limits<float>::lowest();
+
+		auto m = torch::full({ T, T }, minValue, torch::TensorOptions().device(device).dtype(dtype));
 		m = torch::triu(m, 1);
 		_attn_mask_cache = m.view({ 1, 1, T, T });
 		_mask_len = T;
@@ -334,7 +335,7 @@ std::pair<torch::Tensor, torch::Tensor> LlamaForCausalLM::precompute_rope_freque
 	int64_t max_seq_len,
 	double base,
 	torch::Device device,
-	std::optional<torch::ScalarType> dtype)
+	torch::ScalarType dtype)
 {
 	auto inv_freq = 1.0 / torch::pow(
 		torch::tensor(base, torch::TensorOptions().device(device)),
@@ -344,11 +345,9 @@ std::pair<torch::Tensor, torch::Tensor> LlamaForCausalLM::precompute_rope_freque
 	auto freqs = torch::outer(t, inv_freq);
 	auto cos = torch::cos(freqs);
 	auto sin = torch::sin(freqs);
-	if (dtype.has_value())
-	{
-		cos = cos.to(dtype.value());
-		sin = sin.to(dtype.value());
-	}
+	cos = cos.to(dtype);
+	sin = sin.to(dtype);
+		
 	return { cos, sin };
 }
 
@@ -357,7 +356,7 @@ std::pair<torch::Tensor, torch::Tensor> LlamaForCausalLM::get_rope(int64_t T,
 	const torch::Device& device,
 	torch::ScalarType dtype) 
 {
-	if (_rope_len < T || _rope_cos.device() != device) 
+	if (_rope_len < T || _rope_cos.device() != device || _rope_cos.scalar_type() != dtype) 
 	{
 		auto head_dim = cfg.hidden_size / cfg.num_attention_heads;
 		auto rope = precompute_rope_frequencies(head_dim, T, cfg.rope_theta, device, dtype);
@@ -373,8 +372,8 @@ torch::Tensor LlamaForCausalLM::forward(const torch::Tensor& input_ids, bool use
 {	
 	auto device = input_ids.device();
 	auto T = input_ids.size(1);
-
-	auto x = tok_emb(input_ids);
+	
+	auto x = tok_emb(input_ids);	
 	auto attn_mask = get_attn_mask(T, device, x.scalar_type());
 	auto rope = get_rope(T, device, x.scalar_type());
 
@@ -389,9 +388,7 @@ torch::Tensor LlamaForCausalLM::forward(const torch::Tensor& input_ids, bool use
 }
 
 std::vector<torch::Tensor> LlamaForCausalLM::RunForward(DataLoaderData& batch)
-{
-	//input size must be w >= 256 and h >= 256
-
+{	
 	auto x = this->forward(batch.input);
 
 	return { x, batch.target };

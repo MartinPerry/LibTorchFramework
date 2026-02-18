@@ -143,9 +143,9 @@ namespace ModelZoo
 
             std::pair<torch::Tensor, torch::Tensor> precompute_rope_frequencies(int64_t dim,
                 int64_t max_seq_len,
-                double base = 10000.0,
-                torch::Device device = torch::kCPU,
-                std::optional<torch::ScalarType> dtype = std::nullopt);
+                double base,
+                torch::Device device,
+                torch::ScalarType);
             
         };
        
