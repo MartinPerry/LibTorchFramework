@@ -22,6 +22,11 @@ const TokenizerJsonLoader::ModelInfo& TokenizerJsonLoader::GetModelInfo() const
 	return this->mi;
 }
 
+std::shared_ptr<TokenizerJsonLoader::IType> TokenizerJsonLoader::GetNormalizer() const
+{
+	return this->normalizer;
+}
+
 const std::vector<TokenizerJsonLoader::AddedToken>& TokenizerJsonLoader::AddedTokens() const
 {
 	return this->addedTokens;
@@ -84,8 +89,8 @@ void TokenizerJsonLoader::Load()
 		auto addedTokens = cJSON_GetObjectItemCaseSensitive(json, "added_tokens");
 		this->LoadAddedTokens(addedTokens);
 
-		//todo 
-		//normalizer
+		auto normalizer = cJSON_GetObjectItemCaseSensitive(json, "normalizer");
+		this->LoadNormalizer(normalizer);
 
 		auto preTokenizer = cJSON_GetObjectItemCaseSensitive(json, "pre_tokenizer");
 		this->LoadPreTokenizer(preTokenizer);
@@ -146,6 +151,25 @@ void TokenizerJsonLoader::LoadAddedTokens(cJSON* json)
 }
 
 //=============================================================================
+// Normalizer
+//=============================================================================
+
+void TokenizerJsonLoader::LoadNormalizer(cJSON* json)
+{
+	if (json == nullptr)
+	{
+		this->normalizer = nullptr;
+		return;
+	}
+
+	auto type = cJSON_GetObjectItemCaseSensitive(json, "type")->valuestring;
+	if (strcmp(type, "Replace") == 0)
+	{		
+		this->normalizer = this->LoadReplaceType(json);
+	}
+}
+
+//=============================================================================
 // Pretokenizer
 //=============================================================================
 
@@ -155,6 +179,12 @@ void TokenizerJsonLoader::LoadAddedTokens(cJSON* json)
 /// <param name="json"></param>
 void TokenizerJsonLoader::LoadPreTokenizer(cJSON* json)
 {
+	if (json == nullptr)
+	{
+		this->preTokenizers.clear();
+		return;
+	}
+
 	auto type = cJSON_GetObjectItemCaseSensitive(json, "type")->valuestring;
 	if (strcmp(type, "Sequence") == 0)
 	{
@@ -170,6 +200,10 @@ void TokenizerJsonLoader::LoadPreTokenizer(cJSON* json)
 	{
 		this->preTokenizers = { this->LoadByteLevelType(json) };
 	}
+	else if (strcmp(type, "Metaspace") == 0)
+	{
+		this->preTokenizers = { this->LoadMetaspaceType(json) };
+	}
 }
 
 
@@ -183,6 +217,12 @@ void TokenizerJsonLoader::LoadPreTokenizer(cJSON* json)
 /// <param name="json"></param>
 void TokenizerJsonLoader::LoadPostProcessor(cJSON* json)
 {	
+	if (json == nullptr)
+	{
+		this->postProcessors.clear();
+		return;
+	}
+
 	auto type = cJSON_GetObjectItemCaseSensitive(json, "type")->valuestring;
 
 	if (strcmp(type, "Sequence") == 0)
@@ -217,6 +257,10 @@ std::vector<std::shared_ptr<TokenizerJsonLoader::IType>> TokenizerJsonLoader::Lo
 		{
 			seq.emplace_back(this->LoadByteLevelType(item));
 		}
+		else if (strcmp(type, "Metaspace") == 0)
+		{
+			seq.emplace_back(this->LoadMetaspaceType(item));
+		}
 		else if (strcmp(type, "TemplateProcessing") == 0)
 		{
 			seq.emplace_back(this->LoadTemplateProcessingType(item));
@@ -224,6 +268,16 @@ std::vector<std::shared_ptr<TokenizerJsonLoader::IType>> TokenizerJsonLoader::Lo
 	}
 
 	return seq;
+}
+
+std::shared_ptr<TokenizerJsonLoader::ReplaceType> TokenizerJsonLoader::LoadReplaceType(cJSON* json)
+{
+	auto pattern = cJSON_GetObjectItemCaseSensitive(json, "pattern");
+	auto stringPattern = cJSON_GetObjectItemCaseSensitive(pattern, "String")->valuestring;
+
+	auto content = cJSON_GetObjectItemCaseSensitive(json, "content")->valuestring;
+
+	return std::make_shared<ReplaceType>(stringPattern, content);
 }
 
 std::shared_ptr<TokenizerJsonLoader::SplitType> TokenizerJsonLoader::LoadSplitType(cJSON* json)
@@ -257,6 +311,28 @@ std::shared_ptr<TokenizerJsonLoader::ByteLevelType> TokenizerJsonLoader::LoadByt
 	auto use_regex = (cJSON_GetObjectItemCaseSensitive(json, "use_regex")->valueint == 1);
 
 	return std::make_shared<ByteLevelType>(add_prefix_space, trim_offsets, use_regex);
+}
+
+std::shared_ptr<TokenizerJsonLoader::MetaspaceType> TokenizerJsonLoader::LoadMetaspaceType(cJSON* json)
+{
+	const char* replacement = " ";
+	const char* prepend_scheme = "always";
+	bool split = true;
+
+	if (auto p = cJSON_GetObjectItemCaseSensitive(json, "replacement"))
+	{
+		replacement = p->valuestring;
+	}
+	if (auto p = cJSON_GetObjectItemCaseSensitive(json, "prepend_scheme"))
+	{
+		prepend_scheme = p->valuestring;
+	}
+	if (auto p = cJSON_GetObjectItemCaseSensitive(json, "split"))
+	{
+		split = (p->valueint == 1);
+	}
+
+	return std::make_shared<MetaspaceType>(replacement, prepend_scheme, split);
 }
 
 std::shared_ptr<TokenizerJsonLoader::TemplateProcessingType> TokenizerJsonLoader::LoadTemplateProcessingType(cJSON* json)

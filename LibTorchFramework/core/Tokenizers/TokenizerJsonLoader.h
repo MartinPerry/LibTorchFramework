@@ -33,10 +33,13 @@ public:
 		using Token::Token;
 	};
 
+	
 	//=============================================================
 
+	struct ReplaceType;
 	struct SplitType;
 	struct ByteLevelType;
+	struct MetaspaceType;
 	struct TemplateProcessingType;
 
 	struct IType
@@ -50,7 +53,9 @@ public:
 
 		virtual const SplitType* GetSplitType() const { return nullptr; }
 		virtual const ByteLevelType* GetByteLevelType() const { return nullptr; }
+		virtual const MetaspaceType* GetMetaspaceType() const { return nullptr; }
 		virtual const TemplateProcessingType* GetTemplateProcessingType() const { return nullptr; }
+		virtual const ReplaceType* GetReplaceType() const { return nullptr; }
 	};
 
 	struct SplitType : public IType
@@ -94,6 +99,22 @@ public:
 		const ByteLevelType* GetByteLevelType() const override { return this; }
 	};
 
+	struct MetaspaceType : public IType
+	{
+		std::string replacement;
+		std::string prepend_scheme;
+		bool split;
+
+		MetaspaceType(const char* replacement, const char* prepend_scheme, bool split) :
+			IType("Metaspace"),
+			replacement(replacement ? replacement : " "),
+			prepend_scheme(prepend_scheme ? prepend_scheme : "always"),
+			split(split)
+		{}
+
+		const MetaspaceType* GetMetaspaceType() const override { return this; }
+	};
+
 	struct TemplateProcessingType : public IType
 	{
 		TokenMap single;
@@ -105,6 +126,21 @@ public:
 		{}
 
 		const TemplateProcessingType* GetTemplateProcessingType() const override { return this; }
+	};
+
+	struct ReplaceType : public IType
+	{
+		std::string splitData;
+		std::string content;
+
+		ReplaceType(const char* splitData, const char* content) :
+			IType("ReplaceType"),
+			splitData(splitData ? splitData : ""),
+			content(content ? content : "")
+		{
+		}
+
+		const ReplaceType* GetReplaceType() const override { return this; }
 	};
 
 	//=============================================================
@@ -121,6 +157,7 @@ public:
 	virtual ~TokenizerJsonLoader();
 
 	const ModelInfo& GetModelInfo() const;
+	std::shared_ptr<IType> GetNormalizer() const;
 
 	const std::vector<AddedToken>& AddedTokens() const;
 	const TokenHashMap& GetVocab() const;
@@ -172,6 +209,8 @@ protected:
 	ReverseTokenMap vocabDataReverse;
 	std::vector<MergeInfo> merges;
 
+	std::shared_ptr<IType> normalizer;
+
 	std::vector<std::shared_ptr<IType>> preTokenizers;
 	std::vector<std::shared_ptr<IType>> postProcessors;
 	
@@ -181,13 +220,16 @@ protected:
 
 	void LoadAddedTokens(cJSON* json);
 
-	void LoadPreTokenizer(cJSON* json);	
+	void LoadNormalizer(cJSON* json);
+	void LoadPreTokenizer(cJSON* json);		
 	void LoadPostProcessor(cJSON* json);
 
 	std::vector<std::shared_ptr<IType>> LoadSequenceType(cJSON* json);
 
 	std::shared_ptr<SplitType> LoadSplitType(cJSON* json);
+	std::shared_ptr<ReplaceType> LoadReplaceType(cJSON* json);
 	std::shared_ptr<ByteLevelType> LoadByteLevelType(cJSON* json);
+	std::shared_ptr<MetaspaceType> LoadMetaspaceType(cJSON* json);
 	std::shared_ptr<TemplateProcessingType> LoadTemplateProcessingType(cJSON* json);
 	
 	Token LoadSpecialTokenOrSequence(cJSON* json);
