@@ -156,7 +156,7 @@ void TokenizerJsonLoader::LoadAddedTokens(cJSON* json)
 
 void TokenizerJsonLoader::LoadNormalizer(cJSON* json)
 {
-	if (json == nullptr)
+	if ((json == nullptr) || (json->child == nullptr))
 	{
 		this->normalizer = nullptr;
 		return;
@@ -179,7 +179,7 @@ void TokenizerJsonLoader::LoadNormalizer(cJSON* json)
 /// <param name="json"></param>
 void TokenizerJsonLoader::LoadPreTokenizer(cJSON* json)
 {
-	if (json == nullptr)
+	if ((json == nullptr) || (json->child == nullptr))
 	{
 		this->preTokenizers.clear();
 		return;
@@ -217,7 +217,7 @@ void TokenizerJsonLoader::LoadPreTokenizer(cJSON* json)
 /// <param name="json"></param>
 void TokenizerJsonLoader::LoadPostProcessor(cJSON* json)
 {	
-	if (json == nullptr)
+	if ((json == nullptr) || (json->child == nullptr))
 	{
 		this->postProcessors.clear();
 		return;
