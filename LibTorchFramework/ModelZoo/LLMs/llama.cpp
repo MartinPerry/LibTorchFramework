@@ -445,7 +445,7 @@ std::pair<torch::Tensor, std::vector<KVCache>> LlamaForCausalLM::forward_with_ca
 		{
 			layer_past = past_key_values[static_cast<size_t>(layer_i)];
 		}
-
+		
 		auto layer = layers[layer_i]->as<Block>();
 		auto layer_out = layer->forward(x, rope.first, rope.second, attn_mask, layer_past, use_cache, past_len);
 		x = layer_out.first;

@@ -506,9 +506,6 @@
     <ClInclude Include="core\Tokenizers\Strings\UnicodeRegex.h">
       <Filter>Header Files\core\Tokenizers\Strings</Filter>
     </ClInclude>
-    <ClInclude Include="core\Tokenizers\Strings\UnicodeStringUtils.h">
-      <Filter>Header Files\core\Tokenizers\Strings</Filter>
-    </ClInclude>
     <ClInclude Include="CustomScenarios\LLMs\setup_llama.h">
       <Filter>Header Files\CustomScenarios\LLMs</Filter>
     </ClInclude>

@@ -83,7 +83,7 @@ namespace CustomScenarios::LLMs::Llama
         }
 
         torch::Tensor x = torch::tensor(ids, torch::TensorOptions().dtype(torch::kLong).device(device)).unsqueeze(0);
-        torch::Tensor logits = model.forward(x, false);
+        torch::Tensor logits = model.forward(x);
 
         std::cout << "SMOKE logits: " << logits.sizes() << " dtype: " << logits.dtype() << std::endl;
 
@@ -114,7 +114,7 @@ namespace CustomScenarios::LLMs::Llama
             torch::Tensor context = generated.index(
                 { torch::indexing::Slice(), torch::indexing::Slice(start, torch::indexing::None) });
 
-            logits = model.forward(context, false);
+            logits = model.forward(context);
             torch::Tensor nextId = std::get<1>(logits.index({ 0, -1 }).max(-1, true)).view({ 1, 1 });
             generated = torch::cat({ generated, nextId }, 1);
 
@@ -142,6 +142,12 @@ namespace CustomScenarios::LLMs::Llama
 
 	void setup()
 	{
+        //https://huggingface.co/spaces/Xenova/the-tokenizer-playground
+
+        auto bpeGemma = TokenizerBPE("d://tokenizer_gemma.json");
+        bpeGemma.Load();
+        auto idsGemma = bpeGemma.Encode(u8"Hello! Briefly explain what weather warnings are.", false, false);
+
 		//std::string modelDir = "e:\\Programming\\Python\\test\\PythonApplication1\\py_cpt\\Llama-3.2-3B-Instruct\\";
         std::string modelDir = "e:\\_models_\\Llama-3.2-3B-Instruct\\";
 

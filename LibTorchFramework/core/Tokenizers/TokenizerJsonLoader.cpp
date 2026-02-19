@@ -3,8 +3,10 @@
 #include <stdexcept>
 
 #include <Utils/cJSON.h>
+#include <Utils/Strings/StringUtils.h>
 
 #include <FileUtils/FileMacros.h>
+
 
 TokenizerJsonLoader::TokenizerJsonLoader(const std::string& jsonPath) : 
 	jsonPath(jsonPath)
@@ -35,7 +37,7 @@ const ReverseTokenMap& TokenizerJsonLoader::GetVocabReversed() const
 	return this->vocabDataReverse;
 }
 
-const std::vector<StringUtf8>& TokenizerJsonLoader::GetMerges() const
+const std::vector<TokenizerJsonLoader::MergeInfo>& TokenizerJsonLoader::GetMerges() const
 {
 	return this->merges;
 }
@@ -81,6 +83,9 @@ void TokenizerJsonLoader::Load()
 	{
 		auto addedTokens = cJSON_GetObjectItemCaseSensitive(json, "added_tokens");
 		this->LoadAddedTokens(addedTokens);
+
+		//todo 
+		//normalizer
 
 		auto preTokenizer = cJSON_GetObjectItemCaseSensitive(json, "pre_tokenizer");
 		this->LoadPreTokenizer(preTokenizer);
@@ -157,6 +162,14 @@ void TokenizerJsonLoader::LoadPreTokenizer(cJSON* json)
 
 		this->preTokenizers = this->LoadSequenceType(pretokenizers);
 	}	
+	else if (strcmp(type, "Split") == 0)
+	{
+		this->preTokenizers = { this->LoadSplitType(json) };
+	}
+	else if (strcmp(type, "ByteLevel") == 0)
+	{
+		this->preTokenizers = { this->LoadByteLevelType(json) };
+	}
 }
 
 
@@ -178,7 +191,10 @@ void TokenizerJsonLoader::LoadPostProcessor(cJSON* json)
 
 		this->postProcessors = this->LoadSequenceType(processors);
 	}	
-
+	else if (strcmp(type, "TemplateProcessing") == 0)
+	{		
+		this->postProcessors = { this->LoadTemplateProcessingType(json) };
+	}
 }
 
 //=============================================================================
@@ -212,13 +228,26 @@ std::vector<std::shared_ptr<TokenizerJsonLoader::IType>> TokenizerJsonLoader::Lo
 
 std::shared_ptr<TokenizerJsonLoader::SplitType> TokenizerJsonLoader::LoadSplitType(cJSON* json)
 {
+	const char* patternInfo = nullptr;
+	SplitType::SplitDataType splitInfo = SplitType::SplitDataType::Unknown;
+
 	auto pattern = cJSON_GetObjectItemCaseSensitive(json, "pattern");
-	auto regex = cJSON_GetObjectItemCaseSensitive(pattern, "Regex")->valuestring;
+	if (auto r = cJSON_GetObjectItemCaseSensitive(pattern, "Regex"))
+	{
+		patternInfo = r->valuestring;
+		splitInfo = SplitType::SplitDataType::Regex;
+	}
+	else if (auto r = cJSON_GetObjectItemCaseSensitive(pattern, "String"))
+	{
+		patternInfo = r->valuestring;
+		splitInfo = SplitType::SplitDataType::String;
+	}
+	
 
 	auto behavior = cJSON_GetObjectItemCaseSensitive(json, "behavior")->valuestring;
 	auto invert = (cJSON_GetObjectItemCaseSensitive(json, "invert")->valueint == 1);
 
-	return std::make_shared<SplitType>(regex, behavior, invert);
+	return std::make_shared<SplitType>(patternInfo, splitInfo, behavior, invert);
 }
 
 std::shared_ptr<TokenizerJsonLoader::ByteLevelType> TokenizerJsonLoader::LoadByteLevelType(cJSON* json)
@@ -380,7 +409,45 @@ void TokenizerJsonLoader::LoadModelMerges(cJSON* json)
 	cJSON* item = nullptr;
 	cJSON_ArrayForEach(item, json)
 	{
-		this->merges.emplace_back((char8_t*)item->valuestring);
+		if (cJSON_IsString(item))
+		{
+			this->ProcessStringMerges(item->valuestring);
+		}
+		else if (cJSON_IsArray(item))
+		{
+			this->ProcessArrayMerges(item);
+		}
+				
 	}
 }
 
+void TokenizerJsonLoader::ProcessStringMerges(const char* data)
+{
+	std::u8string_view m = (char8_t*)data;
+	auto parts = StringUtils::Split<std::u8string_view>(m, u8" ");
+
+	MergeInfo merge;
+	for (size_t i = 0; i < parts.size(); i++)
+	{
+		merge.parts.emplace_back(parts[i]);
+		merge.hashes.emplace_back(Token::CalcHash(parts[i]));
+	}
+
+	this->merges.push_back(std::move(merge));
+}
+
+void TokenizerJsonLoader::ProcessArrayMerges(cJSON* json)
+{
+	MergeInfo merge;
+
+	cJSON* item = nullptr;
+	cJSON_ArrayForEach(item, json)
+	{
+		std::u8string_view m = (char8_t*)item->valuestring;
+
+		merge.parts.emplace_back(m);
+		merge.hashes.emplace_back(Token::CalcHash(m));
+	}
+
+	this->merges.push_back(std::move(merge));
+}

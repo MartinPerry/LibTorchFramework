@@ -181,7 +181,6 @@
     <ClInclude Include="core\Snapshot\SnapshotSaver.h" />
     <ClInclude Include="core\Structures.h" />
     <ClInclude Include="core\Tokenizers\Strings\UnicodeRegex.h" />
-    <ClInclude Include="core\Tokenizers\Strings\UnicodeStringUtils.h" />
     <ClInclude Include="core\Tokenizers\TokenizerBPE.h" />
     <ClInclude Include="core\Tokenizers\TokenizerJsonLoader.h" />
     <ClInclude Include="core\Tokenizers\Tokenizers.h" />

@@ -35,6 +35,7 @@ protected:
 	std::unordered_map<StringUtf8Hash, std::unordered_map<StringUtf8Hash, int>> bpeRanks;
 
 	std::shared_ptr<UnicodeRegex> splitRx;
+	StringUtf8 splitStr;
 
 	std::unordered_map<char8_t, UnicodeCodePoint> bytesToUnicodeMapping;
 	std::unordered_map<UnicodeCodePoint, char8_t> unicodeToBytesMapping;
@@ -45,6 +46,7 @@ protected:
 	void CreateBytesToUnicodeMapping();
 
 	std::vector<StringUtf8> SplitIsolated(const StringUtf8& str);
+	std::vector<StringUtf8> SplitIsolatedRegex(const StringUtf8& str);
 
 	std::vector<std::pair<bool, StringUtf8>> SplitSpecialTokens(const StringUtf8& str) const;
 

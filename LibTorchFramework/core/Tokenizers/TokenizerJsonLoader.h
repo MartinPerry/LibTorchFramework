@@ -55,13 +55,22 @@ public:
 
 	struct SplitType : public IType
 	{
-		std::string regex;
+		enum class SplitDataType 
+		{
+			Regex,
+			String,
+			Unknown
+		};
+
+		std::string splitData;
+		SplitDataType splitType;
 		std::string behavior;
 		bool invert;
 
-		SplitType(const char* regex, const char* behavior, bool invert) :
+		SplitType(const char* splitData, SplitDataType splitType,  const char* behavior, bool invert) :
 			IType("Split"),
-			regex(regex),
+			splitData(splitData),
+			splitType(splitType),
 			behavior(behavior),
 			invert(invert)
 		{}
@@ -100,6 +109,14 @@ public:
 
 	//=============================================================
 
+	struct MergeInfo 
+	{
+		std::vector<StringUtf8> parts;
+		std::vector<StringUtf8Hash> hashes;
+	};
+
+	//=============================================================
+
 	TokenizerJsonLoader(const std::string& jsonPath);
 	virtual ~TokenizerJsonLoader();
 
@@ -108,7 +125,7 @@ public:
 	const std::vector<AddedToken>& AddedTokens() const;
 	const TokenHashMap& GetVocab() const;
 	const ReverseTokenMap& GetVocabReversed() const;
-	const std::vector<StringUtf8>& GetMerges() const;
+	const std::vector<MergeInfo>& GetMerges() const;
 
 	const std::vector<std::shared_ptr<IType>>& GetPreTokenizers() const;
 	const std::vector<std::shared_ptr<IType>>& GetPostProcessors() const;
@@ -153,7 +170,7 @@ protected:
 	std::vector<AddedToken> addedTokens;
 	TokenHashMap vocabData;
 	ReverseTokenMap vocabDataReverse;
-	std::vector<StringUtf8> merges;
+	std::vector<MergeInfo> merges;
 
 	std::vector<std::shared_ptr<IType>> preTokenizers;
 	std::vector<std::shared_ptr<IType>> postProcessors;
@@ -179,6 +196,9 @@ protected:
 	void LoadModelInfo(cJSON* json);
 	void LoadModelVocab(cJSON* json);
 	void LoadModelMerges(cJSON* json);
+
+	void ProcessStringMerges(const char* data);
+	void ProcessArrayMerges(cJSON* json);
 };
 
 #endif

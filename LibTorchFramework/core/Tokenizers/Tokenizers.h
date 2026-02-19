@@ -30,6 +30,17 @@ using TokenMap = std::unordered_map<StringUtf8, TokenId>;
 using ReverseTokenMap = std::unordered_map<TokenId, StringUtf8>;
 using TokenHashMap = std::unordered_map<StringUtf8Hash, TokenId>;
 
+
+static inline StringUtf8 AsStringUtf8(const char* str)
+{
+	return StringUtf8(reinterpret_cast<const char8_t*>(str));
+}
+
+static inline StringUtf8 AsStringUtf8(const std::string& str)
+{
+	return StringUtf8(reinterpret_cast<const char8_t*>(str.c_str()), str.length());
+}
+
 //=============================================================
 
 struct Token

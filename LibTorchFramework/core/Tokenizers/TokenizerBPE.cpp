@@ -38,13 +38,22 @@ void TokenizerBPE::Load()
 	json->Load();
 
 	auto split = json->GetPretokenizerType<TokenizerJsonLoader::SplitType>();
-	if ((split->behavior != "Isolated") || (split->invert))
-	{		
-		throw std::runtime_error("Unsupported Split config: behavior=" + split->behavior);
-	}
-	if (split->regex.empty())
+	if (split)
 	{
-		throw std::runtime_error("Split regex is empty");
+		//if ((split->behavior != "Isolated") || (split->invert))
+		//{
+		//	throw std::runtime_error("Unsupported Split config: behavior=" + split->behavior);
+		//}
+		
+
+		if (split->splitType == TokenizerJsonLoader::SplitType::SplitDataType::Regex)
+		{
+			splitRx = std::make_shared<UnicodeRegex>(split->splitData);
+		}
+		else if (split->splitType == TokenizerJsonLoader::SplitType::SplitDataType::String)
+		{
+			splitStr = AsStringUtf8(split->splitData);
+		}
 	}
 	
 	bos.id = this->GetSpecialTokenId(bos.content);
@@ -61,24 +70,18 @@ void TokenizerBPE::Load()
 		this->specialTokenIds.try_emplace(it.content, it.id);
 	}
 	
-
-	splitRx = std::make_shared<UnicodeRegex>(split->regex);
-	
+		
 
 	const auto& merges = json->GetMerges();
 		
 	for (int i = 0; i < merges.size(); i++)
 	{
-		std::u8string_view m = merges[i];
-	
-		auto parts = StringUtils::Split<std::u8string_view>(m, u8" ");
-		if (parts.size() == 2)
-		{
-			auto h0 = Token::CalcHash(parts[0]);
-			auto h1 = Token::CalcHash(parts[1]);
-
-			auto it = this->bpeRanks.try_emplace(h0);
-			it.first->second.try_emplace(h1, i);
+		const auto& mi = merges[i];
+			
+		if (mi.hashes.size() == 2)
+		{			
+			auto it = this->bpeRanks.try_emplace(mi.hashes[0]);
+			it.first->second.try_emplace(mi.hashes[1], i);
 		}		
 	}	
 	
@@ -89,6 +92,10 @@ TokenId TokenizerBPE::GetSpecialTokenId(const StringUtf8& token) const
 	const auto& vocab = json->GetVocab();
 	const auto& added = json->AddedTokens();
 	auto tpl = json->GetPostProcessorType<TokenizerJsonLoader::TemplateProcessingType>();
+	if (tpl == nullptr)
+	{
+		return -1;
+	}
 
 	auto it = tpl->special.find(token);
 	if (it != tpl->special.end())
@@ -178,13 +185,24 @@ void TokenizerBPE::CreateBytesToUnicodeMapping()
 }
 
 
+
+std::vector<StringUtf8> TokenizerBPE::SplitIsolated(const StringUtf8& str)
+{
+	if (this->splitRx)
+	{
+		return this->SplitIsolatedRegex(str);
+	}
+	
+	return StringUtils::Split(str, this->splitStr);	
+}
+
 /// <summary>
 /// Split behavior=Isolated: keep matched spans as tokens, plus any gaps.
 /// Your regex usually covers the whole string, but we do it correctly anyway.
 /// </summary>
 /// <param name="str"></param>
 /// <returns></returns>
-std::vector<StringUtf8> TokenizerBPE::SplitIsolated(const StringUtf8& str)
+std::vector<StringUtf8> TokenizerBPE::SplitIsolatedRegex(const StringUtf8& str)
 {
 	std::vector<StringUtf8> res;
 	size_t last = 0;
