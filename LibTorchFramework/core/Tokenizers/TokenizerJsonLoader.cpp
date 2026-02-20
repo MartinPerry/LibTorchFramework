@@ -441,7 +441,7 @@ void TokenizerJsonLoader::LoadModelInfo(cJSON* json)
 
 	mi.tokenType = tokenType;
 	mi.dropout = (dropout != nullptr) ? dropout : "";
-	mi.unk_token = (unk_token != nullptr) ? unk_token : "";
+	mi.unk_token = (unk_token != nullptr) ? AsStringUtf8(unk_token) : u8"";
 	mi.continuing_subword_prefix = (continuing_subword_prefix != nullptr) ? continuing_subword_prefix : "";
 	mi.end_of_word_suffix = (end_of_word_suffix != nullptr) ? end_of_word_suffix : "";
 

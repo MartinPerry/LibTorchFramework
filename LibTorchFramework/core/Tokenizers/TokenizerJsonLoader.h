@@ -18,7 +18,7 @@ public:
 	{
 		std::string tokenType;
 		std::string dropout;
-		std::string unk_token;
+		StringUtf8 unk_token;
 		std::string continuing_subword_prefix;
 		std::string end_of_word_suffix;
 		bool fuse_unk;

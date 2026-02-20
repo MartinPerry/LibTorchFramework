@@ -29,6 +29,7 @@ protected:
 
 	Token bos;
 	Token eos;
+	Token unk;
 
 	std::unordered_map<StringUtf8, TokenId> specialTokenIds;
 
@@ -36,6 +37,12 @@ protected:
 
 	std::shared_ptr<UnicodeRegex> splitRx;
 	StringUtf8 splitStr;
+	std::string splitBehavior;
+	bool splitInvert;
+	bool useByteLevelEncoding;
+	
+	StringUtf8 decodeReplaceFrom;
+	StringUtf8 decodeReplaceTo;
 
 	std::unordered_map<char8_t, UnicodeCodePoint> bytesToUnicodeMapping;
 	std::unordered_map<UnicodeCodePoint, char8_t> unicodeToBytesMapping;
@@ -49,11 +56,18 @@ protected:
 
 	std::vector<StringUtf8> SplitIsolated(const StringUtf8& str);
 	std::vector<StringUtf8> SplitIsolatedRegex(const StringUtf8& str);
-
+	std::vector<StringUtf8> SplitMergedWithPrevious(const StringUtf8& str) const;
+	TokenId FindByteFallbackId(char8_t b) const;
+	void AppendFallbackIds(UnicodeCodePoint cp, std::vector<TokenId>& ids);
+	
 	std::vector<std::pair<bool, StringUtf8>> SplitSpecialTokens(const StringUtf8& str) const;
 
 	std::vector<TokenId> EncodePiece(const std::vector<UnicodeCodePoint>& u);
 	
+
+	static bool TryParseByteFallbackToken(const StringUtf8& token, char8_t& outByte);
+
+	void AppendUtf8Bytes(UnicodeCodePoint cp, std::vector<char8_t>& out);
 };
 
 #endif

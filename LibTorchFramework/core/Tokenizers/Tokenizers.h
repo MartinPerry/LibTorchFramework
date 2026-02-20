@@ -10,6 +10,7 @@
 #include <Utils/3rdParty/xxhash.hpp>
 
 #include <Utils/Strings/StringIterators.h>
+#include <Utils/Strings/Utf8Utils.h>
 
 //=============================================================
 //Tokens:
@@ -23,23 +24,12 @@
 
 using TokenId = int32_t; //use signed type - we use invalid token as negative
 using UnicodeCodePoint = char32_t;
-using StringUtf8 = std::u8string;
+//using StringUtf8 = std::u8string;
 using StringUtf8Hash = uint64_t;
 
 using TokenMap = std::unordered_map<StringUtf8, TokenId>;
 using ReverseTokenMap = std::unordered_map<TokenId, StringUtf8>;
 using TokenHashMap = std::unordered_map<StringUtf8Hash, TokenId>;
-
-
-static inline StringUtf8 AsStringUtf8(const char* str)
-{
-	return StringUtf8(reinterpret_cast<const char8_t*>(str));
-}
-
-static inline StringUtf8 AsStringUtf8(const std::string& str)
-{
-	return StringUtf8(reinterpret_cast<const char8_t*>(str.c_str()), str.length());
-}
 
 //=============================================================
 
@@ -80,6 +70,12 @@ struct Token
 	TokenId id;
 
 	Token(const char8_t* content, TokenId id) :
+		content(content),
+		id(id)
+	{
+	}
+
+	Token(const StringUtf8& content, TokenId id) :
 		content(content),
 		id(id)
 	{

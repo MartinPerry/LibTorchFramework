@@ -2,16 +2,25 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <algorithm>
+#include <cstring>
+#include <limits>
+#include <utility>
 
 #include "./Strings/UnicodeRegex.h"
 
 #include <Utils/Strings/StringUtils.h>
 #include <Utils/Strings/StringIterators.h>
 
+
 TokenizerBPE::TokenizerBPE(const std::string& jsonPath) : 
 	json(std::make_shared<TokenizerJsonLoader>(jsonPath)),
-	bos(u8"<|begin_of_text|>", -1),
-	eos(u8"<|end_of_text|>", -1)	
+	bos(u8"", -1),
+	eos(u8"", -1),
+	unk(u8"", -1),
+	splitBehavior("Isolated"),
+	splitInvert(false),
+	useByteLevelEncoding(true)	
 {
 	
 }
@@ -40,14 +49,15 @@ void TokenizerBPE::Load()
 	this->CreateBytesToUnicodeMapping();
 	
 	json->Load();
+	this->splitRx.reset();
+	this->splitStr.clear();
+	this->bpeRanks.clear();
 
 	auto split = json->GetPretokenizerType<TokenizerJsonLoader::SplitType>();
 	if (split)
 	{
-		//if ((split->behavior != "Isolated") || (split->invert))
-		//{
-		//	throw std::runtime_error("Unsupported Split config: behavior=" + split->behavior);
-		//}
+		this->splitBehavior = split->behavior;
+		this->splitInvert = split->invert;
 		
 
 		if (split->splitType == TokenizerJsonLoader::SplitType::SplitDataType::Regex)
@@ -59,11 +69,58 @@ void TokenizerBPE::Load()
 			splitStr = split->splitData;
 		}
 	}
+	else
+	{
+		this->splitBehavior = "Isolated";
+		this->splitInvert = false;
+	}
+
+	this->useByteLevelEncoding = (json->GetPretokenizerType<TokenizerJsonLoader::ByteLevelType>() != nullptr);
+
+	this->decodeReplaceFrom.clear();
+	this->decodeReplaceTo.clear();
+
+	auto normalizer = json->GetNormalizer();
+	if ((normalizer != nullptr) && (normalizer->GetReplaceType() != nullptr))
+	{
+		auto repl = normalizer->GetReplaceType();
+		if (repl->splitData == u8" ")
+		{
+			this->decodeReplaceFrom = repl->content;
+			this->decodeReplaceTo = repl->splitData;
+		}
+	}
+
+	auto mi = json->GetModelInfo();
+	if (!mi.unk_token.empty())
+	{
+		this->unk.id = this->GetSpecialTokenId(mi.unk_token);
+	}
 	
-	bos.id = this->GetSpecialTokenId(bos.content);
-	eos.id = this->GetSpecialTokenId(eos.content);
-	
-	
+	std::vector<StringUtf8> bosTokens = { u8"<|begin_of_text|>", u8"<bos>", u8"<s>" };
+	std::vector<StringUtf8> eosTokens = { u8"<|end_of_text|>", u8"<eos>", u8"</s>" };
+		
+	for (const auto& token : bosTokens)
+	{
+		bos.id = this->GetSpecialTokenId(token);
+		if (bos.id != -1)
+		{
+			bos.content = token;
+			break;
+		}
+	}
+
+	for (const auto& token : eosTokens)
+	{
+		eos.id = this->GetSpecialTokenId(token);
+		if (eos.id != -1)
+		{
+			eos.content = token;
+			break;
+		}
+	}
+
+			
 	this->specialTokenIds.clear();
 	
 	
@@ -94,35 +151,32 @@ void TokenizerBPE::Load()
 TokenId TokenizerBPE::GetSpecialTokenId(const StringUtf8& token) const
 {	
 	const auto& vocab = json->GetVocab();
+	
 	const auto& added = json->AddedTokens();
 	auto tpl = json->GetPostProcessorType<TokenizerJsonLoader::TemplateProcessingType>();
-	if (tpl == nullptr)
+	if (tpl != nullptr)
 	{
-		return -1;
+		auto it = tpl->special.find(token);
+		if (it != tpl->special.end())
+		{
+			return it->second[0];
+		}
 	}
 
-	auto it = tpl->special.find(token);
-	if (it != tpl->special.end())
+	auto tokenHash = Token::CalcHash(token);
+
+	auto jt = vocab.find(tokenHash);
+	if (jt != vocab.end())
 	{
-		return it->second[0];
+		return jt->second;
 	}
 	else
 	{
-		auto tokenHash = Token::CalcHash(token);
-
-		auto jt = vocab.find(tokenHash);
-		if (jt != vocab.end())
+		for (const auto& t : added)
 		{
-			return jt->second;
-		}
-		else
-		{
-			for (const auto& t : added)
+			if (t.content == token)
 			{
-				if (t.content == token)
-				{
-					return t.id;					
-				}
+				return t.id;					
 			}
 		}
 	}
@@ -212,9 +266,29 @@ StringUtf8 TokenizerBPE::RunNormalizer(const StringUtf8& str)
 
 std::vector<StringUtf8> TokenizerBPE::SplitIsolated(const StringUtf8& str)
 {
+	if (str.empty())
+	{
+		return {};
+	}
+
 	if (this->splitRx)
 	{
 		return this->SplitIsolatedRegex(str);
+	}
+
+	if (this->splitStr.empty())
+	{
+		return { str };
+	}
+
+	if (this->splitInvert)
+	{
+		return { str };
+	}
+
+	if (this->splitBehavior == "MergedWithPrevious")
+	{
+		return this->SplitMergedWithPrevious(str);
 	}
 	
 	return StringUtils::Split(str, this->splitStr);	
@@ -256,6 +330,97 @@ std::vector<StringUtf8> TokenizerBPE::SplitIsolatedRegex(const StringUtf8& str)
 	}
 
 	return res;
+}
+
+std::vector<StringUtf8> TokenizerBPE::SplitMergedWithPrevious(const StringUtf8& str) const
+{
+	std::vector<StringUtf8> out;
+	if (str.empty())
+	{
+		return out;
+	}
+	if (this->splitStr.empty())
+	{
+		out.emplace_back(str);
+		return out;
+	}
+
+	size_t pos = 0;
+	const size_t dlen = this->splitStr.size();
+	while (pos < str.size())
+	{
+		size_t found = str.find(this->splitStr, pos);
+		if (found == StringUtf8::npos)
+		{
+			if (pos < str.size())
+			{
+				out.emplace_back(str.substr(pos));
+			}
+			break;
+		}
+
+		size_t next = found + dlen;
+		if (found > pos)
+		{
+			out.emplace_back(str.substr(pos, next - pos));
+		}
+		else
+		{
+			if (!out.empty())
+			{
+				out.back().append(this->splitStr);
+			}
+			else
+			{
+				out.emplace_back(this->splitStr);
+			}
+		}
+		pos = next;
+	}
+
+	return out;
+}
+
+
+void TokenizerBPE::AppendFallbackIds(UnicodeCodePoint cp, std::vector<TokenId>& ids)
+{
+	if (cp < 0x80) {                   // one octet
+		ids.push_back(FindByteFallbackId(static_cast<char8_t>(cp)));		
+	}
+	else if (cp < 0x800) {                // two octets
+		ids.push_back(FindByteFallbackId(static_cast<char8_t>((cp >> 6) | 0xc0)));
+		ids.push_back(FindByteFallbackId(static_cast<char8_t>((cp & 0x3f) | 0x80)));
+	}
+	else if (cp < 0x10000) {              // three octets
+		ids.push_back(FindByteFallbackId(static_cast<char8_t>((cp >> 12) | 0xe0)));
+		ids.push_back(FindByteFallbackId(static_cast<char8_t>(((cp >> 6) & 0x3f) | 0x80)));
+		ids.push_back(FindByteFallbackId(static_cast<char8_t>((cp & 0x3f) | 0x80)));
+	}
+	else {                                // four octets
+		ids.push_back(FindByteFallbackId(static_cast<char8_t>((cp >> 18) | 0xf0)));
+		ids.push_back(FindByteFallbackId(static_cast<char8_t>(((cp >> 12) & 0x3f) | 0x80)));
+		ids.push_back(FindByteFallbackId(static_cast<char8_t>(((cp >> 6) & 0x3f) | 0x80)));
+		ids.push_back(FindByteFallbackId(static_cast<char8_t>((cp & 0x3f) | 0x80)));
+	}
+}
+
+TokenId TokenizerBPE::FindByteFallbackId(char8_t b) const
+{
+	constexpr char8_t hex[] = u8"0123456789ABCDEF";
+	StringUtf8 tok = u8"<0x00>";
+	tok[3] = hex[(b >> 4) & 0xF];
+	tok[4] = hex[b & 0xF];
+
+	const auto& vocab = json->GetVocab();
+
+	auto h = Token::CalcHash(tok);
+	auto it = vocab.find(h);
+	if (it != vocab.end())
+	{
+		return it->second;
+	}
+
+	return this->unk.id;
 }
 
 
@@ -408,17 +573,27 @@ std::vector<TokenId> TokenizerBPE::EncodePiece(const std::vector<UnicodeCodePoin
 		}
 		else 
 		{
-			for (auto ch : s)
-			{
-				auto tokenHash = Token::CalcHash(ch);
-				auto it = vocab.find(tokenHash);
-				if (it != vocab.end())
+			if (json->GetModelInfo().byte_fallback)
+			{								
+				for (auto ch : s)
 				{
-					ids.push_back(it->second);
+					AppendFallbackIds(ch, ids);
 				}
-				else 
+			}
+			else
+			{
+				for (auto ch : s)
 				{
-					ids.push_back(0);
+					auto tokenHash = Token::CalcHash(ch);
+					auto it = vocab.find(tokenHash);
+					if (it != vocab.end())
+					{
+						ids.push_back(it->second);
+					}
+					else 
+					{
+						ids.push_back(this->unk.id);
+					}
 				}
 			}
 		}
@@ -436,9 +611,7 @@ std::vector<TokenId> TokenizerBPE::EncodePiece(const std::vector<UnicodeCodePoin
 /// <param name="addEos"></param>
 /// <returns></returns>
 std::vector<TokenId> TokenizerBPE::Encode(const StringUtf8& str, bool addBos, bool addEos)
-{
-	//auto pieces = this->SplitIsolated(str);
-	
+{	
 	std::vector<TokenId> ids;
 
 	//post_processor: TemplateProcessing prepends <|begin_of_text|>
@@ -471,12 +644,30 @@ std::vector<TokenId> TokenizerBPE::Encode(const StringUtf8& str, bool addBos, bo
 		auto pieces = this->SplitIsolated(segment.second);
 		for (const auto& p : pieces)
 		{
+			if (p.empty())
+			{
+				continue;
+			}
 
 			std::vector<UnicodeCodePoint> unicodes;
+			unicodes.reserve(p.size());
 
-			for (auto b : p)
+			if (this->useByteLevelEncoding)
+			{				
+				for (auto b : p)
+				{
+					auto it = this->bytesToUnicodeMapping.find(b);
+					unicodes.push_back((it != this->bytesToUnicodeMapping.end()) ? it->second : static_cast<UnicodeCodePoint>(b));
+				}
+			}
+			else
 			{
-				unicodes.push_back(this->bytesToUnicodeMapping[b]);
+				CustomU8Iterator it(p);
+				UnicodeCodePoint ch;
+				while ((ch = it.GetCurrentAndAdvance()) != it.DONE)
+				{
+					unicodes.push_back(ch);
+				}
 			}
 
 
@@ -499,31 +690,126 @@ std::vector<TokenId> TokenizerBPE::Encode(const StringUtf8& str, bool addBos, bo
 // Decode
 //==========================================================================
 
+bool TokenizerBPE::TryParseByteFallbackToken(const StringUtf8& token, char8_t& outByte)
+{
+	if (token.size() != 6)
+	{
+		return false;
+	}
+	if ((token[0] != u8'<') || (token[1] != u8'0') || (token[2] != u8'x') || (token[5] != u8'>'))
+	{
+		return false;
+	}
+
+	auto hexValue = [](char8_t c) -> int
+		{
+			if ((c >= u8'0') && (c <= u8'9'))
+			{
+				return c - u8'0';
+			}
+			if ((c >= u8'a') && (c <= u8'f'))
+			{
+				return c - u8'a' + 10;
+			}
+			if ((c >= u8'A') && (c <= u8'F'))
+			{
+				return c - u8'A' + 10;
+			}
+			return -1;
+		};
+
+	int hi = hexValue(token[3]);
+	int lo = hexValue(token[4]);
+	if ((hi < 0) || (lo < 0))
+	{
+		return false;
+	}
+
+	outByte = static_cast<char8_t>((hi << 4) | lo);
+	return true;
+}
+
+void TokenizerBPE::AppendUtf8Bytes(UnicodeCodePoint cp, std::vector<char8_t>& out)
+{
+	uint32_t c = static_cast<uint32_t>(cp);
+	if (c <= 0x7F)
+	{
+		out.push_back(static_cast<char8_t>(c));
+	}
+	else if (c <= 0x7FF)
+	{
+		out.push_back(static_cast<char8_t>(0xC0 | (c >> 6)));
+		out.push_back(static_cast<char8_t>(0x80 | (c & 0x3F)));
+	}
+	else if (c <= 0xFFFF)
+	{
+		out.push_back(static_cast<char8_t>(0xE0 | (c >> 12)));
+		out.push_back(static_cast<char8_t>(0x80 | ((c >> 6) & 0x3F)));
+		out.push_back(static_cast<char8_t>(0x80 | (c & 0x3F)));
+	}
+	else if (c <= 0x10FFFF)
+	{
+		out.push_back(static_cast<char8_t>(0xF0 | (c >> 18)));
+		out.push_back(static_cast<char8_t>(0x80 | ((c >> 12) & 0x3F)));
+		out.push_back(static_cast<char8_t>(0x80 | ((c >> 6) & 0x3F)));
+		out.push_back(static_cast<char8_t>(0x80 | (c & 0x3F)));
+	}
+}
+
 StringUtf8 TokenizerBPE::Decode(const std::vector<TokenId>& ids)
 {
 	const auto& revVocab = json->GetVocabReversed();
-	
-	//ids->token strings->unicode byte stream->bytes->utf - 8
-	
-	StringUtf8 tmp = u8"";
+
+	std::vector<char8_t> outBytes;
+
 	for (auto id : ids)
 	{
 		auto it = revVocab.find(id);
-		if (it != revVocab.end())
+		if (it == revVocab.end())
 		{
-			tmp.append(it->second.data(), it->second.length());
+			continue;
+		}
+
+		auto token = it->second;
+		if (!this->decodeReplaceFrom.empty())
+		{
+			StringUtils::ReplaceAllSubStr(token, this->decodeReplaceFrom, this->decodeReplaceTo);
+		}
+
+		char8_t decodedByte = 0;
+		if (json->GetModelInfo().byte_fallback && TryParseByteFallbackToken(token, decodedByte))
+		{
+			outBytes.push_back(decodedByte);
+			continue;
+		}
+
+		if (this->useByteLevelEncoding)
+		{
+			CustomU8Iterator itU8(token);
+			UnicodeCodePoint ch;
+			while ((ch = itU8.GetCurrentAndAdvance()) != itU8.DONE)
+			{
+				auto jt = unicodeToBytesMapping.find(ch);
+				if (jt != unicodeToBytesMapping.end())
+				{
+					outBytes.push_back(jt->second);
+				}
+				else
+				{
+					AppendUtf8Bytes(ch, outBytes);
+				}
+			}
+		}
+		else
+		{
+			outBytes.insert(outBytes.end(), token.begin(), token.end());
 		}		
 	}
 
-	CustomU8Iterator it(tmp);	
-	UnicodeCodePoint ch;
-
-	std::vector<char8_t> data;
-	while ((ch = it.GetCurrentAndAdvance()) != it.DONE)
+	if (outBytes.empty())
 	{
-		data.push_back(unicodeToBytesMapping[ch]);
+		return u8"";
 	}
-	data.push_back(0);
 
-	return StringUtf8(data.data(), data.size());
+	return StringUtf8(outBytes.data(), outBytes.size());
 }
