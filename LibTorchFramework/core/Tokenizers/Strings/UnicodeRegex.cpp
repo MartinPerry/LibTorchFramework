@@ -16,11 +16,11 @@
 #   pragma comment(lib, "icuin.lib")
 #endif
 
-UnicodeRegex::UnicodeRegex(const std::string& pattern)
+UnicodeRegex::UnicodeRegex(const std::u8string& pattern)
 {
     // Raw string literal to avoid double-escaping.
     // NOTE: The pattern below is the *logical* regex (not JSON-escaped).
-    icu::UnicodeString patternUni = icu::UnicodeString::fromUTF8(pattern);
+    icu::UnicodeString patternUni = icu::UnicodeString::fromUTF8((const char*)(pattern.c_str()));
         
     UErrorCode status = U_ZERO_ERROR;
     icu::RegexPattern* tmp = icu::RegexPattern::compile(patternUni, 0, status);

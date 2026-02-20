@@ -67,14 +67,14 @@ public:
 			Unknown
 		};
 
-		std::string splitData;
+		StringUtf8 splitData;
 		SplitDataType splitType;
 		std::string behavior;
 		bool invert;
 
 		SplitType(const char* splitData, SplitDataType splitType,  const char* behavior, bool invert) :
 			IType("Split"),
-			splitData(splitData),
+			splitData(AsStringUtf8(splitData)),
 			splitType(splitType),
 			behavior(behavior),
 			invert(invert)
@@ -130,13 +130,13 @@ public:
 
 	struct ReplaceType : public IType
 	{
-		std::string splitData;
-		std::string content;
+		StringUtf8 splitData;
+		StringUtf8 content;
 
 		ReplaceType(const char* splitData, const char* content) :
 			IType("ReplaceType"),
-			splitData(splitData ? splitData : ""),
-			content(content ? content : "")
+			splitData(splitData ? AsStringUtf8(splitData) : u8""),
+			content(content ? AsStringUtf8(content) : u8"")
 		{
 		}
 

@@ -45,6 +45,8 @@ protected:
 
 	void CreateBytesToUnicodeMapping();
 
+	StringUtf8 RunNormalizer(const StringUtf8& str);
+
 	std::vector<StringUtf8> SplitIsolated(const StringUtf8& str);
 	std::vector<StringUtf8> SplitIsolatedRegex(const StringUtf8& str);
 

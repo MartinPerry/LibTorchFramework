@@ -19,7 +19,7 @@ public:
 		std::string s; // matched substring (UTF-8)
 	};
 
-	UnicodeRegex(const std::string& pattern);
+	UnicodeRegex(const std::u8string& pattern);
 	~UnicodeRegex();
 
 	std::vector<std::string> Run(const std::u8string& utf8);

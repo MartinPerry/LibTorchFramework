@@ -31,6 +31,10 @@ const Token& TokenizerBPE::GetEos() const
 	return this->eos;
 }
 
+//==========================================================================
+// Loading and prepearing data
+//==========================================================================
+
 void TokenizerBPE::Load()
 {
 	this->CreateBytesToUnicodeMapping();
@@ -52,7 +56,7 @@ void TokenizerBPE::Load()
 		}
 		else if (split->splitType == TokenizerJsonLoader::SplitType::SplitDataType::String)
 		{
-			splitStr = AsStringUtf8(split->splitData);
+			splitStr = split->splitData;
 		}
 	}
 	
@@ -184,7 +188,27 @@ void TokenizerBPE::CreateBytesToUnicodeMapping()
 	}	
 }
 
+//==========================================================================
+// Run encode for input text
+//==========================================================================
 
+StringUtf8 TokenizerBPE::RunNormalizer(const StringUtf8& str)
+{
+	auto n = json->GetNormalizer();
+	if (n == nullptr)
+	{
+		return str;
+	}
+	
+	if (auto repl = n->GetReplaceType())
+	{
+		auto tmp = str;
+		StringUtils::ReplaceAllSubStr(tmp, repl->splitData, repl->content);		
+		return tmp;
+	}
+
+	return str;
+}
 
 std::vector<StringUtf8> TokenizerBPE::SplitIsolated(const StringUtf8& str)
 {
@@ -413,7 +437,7 @@ std::vector<TokenId> TokenizerBPE::EncodePiece(const std::vector<UnicodeCodePoin
 /// <returns></returns>
 std::vector<TokenId> TokenizerBPE::Encode(const StringUtf8& str, bool addBos, bool addEos)
 {
-	auto pieces = this->SplitIsolated(str);
+	//auto pieces = this->SplitIsolated(str);
 	
 	std::vector<TokenId> ids;
 
@@ -423,7 +447,10 @@ std::vector<TokenId> TokenizerBPE::Encode(const StringUtf8& str, bool addBos, bo
 		ids.push_back(bos.id);
 	}
 
-	auto split = this->SplitSpecialTokens(str);
+	auto normalizedStr = this->RunNormalizer(str);
+
+
+	auto split = this->SplitSpecialTokens(normalizedStr);
 	for (const auto& segment : split)
 	{
 		if (segment.second.empty())
@@ -467,6 +494,10 @@ std::vector<TokenId> TokenizerBPE::Encode(const StringUtf8& str, bool addBos, bo
 	
 	return ids;
 }
+
+//==========================================================================
+// Decode
+//==========================================================================
 
 StringUtf8 TokenizerBPE::Decode(const std::vector<TokenId>& ids)
 {
