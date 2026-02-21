@@ -54,6 +54,8 @@
 
 //=========================================================
 
+#include "./smoke_tests.h"
+
 using namespace ModelZoo::llama;
 
 
@@ -149,107 +151,21 @@ namespace CustomScenarios::LLMs::Llama
 
 
 
-
-    void SmokeTestInference(
-        LlamaForCausalLM& model,
-        TokenizerBPE& bpe,
-        const torch::Device& device,
-        int64_t seqLen,
-        int64_t steps)
-    {
-        torch::NoGradGuard noGrad;
-        model.eval();
-
-        StringUtf8 prompt = LlamaConfig::InstructPrompt(u8"Hello! Briefly explain what weather warnings are.\n");
-
-        std::vector<TokenId> ids;
-        ids = bpe.Encode(prompt, false, false);
-        
-        if (ids.size() < 4)
-        {
-            throw std::runtime_error("Tokenizer returned too few tokens; special tokens may be wrong.");
-        }
-
-        if (static_cast<int64_t>(ids.size()) > seqLen)
-        {
-            ids.resize(static_cast<size_t>(seqLen));
-        }
-
-        torch::Tensor x = torch::tensor(ids, torch::TensorOptions().dtype(torch::kLong).device(device)).unsqueeze(0);
-        torch::Tensor logits = model.forward(x);
-
-        std::cout << "SMOKE logits: " << logits.sizes() << " dtype: " << logits.dtype() << std::endl;
-
-        const int64_t vocabSize = logits.size(-1);
-        
-
-        if (x.size(1) >= 2)
-        {
-            torch::Tensor y = x.index({ torch::indexing::Slice(), torch::indexing::Slice(1, torch::indexing::None) }).contiguous();
-            torch::Tensor shifted = logits.index({ torch::indexing::Slice(), torch::indexing::Slice(0, -1), torch::indexing::Slice() }).contiguous();
-            torch::Tensor loss = torch::nn::functional::cross_entropy(
-                shifted.view({ -1, vocabSize }),
-                y.view({ -1 }));
-
-            std::cout << "SMOKE loss: " << loss.item<double>() << std::endl;
-            if (!torch::isfinite(loss).item<bool>())
-            {
-                throw std::runtime_error("Loss is not finite; weights or dtype issue.");
-            }
-        }
-
-        //================================================
-        //Greedy generation
-        torch::Tensor generated = x.clone();
-        for (int64_t i = 0; i < steps; ++i)
-        {
-            const int64_t start = std::max<int64_t>(0, generated.size(1) - seqLen);
-            torch::Tensor context = generated.index(
-                { torch::indexing::Slice(), torch::indexing::Slice(start, torch::indexing::None) });
-
-            logits = model.forward(context);
-            torch::Tensor nextId = std::get<1>(logits.index({ 0, -1 }).max(-1, true)).view({ 1, 1 });
-            generated = torch::cat({ generated, nextId }, 1);
-
-            if ((bpe.GetEos().id != -1) && (nextId.item<int64_t>() == bpe.GetEos().id))
-            {
-                break;
-            }
-        }
-        //================================================
-
-        std::vector<TokenId> outIds(generated.size(1));
-        torch::Tensor generatedCpu = generated.to(torch::kCPU).contiguous();
-        auto* ptr = generatedCpu.data_ptr<int64_t>();
-        for (int64_t i = 0; i < generatedCpu.size(1); ++i)
-        {
-            outIds[static_cast<size_t>(i)] = static_cast<TokenId>(ptr[i]);
-        }
-
-        StringUtf8 decoded = bpe.Decode(outIds);
-        std::cout << "\n=== SMOKE GENERATED ===\n" << ((const char*)decoded.c_str()) << "\n======================\n" << std::endl;
-        
-        model.train();
-    }
-
-
 	void setup()
 	{
         //https://huggingface.co/spaces/Xenova/the-tokenizer-playground
 
-        auto bpeGemma = TokenizerBPE("d://tokenizer_gemma.json");
-        bpeGemma.Load();
-        RunBpeJsonTests("D://res_tokenizer_gemma.json", bpeGemma);
-        auto idsGemma = bpeGemma.Encode(u8"Hello! Briefly explain what weather warnings are.\n", false, false);
+        //auto bpeGemma = TokenizerBPE("d://tokenizer_gemma.json");
+        //bpeGemma.Load();
+        //RunBpeJsonTests("D://res_tokenizer_gemma.json", bpeGemma);
+        //auto idsGemma = bpeGemma.Encode(u8"Hello! Briefly explain what weather warnings are.\n", false, false);
 
-        //auto ids2 = bpeGemma.Encode(u8"Greek: \u039C\u1FC6\u03BD\u03B9\u03BD \u1F04\u03B5\u03B9\u03B4\u03B5, \u03B8\u03B5\u03AC \u2014 \u039F\u03B4\u03CD\u03C3\u03C3\u03B5\u03B9\u03B1", false, false);
-
-		//std::string modelDir = "e:\\Programming\\Python\\test\\PythonApplication1\\py_cpt\\Llama-3.2-3B-Instruct\\";
+        		
         std::string modelDir = "e:\\_models_\\Llama-3.2-3B-Instruct\\";
 
         auto bpe = TokenizerBPE("d://tokenizer.json");
         bpe.Load();
-        RunBpeJsonTests("D://res_tokenizer_llama3.2.json", bpe);
+        //RunBpeJsonTests("D://res_tokenizer_llama3.2.json", bpe);
 
         StringUtf8 prompt = LlamaConfig::InstructPrompt(u8"Hello! Briefly explain what weather warnings are.\n");
 
@@ -268,7 +184,8 @@ namespace CustomScenarios::LLMs::Llama
         
         llama.to(device);
 
-        SmokeTestInference(llama, bpe, device, 256, 40);
+        GreedySmokeTestInference(llama, bpe, 256, 40);
+        SmokeTestInference(llama, bpe, 256, 40);
 
         printf("=====");
 	}

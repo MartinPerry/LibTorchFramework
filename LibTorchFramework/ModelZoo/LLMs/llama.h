@@ -165,7 +165,7 @@ namespace ModelZoo
             torch::Tensor forward(const torch::Tensor& input_ids);
 
             std::pair<torch::Tensor, std::vector<KVCache>> forward_with_cache(const torch::Tensor& input_ids, 
-                const std::vector<std::optional<KVCache>>& past_key_values,
+                const std::vector<KVCache>& past_key_values,
                 bool use_cache);
 
         protected:

@@ -404,7 +404,7 @@ torch::Tensor LlamaForCausalLM::forward(const torch::Tensor& input_ids)
 
 std::pair<torch::Tensor, std::vector<KVCache>> LlamaForCausalLM::forward_with_cache(
 	const torch::Tensor& input_ids,
-	const std::vector<std::optional<KVCache>>& past_key_values,
+	const std::vector<KVCache>& past_key_values,
 	bool use_cache)
 {
 	auto device = input_ids.device();	
@@ -420,11 +420,7 @@ std::pair<torch::Tensor, std::vector<KVCache>> LlamaForCausalLM::forward_with_ca
 			"past_key_values has ", static_cast<int64_t>(past_key_values.size()),
 			" layers, expected ", cfg.num_hidden_layers);
 		
-		const auto& first = past_key_values[0];
-		if (first.has_value())
-		{
-			past_len = first->k.size(2);
-		}		
+		past_len = past_key_values[0].k.size(2);		
 	}
 
 	auto x = tok_emb(input_ids);

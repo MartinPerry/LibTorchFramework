@@ -123,6 +123,7 @@
     <ClCompile Include="core\Tokenizers\TokenizerJsonLoader.cpp" />
     <ClCompile Include="core\Trainer.cpp" />
     <ClCompile Include="CustomScenarios\LLMs\setup_llama.cpp" />
+    <ClCompile Include="CustomScenarios\LLMs\smoke_tests.cpp" />
     <ClCompile Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.cpp" />
     <ClCompile Include="CustomScenarios\MrmsDatasetTraining\MrmsLoss.cpp" />
     <ClCompile Include="CustomScenarios\MrmsDatasetTraining\setup_mrms.cpp" />
@@ -186,6 +187,7 @@
     <ClInclude Include="core\Tokenizers\Tokenizers.h" />
     <ClInclude Include="core\Trainer.h" />
     <ClInclude Include="CustomScenarios\LLMs\setup_llama.h" />
+    <ClInclude Include="CustomScenarios\LLMs\smoke_tests.h" />
     <ClInclude Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.h" />
     <ClInclude Include="CustomScenarios\MrmsDatasetTraining\MrmsLoss.h" />
     <ClInclude Include="CustomScenarios\MrmsDatasetTraining\setup_mrms.h" />
