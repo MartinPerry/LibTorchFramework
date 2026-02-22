@@ -39,7 +39,7 @@ torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch)
         }
     }
     auto result = model->RunForward(batch);
-    
+  
     torch::Tensor loss;
 
     if (sets.lossFn)

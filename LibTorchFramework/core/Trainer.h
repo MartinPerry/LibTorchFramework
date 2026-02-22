@@ -30,6 +30,8 @@ protected:
 
 	std::shared_ptr<MetricsDefault> bestMetrics;
 
+	void CheckLoss(at::Tensor loss);
+
 	void RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer);
 	void RunTrainStepsAutocast(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer);
 

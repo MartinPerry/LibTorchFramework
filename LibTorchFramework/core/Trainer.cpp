@@ -30,8 +30,37 @@ Trainer::~Trainer()
 {
 }
 
+void Trainer::CheckLoss(at::Tensor loss)
+{
+    TORCH_CHECK(scaler != nullptr, "enableAutoCast is true but scaler is null");
+    TORCH_CHECK(loss.defined(), "Loss is not defined (autocast)");
+    TORCH_CHECK(loss.grad_fn() != nullptr, "Loss has no grad_fn (autocast)");
+
+    // Optional, but useful: loss should be scalar (0-D) or you must pass grad_outputs
+    TORCH_CHECK(loss.sizes().size() == 0, "Loss is not scalar; sizes = ", loss.sizes());
+
+    // (1) Check devices
+    auto params = model->parameters();
+    TORCH_CHECK(!params.empty(), "Model has no parameters");
+
+    const auto loss_device = loss.device();
+    const auto param_device = params.front().device();
+    TORCH_CHECK(loss_device == param_device,
+        "Device mismatch: loss on ", loss_device,
+        " but model params on ", param_device);
+
+    // (2) Check dtype
+    TORCH_CHECK(loss.dtype() == torch::kFloat32 ||
+        loss.dtype() == torch::kFloat16 ||
+        loss.dtype() == torch::kBFloat16,
+        "Unexpected loss dtype: ", loss.dtype());
+}
+
 void Trainer::RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer)
 {
+#ifdef _DEBUG
+    this->CheckLoss(loss);
+#endif
     loss.backward();
 
     if (sets.clippingFn)
@@ -48,6 +77,10 @@ void Trainer::RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::O
 
 void Trainer::RunTrainStepsAutocast(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer)
 {
+#ifdef _DEBUG
+    this->CheckLoss(loss);
+#endif
+
     auto scaledLoss = scaler->scale(loss);
     scaledLoss.backward();
    

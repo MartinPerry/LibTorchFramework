@@ -88,7 +88,7 @@ namespace CustomScenarios::UNetTraining
 		loaderSets.subsetSize = 200;
 
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
-		ilw->InitLoaders<SegmentationInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } }, "D:\\Datasets\\Skyfinder");
+		ilw->InitLoaders<SegmentationInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } }, "E:\\Datasets\\Skyfinder");
 
 		auto m = std::make_shared<ModelZoo::unet::UNetModel>(imSize, outSize);
 		

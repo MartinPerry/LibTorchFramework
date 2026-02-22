@@ -153,11 +153,37 @@ namespace CustomScenarios::LLMs::Llama
     }
 
 
+    void TestLoRA() {
+        int64_t in_features = 2048;
+        int64_t out_features = 2048;
+        int64_t r = 8;
+        double alpha = 16.0;
+        double dropout = 0.05;
+
+        auto base = torch::nn::Linear(
+            torch::nn::LinearOptions(in_features, out_features).bias(false));
+        auto lora = LoRALinear(base, r, alpha, dropout);
+
+        // Dummy input
+        auto x = torch::randn({ 2, in_features }, torch::kFloat32);
+        x.set_requires_grad(true);
+
+        auto y = lora->forward(x);
+        std::cout << "y.requires_grad = " << y.requires_grad() << "\n";
+        std::cout << "y.grad_fn       = " << (y.grad_fn() ? "NON-NULL" : "NULL") << "\n";
+
+        auto loss = y.pow(2).mean();
+        std::cout << "loss.requires_grad = " << loss.requires_grad() << "\n";
+        std::cout << "loss.grad_fn       = " << (loss.grad_fn() ? "NON-NULL" : "NULL") << "\n";
+
+        loss.backward(); // should succeed and give grads on A/B
+    }
 
 	void setup()
 	{
         //https://huggingface.co/spaces/Xenova/the-tokenizer-playground
 
+        
         //auto bpeGemma = TokenizerBPE("d://tokenizer_gemma.json");
         //bpeGemma.Load();
         //RunBpeJsonTests("D://res_tokenizer_gemma.json", bpeGemma);
@@ -178,6 +204,7 @@ namespace CustomScenarios::LLMs::Llama
 
         //--------------------------------------------------------------------
 
+        
 		LlamaConfig cfg = LlamaConfig::FromJsonFile(modelDir + "config.json");
 
         auto llama = std::make_shared<ModelZoo::llama::LlamaForCausalLM>(cfg);
@@ -230,6 +257,9 @@ namespace CustomScenarios::LLMs::Llama
         std::unordered_set<std::string> targets = { "q_proj", "k_proj", "v_proj", "o_proj" };
         LoRAWrap(llama, "", lora_r, lora_alpha, lora_dropout, targets);
 
+        llama->to(sets.device);
+
+        
         ModelInfo mi(*llama.get());
         auto params = mi.CountParams();
         MY_LOG_INFO("Params trainable: %f M / total %f M", params.trainable / 1e6, params.total / 1e6);
@@ -243,10 +273,10 @@ namespace CustomScenarios::LLMs::Llama
         llama->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(5e-5).weight_decay(0.01).betas(std::make_tuple(0.9, 0.95)));
         
 
-        sets.pretrainedManager = std::make_shared<PretrainedManager>("D://CppTorchModels");
-        sets.pretrainedManager->EnableTrainingSnapshot(false);
-        sets.pretrainedManager->EnableSaving(false);
-        sets.pretrainedManager->EnableLoading(false);
+        //sets.pretrainedManager = std::make_shared<PretrainedManager>("D://CppTorchModels");
+        //sets.pretrainedManager->EnableTrainingSnapshot(false);
+        //sets.pretrainedManager->EnableSaving(false);
+        //sets.pretrainedManager->EnableLoading(false);
 
         TrainingHelper th(sets, llama);
         th.Run(ilw);

@@ -11,10 +11,12 @@ ModelInfo::ModelParams ModelInfo::CountParams() const
     int64_t total = 0;
     int64_t trainable = 0;
 
-    for (const auto& p : model.parameters(/*recurse=*/true)) {
+    for (const auto& p : model.parameters(/*recurse=*/true)) 
+    {
         const int64_t n = p.numel();
         total += n;
-        if (p.requires_grad()) {
+        if (p.requires_grad()) 
+        {
             trainable += n;
         }
     }

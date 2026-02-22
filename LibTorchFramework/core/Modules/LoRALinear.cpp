@@ -40,7 +40,7 @@ void LoRAWrap(torch::nn::Module& m,
                 auto wrapped = LoRALinear(linear, rank, alpha, dropout);
 
                                
-                m.replace_module(child_name, wrapped);
+                wrapped = m.replace_module(child_name, wrapped);
                 continue;
             }            
         }
