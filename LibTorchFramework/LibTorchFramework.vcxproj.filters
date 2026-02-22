@@ -330,9 +330,6 @@
     <ClCompile Include="CustomScenarios\LLMs\smoke_tests.cpp">
       <Filter>Source Files\CustomScenarios\LLMs</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\LoRALinear.cpp">
-      <Filter>Source Files\core\Modules</Filter>
-    </ClCompile>
     <ClCompile Include="Utils\TorchUtils.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
@@ -341,6 +338,9 @@
     </ClCompile>
     <ClCompile Include="Utils\ModelInfo.cpp">
       <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\LoRALinear.cpp">
+      <Filter>Source Files\core\Modules</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -536,9 +536,6 @@
     <ClInclude Include="CustomScenarios\LLMs\smoke_tests.h">
       <Filter>Header Files\CustomScenarios\LLMs</Filter>
     </ClInclude>
-    <ClInclude Include="core\Modules\LoRALinear.h">
-      <Filter>Header Files\core\Modules</Filter>
-    </ClInclude>
     <ClInclude Include="InputProcessing\InputLoaders\TextFilesInputLoader.h">
       <Filter>Header Files\InputProcessing\InputLoaders</Filter>
     </ClInclude>
@@ -547,6 +544,9 @@
     </ClInclude>
     <ClInclude Include="Utils\HelperMacros.h">
       <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\LoRALinear.h">
+      <Filter>Header Files\core\Modules</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

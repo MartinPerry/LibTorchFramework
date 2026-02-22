@@ -505,7 +505,7 @@ std::vector<torch::Tensor> U2NetModel::RunForward(DataLoaderData& batch)
 
     auto x = this->forward(batch.input);
     
-    x.push_back(batch.target);
+    //x.push_back(batch.target);
 
-    return x;// { x, batch.target };
+    return x;
 }

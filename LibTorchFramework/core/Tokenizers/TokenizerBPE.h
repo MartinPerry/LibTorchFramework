@@ -15,6 +15,7 @@ public:
 	TokenizerBPE(const std::string& jsonPath);
 	virtual ~TokenizerBPE();
 
+	const Token& GetPad() const;
 	const Token& GetBos() const;
 	const Token& GetEos() const;
 
@@ -31,6 +32,7 @@ protected:
 
 	Token bos;
 	Token eos;
+	Token pad;
 	Token unk;
 
 	std::unordered_map<StringUtf8, TokenId> specialTokenIds;

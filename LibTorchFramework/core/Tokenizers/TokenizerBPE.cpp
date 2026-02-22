@@ -17,6 +17,7 @@ TokenizerBPE::TokenizerBPE(const std::string& jsonPath) :
 	json(std::make_shared<TokenizerJsonLoader>(jsonPath)),
 	bos(u8"", -1),
 	eos(u8"", -1),
+	pad(u8"", -1),
 	unk(u8"", -1),
 	splitBehavior("Isolated"),
 	splitInvert(false),
@@ -28,6 +29,11 @@ TokenizerBPE::TokenizerBPE(const std::string& jsonPath) :
 
 TokenizerBPE::~TokenizerBPE()
 {	
+}
+
+const Token& TokenizerBPE::GetPad() const
+{
+	return this->pad;
 }
 
 const Token& TokenizerBPE::GetBos() const
@@ -97,33 +103,28 @@ void TokenizerBPE::Load()
 		this->unk.id = this->GetSpecialTokenId(mi.unk_token);
 	}
 	
-	std::vector<StringUtf8> bosTokens = { u8"<|begin_of_text|>", u8"<bos>", u8"<s>" };
-	std::vector<StringUtf8> eosTokens = { u8"<|end_of_text|>", u8"<eos>", u8"</s>" };
-		
-	for (const auto& token : bosTokens)
+	std::unordered_map<Token*, std::vector<StringUtf8>> specials = {
+		 { &pad, { u8"<|finetune_right_pad_id|>", u8"<pad>" }},
+		 { &bos, { u8"<|begin_of_text|>", u8"<bos>", u8"<s>" }},
+		 { &eos, { u8"<|end_of_text|>", u8"<eos>", u8"</s>" }}
+	};
+
+	for (const auto& [t, specTokens] : specials)
 	{
-		bos.id = this->GetSpecialTokenId(token);
-		if (bos.id != -1)
+		for (const auto& token : specTokens)
 		{
-			bos.content = token;
-			break;
+			t->id = this->GetSpecialTokenId(token);
+			if (t->id != -1)
+			{
+				t->content = token;
+				break;
+			}
 		}
 	}
+	
 
-	for (const auto& token : eosTokens)
-	{
-		eos.id = this->GetSpecialTokenId(token);
-		if (eos.id != -1)
-		{
-			eos.content = token;
-			break;
-		}
-	}
-
-			
 	this->specialTokenIds.clear();
-	
-	
+		
 	const auto& added = json->AddedTokens();
 	for (const auto& it : added)
 	{

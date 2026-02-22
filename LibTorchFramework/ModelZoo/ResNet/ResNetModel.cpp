@@ -134,5 +134,5 @@ std::vector<torch::Tensor> ResNetModel::RunForward(DataLoaderData& batch)
 
     auto x = this->forward(batch.input);
     
-    return { x, batch.target };
+    return { x };
 }

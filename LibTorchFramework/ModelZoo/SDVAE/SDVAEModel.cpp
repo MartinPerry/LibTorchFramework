@@ -62,5 +62,5 @@ std::vector<torch::Tensor> SDVAEModel::RunForward(DataLoaderData& batch)
 
     auto x = this->forward(batch.input);
     
-    return { std::get<0>(x), batch.target };
+    return { std::get<0>(x) };
 }

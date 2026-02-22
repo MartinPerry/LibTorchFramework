@@ -30,8 +30,7 @@ public:
 protected:
     std::shared_ptr<Tokenizer> tokenizer;
     int32_t seqLen;
-
-    std::vector<TokenId> ids;
+    
 };
 
 #endif

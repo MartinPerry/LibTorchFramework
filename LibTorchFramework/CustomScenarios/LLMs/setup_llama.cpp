@@ -186,7 +186,7 @@ namespace CustomScenarios::LLMs::Llama
         Settings sets;
         //-----
         //model debug
-        sets.numWorkers = 4;
+        sets.numWorkers = 0;
         sets.device = torch::kCUDA;
         sets.perf.enableAutoCast = true;
         //-----
@@ -201,7 +201,16 @@ namespace CustomScenarios::LLMs::Llama
         
         sets.lossFn = [&](const auto& output, const auto& targets) {
             //F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
-            return torch::cross_entropy_loss(output[0], targets);
+
+            //[1, 4096, 128256]
+            //[1, 4096]
+            auto vocab_size = output[0].size(-1);
+            auto x = output[0].view({ -1, vocab_size });
+            auto gt = targets.view({ -1 });
+            auto loss = torch::nn::functional::cross_entropy(x, gt);
+            auto lossVal = loss.cpu();
+
+            return loss;
         };
 
 

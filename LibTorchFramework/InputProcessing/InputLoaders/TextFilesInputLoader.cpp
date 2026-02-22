@@ -39,7 +39,9 @@ void TextFilesInputLoader::Load()
 
 void TextFilesInputLoader::FillData(size_t index, DataLoaderData& ld)
 {
-	if (ids.size() < static_cast<size_t>(seqLen + 1))
+	std::vector<TokenId> ids;
+
+	while (ids.size() <= static_cast<size_t>(seqLen + 1))
 	{
 		//load next line, strip it
 		StringUtf8 prompt = (u8"Hello! Briefly explain what weather warnings are.");
@@ -49,7 +51,9 @@ void TextFilesInputLoader::FillData(size_t index, DataLoaderData& ld)
 		ids.insert(ids.end(), tmp.begin(), tmp.end());
 	}
 
-
+	//pad to seq_len if ids is shorter
+	//if len(buf) < self.seq_len + 1:
+	//	buf = buf + [pad] * ((self.seq_len + 1) - len(buf))
 
 	std::vector<int64_t> chunk(ids.begin(), ids.begin() + (seqLen + 1));
 	ids.erase(ids.begin(), ids.begin() + (seqLen + 1));
