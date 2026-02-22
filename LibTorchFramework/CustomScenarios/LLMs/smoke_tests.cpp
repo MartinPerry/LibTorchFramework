@@ -21,8 +21,8 @@ namespace CustomScenarios::LLMs::Llama
 	}
 
 	void GreedySmokeTestInference(
-		ModelZoo::llama::LlamaForCausalLM& model,
-		TokenizerBPE& bpe,
+		std::shared_ptr<ModelZoo::llama::LlamaForCausalLM> model,
+		std::shared_ptr<TokenizerBPE> bpe,
 		int64_t seqLen,
 		int64_t steps)
 	{
@@ -32,10 +32,10 @@ namespace CustomScenarios::LLMs::Llama
 
 
 		torch::NoGradGuard noGrad;
-		model.eval();
+		model->eval();
 		
 		std::vector<TokenId> ids;
-		ids = bpe.Encode(prompt, false, false);
+		ids = bpe->Encode(prompt, false, false);
 
 		if (ids.size() < 4)
 		{
@@ -48,7 +48,7 @@ namespace CustomScenarios::LLMs::Llama
 		}
 
 		torch::Tensor x = torch::tensor(ids, torch::TensorOptions().dtype(torch::kLong).device(device)).unsqueeze(0);
-		torch::Tensor logits = model.forward(x);
+		torch::Tensor logits = model->forward(x);
 
 		std::cout << "SMOKE logits: " << logits.sizes() << " dtype: " << logits.dtype() << std::endl;
 
@@ -79,11 +79,11 @@ namespace CustomScenarios::LLMs::Llama
 			torch::Tensor context = generated.index(
 				{ torch::indexing::Slice(), torch::indexing::Slice(start, torch::indexing::None) });
 
-			logits = model.forward(context);
+			logits = model->forward(context);
 			torch::Tensor nextId = std::get<1>(logits.index({ 0, -1 }).max(-1, true)).view({ 1, 1 });
 			generated = torch::cat({ generated, nextId }, 1);
 
-			if ((bpe.GetEos().id != -1) && (nextId.item<int64_t>() == bpe.GetEos().id))
+			if ((bpe->GetEos().id != -1) && (nextId.item<int64_t>() == bpe->GetEos().id))
 			{
 				break;
 			}
@@ -98,17 +98,16 @@ namespace CustomScenarios::LLMs::Llama
 			outIds[static_cast<size_t>(i)] = static_cast<TokenId>(ptr[i]);
 		}
 		
-		StringUtf8 decoded = bpe.Decode(outIds);
+		StringUtf8 decoded = bpe->Decode(outIds);
 		std::cout << "\n=== SMOKE GENERATED ===\n" << ((const char*)decoded.c_str()) << "\n======================\n" << std::endl;
-
-		model.train();
+		
 	}
 
 
 
 	void SmokeTestInference(
-		ModelZoo::llama::LlamaForCausalLM& model,
-		TokenizerBPE& bpe,
+		std::shared_ptr<ModelZoo::llama::LlamaForCausalLM> model,
+		std::shared_ptr<TokenizerBPE> bpe,
 		int64_t seq_len,
 		int64_t steps,
 		double temperature,
@@ -123,10 +122,10 @@ namespace CustomScenarios::LLMs::Llama
 		auto device = torch::kCUDA;
 
 		torch::NoGradGuard noGrad;
-		model.eval();
+		model->eval();
 
 		std::vector<TokenId> ids;
-		ids = bpe.Encode(prompt, false, false);
+		ids = bpe->Encode(prompt, false, false);
 		
 		if (ids.size() < 4)
 		{
@@ -140,7 +139,7 @@ namespace CustomScenarios::LLMs::Llama
 
 		torch::Tensor x = torch::tensor(ids, torch::TensorOptions().dtype(torch::kLong).device(device)).unsqueeze(0);
 		{
-			auto logits = model.forward(x);
+			auto logits = model->forward(x);
 
 			std::cout << "SMOKE logits: (";
 			for (int64_t i = 0; i < logits.dim(); ++i)
@@ -177,7 +176,7 @@ namespace CustomScenarios::LLMs::Llama
 		std::vector<KVCache> kvCache;
 
 		torch::Tensor gen = x.clone();
-		std::tie(logits, kvCache) = model.forward_with_cache(x, {}, true);
+		std::tie(logits, kvCache) = model->forward_with_cache(x, {}, true);
 		
 		for (int64_t step = 0; step < steps; ++step)
 		{
@@ -252,7 +251,7 @@ namespace CustomScenarios::LLMs::Llama
 			gen = torch::cat({ gen, next_id_dev }, 1);
 
 			const int64_t next_token = next_id.item<int64_t>();			
-			if ((bpe.GetEos().id != -1) && (next_token == bpe.GetEos().id))
+			if ((bpe->GetEos().id != -1) && (next_token == bpe->GetEos().id))
 			{
 				break;
 			}
@@ -262,7 +261,7 @@ namespace CustomScenarios::LLMs::Llama
 				break;
 			}
 
-			std::tie(logits, kvCache) = model.forward_with_cache(next_id_dev, kvCache, true);
+			std::tie(logits, kvCache) = model->forward_with_cache(next_id_dev, kvCache, true);
 			
 		}
 		//================================================
@@ -275,12 +274,11 @@ namespace CustomScenarios::LLMs::Llama
 			outIds[static_cast<size_t>(i)] = static_cast<TokenId>(ptr[i]);
 		}
 
-		StringUtf8 decoded = bpe.Decode(outIds);
+		StringUtf8 decoded = bpe->Decode(outIds);
 		std::cout << "\n=== SMOKE GENERATED ===\n" << ((const char*)decoded.c_str()) << "\n======================\n" << std::endl;
 
 		//std::string out = bpe.decode(TensorToInt64Vector(gen.index({ 0 })));
 		//std::cout << "\n=== SMOKE GENERATED ===\n" << out << "\n======================\n\n";
-
-		model.train();
+		
 	}
 }

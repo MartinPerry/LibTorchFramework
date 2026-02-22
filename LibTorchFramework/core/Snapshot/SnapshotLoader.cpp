@@ -53,7 +53,7 @@ bool SnapshotLoader::Load(const std::variant<std::string, std::shared_ptr<Pretra
         this->LoadParametersFromDict(path);        
     }
                 
-    this->UpdateFreeze(freezeInfo);
+    model->SetFrozen(freezeInfo);
 
     return true;
 }
@@ -199,35 +199,3 @@ bool SnapshotLoader::LoadParametersFromDict(const std::string& path)
     return true;
 }
 
-void SnapshotLoader::UpdateFreeze(std::shared_ptr<FreezeInfo> freezeInfo)
-{
-    if (freezeInfo == nullptr)
-    {
-        return;
-    }
-
-    torch::OrderedDict<std::string, at::Tensor> params = model->named_parameters();
-
-    std::vector<std::string> freezedParts;
-    for (auto& kv : params)
-    {
-        if (freezeInfo->enabled && freezeInfo->CanFreeze(kv.key()))
-        {
-            freezedParts.push_back(kv.key());
-        }
-    }
-
-    if (freezedParts.empty())
-    {
-        return;
-    }
-
-    for (auto& kv : params) 
-    {        
-        if (std::find(freezedParts.begin(), freezedParts.end(), kv.key()) != freezedParts.end()) 
-        {
-            MY_LOG_INFO("Freezing: %s", kv.key().c_str());
-            kv.value().set_requires_grad(false);
-        }
-    }
-}

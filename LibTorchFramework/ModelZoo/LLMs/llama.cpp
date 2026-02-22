@@ -3,6 +3,8 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <algorithm>
+#include <execution>
 
 #include <FileUtils/Reading/TextFileReader.h>
 #include <Utils/cJSON.h>
@@ -60,55 +62,27 @@ LlamaConfig LlamaConfig::FromJsonString(const std::string& jsonText)
 	}
 
 	LlamaConfig cfg;
-	try
-	{
-		int64_t intValue = 0;
-		double doubleValue = 0.0;
-		bool boolValue = false;
 
-		if (TryReadInt64(root, "vocab_size", intValue))
-		{
-			cfg.vocab_size = intValue;
-		}
-		if (TryReadInt64(root, "hidden_size", intValue))
-		{
-			cfg.hidden_size = intValue;
-		}
-		if (TryReadInt64(root, "num_hidden_layers", intValue))
-		{
-			cfg.num_hidden_layers = intValue;
-		}
-		if (TryReadInt64(root, "num_attention_heads", intValue))
-		{
-			cfg.num_attention_heads = intValue;
-		}
-		if (TryReadInt64(root, "num_key_value_heads", intValue))
-		{
-			cfg.num_key_value_heads = intValue;
-		}
-		if (TryReadInt64(root, "intermediate_size", intValue))
-		{
-			cfg.intermediate_size = intValue;
-		}
-		if (TryReadDouble(root, "rms_norm_eps", doubleValue))
-		{
-			cfg.rms_norm_eps = doubleValue;
-		}
-		if (TryReadDouble(root, "rope_theta", doubleValue))
-		{
-			cfg.rope_theta = doubleValue;
-		}
-		if (TryReadBool(root, "tie_word_embeddings", boolValue))
-		{
-			cfg.tie_word_embeddings = boolValue;
-		}
-	}
-	catch (...)
+	int64_t intValue = 0;
+	
+	TryReadInt64(root, "vocab_size", cfg.vocab_size);
+	TryReadInt64(root, "hidden_size", cfg.hidden_size);
+	TryReadInt64(root, "num_hidden_layers", cfg.num_hidden_layers);
+	TryReadInt64(root, "num_attention_heads", cfg.num_attention_heads);
+	
+	if (TryReadInt64(root, "num_key_value_heads", intValue))
 	{
-		cJSON_Delete(root);
-		throw;
+		cfg.num_key_value_heads = intValue;
+	}
+	if (TryReadInt64(root, "intermediate_size", intValue))
+	{
+		cfg.intermediate_size = intValue;
 	}
 
+	TryReadDouble(root, "rms_norm_eps", cfg.rms_norm_eps);	
+	TryReadDouble(root, "rope_theta", cfg.rope_theta);	
+	TryReadBool(root, "tie_word_embeddings", cfg.tie_word_embeddings);
+	
 	cJSON_Delete(root);
 	return cfg;
 }
@@ -122,7 +96,7 @@ LlamaConfig LlamaConfig::FromJsonFile(const std::string& filePath)
 	return FromJsonString(data.c_str());
 }
 
-std::u8string LlamaConfig::InstructPrompt(std::u8string_view userText, 
+std::u8string LlamaConfig::InstructPrompt(std::u8string_view userText,
 	std::u8string_view systemText)
 {
 	std::u8string out;
@@ -150,13 +124,13 @@ std::u8string LlamaConfig::InstructPrompt(std::u8string_view userText,
 //========================================================================
 
 // ---- Layers ----
-RMSNormImpl::RMSNormImpl(int64_t dim, double eps) : 
-	eps(eps) 
+RMSNormImpl::RMSNormImpl(int64_t dim, double eps) :
+	eps(eps)
 {
 	AUTO_REGISTER_NEW_PARAMETER(weight, torch::ones({ dim }));
 }
 
-torch::Tensor RMSNormImpl::forward(const torch::Tensor& x) 
+torch::Tensor RMSNormImpl::forward(const torch::Tensor& x)
 {
 	auto norm = x.pow(2).mean(-1, true);
 	auto y = x * torch::rsqrt(norm + eps);
@@ -165,24 +139,24 @@ torch::Tensor RMSNormImpl::forward(const torch::Tensor& x)
 
 //========================================================================
 
-MLPImpl::MLPImpl(int64_t dim, int64_t hidden_dim) 
+MLPImpl::MLPImpl(int64_t dim, int64_t hidden_dim)
 {
 	AUTO_REGISTER_NEW_MODULE(gate_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, hidden_dim).bias(false)));
 	AUTO_REGISTER_NEW_MODULE(up_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, hidden_dim).bias(false)));
 	AUTO_REGISTER_NEW_MODULE(down_proj, torch::nn::Linear(torch::nn::LinearOptions(hidden_dim, dim).bias(false)));
 }
 
-torch::Tensor MLPImpl::forward(const torch::Tensor& x) 
+torch::Tensor MLPImpl::forward(const torch::Tensor& x)
 {
 	return down_proj(torch::silu(gate_proj(x)) * up_proj(x));
 }
 
 //========================================================================
 
-AttentionImpl::AttentionImpl(int64_t dim, int64_t n_heads, std::optional<int64_t> n_kv_heads_opt) :	
+AttentionImpl::AttentionImpl(int64_t dim, int64_t n_heads, std::optional<int64_t> n_kv_heads_opt) :
 	n_heads(n_heads),
 	n_kv_heads(n_kv_heads_opt.has_value() ? n_kv_heads_opt.value() : n_heads),
-	head_dim(dim / n_heads) 
+	head_dim(dim / n_heads)
 {
 	TORCH_CHECK(dim % n_heads == 0, "dim must be divisible by n_heads");
 
@@ -192,7 +166,7 @@ AttentionImpl::AttentionImpl(int64_t dim, int64_t n_heads, std::optional<int64_t
 	AUTO_REGISTER_NEW_MODULE(o_proj, torch::nn::Linear(torch::nn::LinearOptions(n_heads * head_dim, dim).bias(false)));
 }
 
-torch::Tensor AttentionImpl::apply_rope(const torch::Tensor& x, 
+torch::Tensor AttentionImpl::apply_rope(const torch::Tensor& x,
 	const torch::Tensor& cos, const torch::Tensor& sin,
 	int startPos)
 {
@@ -201,7 +175,7 @@ torch::Tensor AttentionImpl::apply_rope(const torch::Tensor& x,
 	auto T = x.size(1);
 	auto H = x.size(2);
 	auto D = x.size(3);
-	
+
 	auto x1 = x.index({ Slice(), Slice(), Slice(), Slice(0, torch::indexing::None, 2) });
 	auto x2 = x.index({ Slice(), Slice(), Slice(), Slice(1, torch::indexing::None, 2) });
 
@@ -217,13 +191,13 @@ torch::Tensor AttentionImpl::apply_rope(const torch::Tensor& x,
 	return y;
 }
 
-std::pair<torch::Tensor, std::optional<KVCache>> AttentionImpl::forward(const torch::Tensor& x, 
-	const torch::Tensor& cos, 
+std::pair<torch::Tensor, std::optional<KVCache>> AttentionImpl::forward(const torch::Tensor& x,
+	const torch::Tensor& cos,
 	const torch::Tensor& sin,
 	const torch::Tensor& attn_mask,
 	const std::optional<KVCache>& past_kv,
 	bool use_cache,
-	int64_t cache_position) 
+	int64_t cache_position)
 {
 	auto B = x.size(0);
 	auto T = x.size(1);
@@ -251,7 +225,7 @@ std::pair<torch::Tensor, std::optional<KVCache>> AttentionImpl::forward(const to
 		present_kv = KVCache(k, v);
 	}
 
-	if (n_kv_heads != n_heads) 
+	if (n_kv_heads != n_heads)
 	{
 		auto repeat = n_heads / n_kv_heads;
 		k = k.repeat_interleave(repeat, 1);
@@ -269,9 +243,9 @@ std::pair<torch::Tensor, std::optional<KVCache>> AttentionImpl::forward(const to
 
 //========================================================================
 
-BlockImpl::BlockImpl(int64_t dim, int64_t n_heads, int64_t hidden_dim, 
+BlockImpl::BlockImpl(int64_t dim, int64_t n_heads, int64_t hidden_dim,
 	std::optional<int64_t> n_kv_heads,
-	double rms_eps) 
+	double rms_eps)
 {
 	AUTO_REGISTER_NEW_MODULE(attn_norm, RMSNorm(dim, rms_eps));
 	AUTO_REGISTER_NEW_MODULE(ffn_norm, RMSNorm(dim, rms_eps));
@@ -279,12 +253,12 @@ BlockImpl::BlockImpl(int64_t dim, int64_t n_heads, int64_t hidden_dim,
 	AUTO_REGISTER_NEW_MODULE(mlp, MLP(dim, hidden_dim));
 }
 
-std::pair<torch::Tensor, std::optional<KVCache>> BlockImpl::forward(const torch::Tensor& x, 
+std::pair<torch::Tensor, std::optional<KVCache>> BlockImpl::forward(const torch::Tensor& x,
 	const torch::Tensor& cos, const torch::Tensor& sin,
-	const torch::Tensor& attn_mask, 
-	const std::optional<KVCache>& past_kv, 
-	bool use_cache, 
-	int64_t cache_position) 
+	const torch::Tensor& attn_mask,
+	const std::optional<KVCache>& past_kv,
+	bool use_cache,
+	int64_t cache_position)
 {
 	auto normed = attn_norm(x);
 	auto attn_out = attn(normed, cos, sin, attn_mask, past_kv, use_cache, cache_position);
@@ -295,26 +269,36 @@ std::pair<torch::Tensor, std::optional<KVCache>> BlockImpl::forward(const torch:
 
 //========================================================================
 
-LlamaForCausalLM::LlamaForCausalLM(const LlamaConfig& cfg) : 
-	cfg(cfg) 
-{		
-	
+LlamaForCausalLM::LlamaForCausalLM(const LlamaConfig& cfg) :
+	cfg(cfg)
+{
+
 	int64_t n_kv_heads = cfg.num_key_value_heads.has_value() ? cfg.num_key_value_heads.value() : cfg.num_attention_heads;
 	int64_t hidden_dim = cfg.intermediate_size.has_value() ? cfg.intermediate_size.value() : 4 * cfg.hidden_size;
-	
+
 	AUTO_REGISTER_NEW_MODULE(tok_emb, torch::nn::Embedding(cfg.vocab_size, cfg.hidden_size));
-	
+
 	AUTO_REGISTER_NEW_MODULE(layers, torch::nn::ModuleList());
+
+	std::vector<Block> tmp(cfg.num_hidden_layers, nullptr);
+	std::vector<int64_t> indices(cfg.num_hidden_layers);
+	std::iota(indices.begin(), indices.end(), 0);
+
+	std::for_each(std::execution::par, indices.begin(), indices.end(), [&](int64_t i) {
+		tmp[i] = Block(cfg.hidden_size, cfg.num_attention_heads, hidden_dim, n_kv_heads, cfg.rms_norm_eps);
+		});
+
 	for (int64_t i = 0; i < cfg.num_hidden_layers; ++i)
-	{		
-		layers->push_back(Block(cfg.hidden_size, cfg.num_attention_heads, hidden_dim, n_kv_heads, cfg.rms_norm_eps));
+	{
+		//layers->push_back(Block(cfg.hidden_size, cfg.num_attention_heads, hidden_dim, n_kv_heads, cfg.rms_norm_eps));
+		layers->push_back(tmp[i]);
 	}
 
 	AUTO_REGISTER_NEW_MODULE(norm, RMSNorm(cfg.hidden_size, cfg.rms_norm_eps));
 
 	AUTO_REGISTER_NEW_MODULE(lm_head, torch::nn::Linear(torch::nn::LinearOptions(cfg.hidden_size, cfg.vocab_size).bias(false)));
 
-	if (cfg.tie_word_embeddings) 
+	if (cfg.tie_word_embeddings)
 	{
 		lm_head->weight = tok_emb->weight;
 	}
@@ -340,10 +324,10 @@ torch::Tensor LlamaForCausalLM::get_attn_mask(int64_t q_len, int64_t k_len,
 	constexpr float minValue = std::numeric_limits<float>::lowest();
 
 	if (q_len == k_len && past_len == 0)
-	{		
-		if ((_mask_len < q_len) || (_attn_mask_cache.device() != tOptDevice.device()) || 
+	{
+		if ((_mask_len < q_len) || (_attn_mask_cache.device() != tOptDevice.device()) ||
 			(_attn_mask_cache.scalar_type() != dtype))
-		{			
+		{
 			auto m = torch::full({ q_len, q_len }, minValue, tOptDevice.dtype(dtype));
 			m = torch::triu(m, 1);
 			_attn_mask_cache = m.view({ 1, 1, q_len, q_len });
@@ -376,15 +360,15 @@ std::pair<torch::Tensor, torch::Tensor> LlamaForCausalLM::precompute_rope_freque
 	auto sin = torch::sin(freqs);
 	cos = cos.to(dtype);
 	sin = sin.to(dtype);
-		
+
 	return { cos, sin };
 }
 
 
-std::pair<torch::Tensor, torch::Tensor> LlamaForCausalLM::get_rope(int64_t T, 
-	torch::ScalarType dtype) 
+std::pair<torch::Tensor, torch::Tensor> LlamaForCausalLM::get_rope(int64_t T,
+	torch::ScalarType dtype)
 {
-	if ((_rope_len < T) || (_rope_cos.device() != tOptDevice.device()) || 
+	if ((_rope_len < T) || (_rope_cos.device() != tOptDevice.device()) ||
 		(_rope_cos.scalar_type() != dtype))
 	{
 		auto head_dim = cfg.hidden_size / cfg.num_attention_heads;
@@ -397,7 +381,7 @@ std::pair<torch::Tensor, torch::Tensor> LlamaForCausalLM::get_rope(int64_t T,
 	return { _rope_cos.index({Slice(0, T)}), _rope_sin.index({Slice(0, T)}) };
 }
 
-torch::Tensor LlamaForCausalLM::forward(const torch::Tensor& input_ids) 
+torch::Tensor LlamaForCausalLM::forward(const torch::Tensor& input_ids)
 {
 	return forward_with_cache(input_ids, {}, false).first;
 }
@@ -407,7 +391,7 @@ std::pair<torch::Tensor, std::vector<KVCache>> LlamaForCausalLM::forward_with_ca
 	const std::vector<KVCache>& past_key_values,
 	bool use_cache)
 {
-	auto device = input_ids.device();	
+	auto device = input_ids.device();
 	tOptDevice = torch::TensorOptions().device(device);
 
 	//auto B = input_ids.size(0);	
@@ -419,8 +403,8 @@ std::pair<torch::Tensor, std::vector<KVCache>> LlamaForCausalLM::forward_with_ca
 		TORCH_CHECK(static_cast<int64_t>(past_key_values.size()) == cfg.num_hidden_layers,
 			"past_key_values has ", static_cast<int64_t>(past_key_values.size()),
 			" layers, expected ", cfg.num_hidden_layers);
-		
-		past_len = past_key_values[0].k.size(2);		
+
+		past_len = past_key_values[0].k.size(2);
 	}
 
 	auto x = tok_emb(input_ids);
@@ -441,7 +425,7 @@ std::pair<torch::Tensor, std::vector<KVCache>> LlamaForCausalLM::forward_with_ca
 		{
 			layer_past = past_key_values[static_cast<size_t>(layer_i)];
 		}
-		
+
 		auto layer = layers[layer_i]->as<Block>();
 		auto layer_out = layer->forward(x, rope.first, rope.second, attn_mask, layer_past, use_cache, past_len);
 		x = layer_out.first;
@@ -460,7 +444,7 @@ std::pair<torch::Tensor, std::vector<KVCache>> LlamaForCausalLM::forward_with_ca
 
 
 std::vector<torch::Tensor> LlamaForCausalLM::RunForward(DataLoaderData& batch)
-{	
+{
 	auto x = this->forward(batch.input);
 
 	return { x, batch.target };

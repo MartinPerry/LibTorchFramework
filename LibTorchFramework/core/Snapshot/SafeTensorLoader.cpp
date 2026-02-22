@@ -4,6 +4,7 @@
 #include <unordered_set>
 
 #include <Utils/Logger.h>
+#include <Utils/3rdParty/xxhash.hpp>
 
 #include "./safetensors.h"
 
@@ -70,8 +71,8 @@ LoadStateDictReport SafeTensorLoader::LoadSafetensors(const std::filesystem::pat
 	{
 		modelStateDict.try_emplace(item.key(), &item.value());
 	}
-
-	std::unordered_set<std::string> loadedKeys;
+	
+	std::unordered_set<uint64_t> loadedKeys;
 	std::vector<std::string> unexpected;
 
 	torch::NoGradGuard noGrad;
@@ -97,6 +98,9 @@ LoadStateDictReport SafeTensorLoader::LoadSafetensors(const std::filesystem::pat
 				return;
 			}
 
+			dstTensor.copy_(t, /*non_blocking=*/true);
+
+			/*
 			torch::Tensor converted = t.to(
 				dstTensor.device(),
 				dstTensor.scalar_type(),
@@ -105,7 +109,15 @@ LoadStateDictReport SafeTensorLoader::LoadSafetensors(const std::filesystem::pat
 			//.clone() ?
 			
 			dstTensor.copy_(converted);
-			loadedKeys.insert(key);
+			*/
+
+			uint64_t h = xxh::xxhash<64>(key);
+
+			auto tmp = loadedKeys.emplace(h);			
+			if (tmp.second == false)
+			{
+				MY_LOG_WARNING("Hash collision for key %s", key.c_str());
+			}
 		});
 	}	
 
@@ -113,7 +125,8 @@ LoadStateDictReport SafeTensorLoader::LoadSafetensors(const std::filesystem::pat
 	missing.reserve(modelStateDict.size());
 	for (const auto& [key, _] : modelStateDict)
 	{
-		if (loadedKeys.find(key) == loadedKeys.end())
+		uint64_t h = xxh::xxhash<64>(key);
+		if (loadedKeys.find(h) == loadedKeys.end())
 		{
 			missing.push_back(key);
 		}

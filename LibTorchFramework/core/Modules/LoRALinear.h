@@ -82,7 +82,7 @@ TORCH_MODULE(LoRALinear);
 
 void LoRAWrap(std::shared_ptr<torch::nn::Module> m,
     const std::string& name,
-    int64_t r,
+    int64_t rank,
     double alpha,
     double dropout,
     const std::unordered_set<std::string>& targets
@@ -90,7 +90,7 @@ void LoRAWrap(std::shared_ptr<torch::nn::Module> m,
 
 void LoRAWrap(torch::nn::Module& m,
     const std::string& name,
-    int64_t r,
+    int64_t rank,
     double alpha,
     double dropout,
     const std::unordered_set<std::string>& targets

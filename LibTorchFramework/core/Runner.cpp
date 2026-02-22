@@ -33,6 +33,10 @@ torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch)
     if (sets.perf.enableAutoCast)
     {                        
         at::autocast::set_autocast_enabled(sets.device, true);
+        if (sets.perf.autocastType.has_value())
+        {
+            at::autocast::set_autocast_dtype(sets.device, *sets.perf.autocastType);
+        }
     }
     auto result = model->RunForward(batch);
     
@@ -51,7 +55,7 @@ torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch)
     if (sets.perf.enableAutoCast)
     {
         at::autocast::clear_cache();
-        at::autocast::set_autocast_enabled(sets.device, false);
+        at::autocast::set_autocast_enabled(sets.device, false);        
     }
 
     if (this->metrics)

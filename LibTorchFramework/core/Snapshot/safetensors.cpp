@@ -314,8 +314,7 @@ SafeTensorManager::TensorMap SafeTensorManager::Load(const std::string& filename
 		throw SafetensorsException("Failed to open file: " + filename);
 	}
 
-	memFile.GetSize();
-
+	
 	size_t file_size = memFile.GetSize();
 
 	if (file_size > SAFETENSORS_MAX_FILE_SIZE)
@@ -376,6 +375,8 @@ SafeTensorManager::TensorMap SafeTensorManager::Load(const std::string& filename
 				info.shape,
 				options);
 			
+			cpu_tensor = cpu_tensor.pin_memory();
+
 			//.clone(); // Clone to own the data
 
 			if (is_big_endian() && 

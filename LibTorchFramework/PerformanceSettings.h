@@ -1,6 +1,9 @@
 #ifndef PERFORMANCE_SETTINGS_H
 #define PERFORMANCE_SETTINGS_H
 
+#include <optional>
+
+#include <ATen/ScalarType.h>
 
 struct PerformanceSettings
 {
@@ -14,6 +17,8 @@ struct PerformanceSettings
 	//https://discuss.pytorch.org/t/deploy-mixed-precision-model-in-libtorch/89046/13
 	//https://discuss.pytorch.org/t/equivalent-of-gradscaler-in-the-c-api/190234/2
 	bool enableAutoCast = false;
+
+	std::optional<at::ScalarType> autocastType = std::nullopt;
 
 	//https://discuss.pytorch.org/t/should-we-set-non-blocking-to-true/38234/4
 	//whether to use non_blocking in.to() calls on tensors

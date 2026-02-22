@@ -10,6 +10,7 @@ namespace ModelZoo
 }
 
 #include <cstdint>
+#include <memory>
 
 namespace CustomScenarios
 {
@@ -18,15 +19,15 @@ namespace CustomScenarios
 		namespace Llama
 		{
 			void GreedySmokeTestInference(
-				ModelZoo::llama::LlamaForCausalLM& model,
-				TokenizerBPE& bpe,				
+				std::shared_ptr<ModelZoo::llama::LlamaForCausalLM> model,
+				std::shared_ptr<TokenizerBPE> bpe,
 				int64_t seqLen = 128,
 				int64_t steps = 30
 			);
 
 			void SmokeTestInference(
-				ModelZoo::llama::LlamaForCausalLM& model,
-				TokenizerBPE& bpe,
+				std::shared_ptr<ModelZoo::llama::LlamaForCausalLM> model,
+				std::shared_ptr<TokenizerBPE> bpe,
 				int64_t seq_len = 128,
 				int64_t steps = 30,
 				double temperature = 0.8,

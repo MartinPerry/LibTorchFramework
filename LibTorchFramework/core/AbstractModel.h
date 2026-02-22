@@ -1,6 +1,7 @@
 #ifndef ABSTRACT_MODEL_H
 #define ABSTRACT_MODEL_H
 
+class FreezeInfo;
 struct DataLoaderData;
 class Trainer;
 
@@ -21,6 +22,8 @@ public:
 	
 	void RemoveOptimizer();
 
+	void SetFrozen(std::shared_ptr<FreezeInfo> freezeInfo) const;
+
 	virtual std::vector<torch::Tensor> RunForward(DataLoaderData& batch) = 0;
 
 	virtual void OnBatchStart();
@@ -39,16 +42,15 @@ protected:
 template <typename OptimType, typename Options>
 void AbstractModel::CreateOptimizer(const Options& options, bool onlyGradientParams)
 {	
-	this->optimizer = std::make_shared<OptimType>(this->parameters(), options);
-	/*
+	
 	if (onlyGradientParams)
 	{
-		std::vector<torch::optim::OptimizerParamGroup> paramGroups;
+		torch::autograd::variable_list paramGroups;		
 		for (auto& p : this->parameters())
 		{
 			if (p.requires_grad())
 			{
-				paramGroups.emplace_back(p);
+				paramGroups.emplace_back(p);				
 			}
 		}
 
@@ -58,7 +60,7 @@ void AbstractModel::CreateOptimizer(const Options& options, bool onlyGradientPar
 	{
 		this->optimizer = std::make_shared<OptimType>(this->parameters(), options);
 	}	
-	*/
+	
 }
 
 

@@ -20,6 +20,7 @@
 #include "../../core/Snapshot/PretrainedManager.h"
 #include "../../core/Snapshot/SnapshotSaver.h"
 #include "../../core/Snapshot/SnapshotLoader.h"
+#include "../../core/Snapshot/FreezeInfo.h"
 
 #include "../../core/Tokenizers/Tokenizers.h"
 #include "../../core/Tokenizers/TokenizerBPE.h"
@@ -163,44 +164,25 @@ namespace CustomScenarios::LLMs::Llama
         //auto idsGemma = bpeGemma.Encode(u8"Hello! Briefly explain what weather warnings are.\n", false, false);
 
         		
-        std::string modelDir = "e:\\_models_\\Llama-3.2-3B-Instruct\\";
+        //std::string modelDir = "e:\\_models_\\Llama-3.2-3B-Instruct\\";
+        std::string modelDir = "e:\\_models_\\Llama-3.2-1B\\";
 
         std::shared_ptr<TokenizerBPE> bpe = std::make_shared<TokenizerBPE>("d://tokenizer.json");
         bpe->Load();
-        //RunBpeJsonTests("D://res_tokenizer_llama3.2.json", bpe);
+        //RunBpeJsonTests("D://res_tokenizer_llama3.2.json", *bpe.get());
 
         StringUtf8 prompt = LlamaConfig::InstructPrompt(u8"Hello! Briefly explain what weather warnings are.\n");
 
         std::vector<TokenId> ids;
         ids = bpe->Encode(prompt, false, false);
 
+        //--------------------------------------------------------------------
+
 		LlamaConfig cfg = LlamaConfig::FromJsonFile(modelDir + "config.json");
 
         auto llama = std::make_shared<ModelZoo::llama::LlamaForCausalLM>(cfg);
-		
-		LLamaSafeTensorLoader tl;
-		tl.LoadFromHfSafetensors(*llama.get(), modelDir);
+        llama->SetFrozen(std::make_shared<FreezeInfo>(true));
 
-		
-        auto device = torch::kCUDA;
-        
-        llama->to(device);
-
-        //GreedySmokeTestInference(llama, bpe, 256, 40);
-        //SmokeTestInference(llama, bpe, 256, 40);
-
-        
-        int lora_r = 8;
-        float lora_alpha = 16.0f;
-        float lora_dropout = 0.05f;
-        std::unordered_set<std::string> targets = { "q_proj","k_proj","v_proj","o_proj" };
-        LoRAWrap(llama, "", lora_r, lora_alpha, lora_dropout, targets);
-
-        ModelInfo mi(*llama.get());
-        auto params = mi.CountParams();
-        MY_LOG_INFO("Params trainable: %f M / total %f M", params.trainable / 1e6, params.total / 1e6);
-        
-        
         Settings sets;
         //-----
         //model debug
@@ -223,13 +205,34 @@ namespace CustomScenarios::LLMs::Llama
         };
 
 
+        llama->to(sets.device);
+
+        LLamaSafeTensorLoader tl;
+        //tl.LoadFromHfSafetensors(*llama.get(), modelDir);
+        
+        
+        //GreedySmokeTestInference(llama, bpe, 256, 40);
+        //SmokeTestInference(llama, bpe, 256, 40);
+        //return;
+
+        int lora_r = 8;
+        float lora_alpha = 16.0f;
+        float lora_dropout = 0.05f;
+        std::unordered_set<std::string> targets = { "q_proj", "k_proj", "v_proj", "o_proj" };
+        LoRAWrap(llama, "", lora_r, lora_alpha, lora_dropout, targets);
+
+        ModelInfo mi(*llama.get());
+        auto params = mi.CountParams();
+        MY_LOG_INFO("Params trainable: %f M / total %f M", params.trainable / 1e6, params.total / 1e6);
+
+
 
         auto ilw = std::make_shared<InputLoadersWrapper>(std::vector<uint16_t>{ 4096 });
         ilw->InitLoaders<TextFilesInputLoader, std::shared_ptr<Tokenizer>, int32_t, std::string>({ RunMode::TRAIN }, bpe, 4096,  "");
 
                 
         llama->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(5e-5).weight_decay(0.01).betas(std::make_tuple(0.9, 0.95)));
-
+        
 
         sets.pretrainedManager = std::make_shared<PretrainedManager>("D://CppTorchModels");
         sets.pretrainedManager->EnableTrainingSnapshot(false);
