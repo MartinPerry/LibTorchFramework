@@ -6,9 +6,13 @@ namespace ModelZoo
     namespace llama
     {
         struct LlamaConfig;
-        struct LlamaForCausalLM;
+        class LlamaForCausalLM;
     }
 }
+
+#include <unordered_map>
+#include <string>
+#include <filesystem>
 
 #include "../../core/Snapshot/SafeTensorLoader.h"
 

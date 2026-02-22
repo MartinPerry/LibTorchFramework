@@ -1,7 +1,7 @@
 #ifndef MODULES_OPTIONS_H
 #define MODULES_OPTIONS_H
 
-#include <torch/torch.h>
+#include "../../Utils/HelperMacros.h"
 
 struct ResampleOptions 
 {
@@ -11,15 +11,15 @@ struct ResampleOptions
 		scaleFactor_(scaleFactor)
 	{}
 
-	TORCH_ARG(int64_t, inChannels);
+	STRUCT_ARG(int64_t, inChannels);
 
-	TORCH_ARG(int64_t, outChannels);
+	STRUCT_ARG(int64_t, outChannels);
 
-	TORCH_ARG(int64_t, scaleFactor);
+	STRUCT_ARG(int64_t, scaleFactor);
 
-	TORCH_ARG(int64_t, kernelSize) = 1;
-	TORCH_ARG(int64_t, padding) = 0;
-	TORCH_ARG(int64_t, dilation) = 1;
+	STRUCT_ARG(int64_t, kernelSize) = 1;
+	STRUCT_ARG(int64_t, padding) = 0;
+	STRUCT_ARG(int64_t, dilation) = 1;
 };
 
 //=============================================================
@@ -32,14 +32,14 @@ struct ResidualBlockOptions
 	{
 	}
 
-	TORCH_ARG(int64_t, inChannels);
+	STRUCT_ARG(int64_t, inChannels);
 
-	TORCH_ARG(int64_t, outChannels);
+	STRUCT_ARG(int64_t, outChannels);
 
 
-	TORCH_ARG(int64_t, stride) = 1;
-	TORCH_ARG(int64_t, dilation) = 1;
-	TORCH_ARG(int64_t, outExpansion) = 0;
+	STRUCT_ARG(int64_t, stride) = 1;
+	STRUCT_ARG(int64_t, dilation) = 1;
+	STRUCT_ARG(int64_t, outExpansion) = 0;
 };
 
 #endif

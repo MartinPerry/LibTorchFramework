@@ -33,6 +33,18 @@ using TokenHashMap = std::unordered_map<StringUtf8Hash, TokenId>;
 
 //=============================================================
 
+class Tokenizer 
+{
+public:
+	Tokenizer() = default;
+	~Tokenizer() = default;
+
+	virtual std::vector<TokenId> Encode(const StringUtf8& str) = 0;
+	virtual StringUtf8 Decode(const std::vector<TokenId>& ids) = 0;
+};
+
+//=============================================================
+
 struct Token
 {
 	template <typename T>

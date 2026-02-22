@@ -147,7 +147,7 @@ namespace ModelZoo
 
         //========================================================================
 
-        struct LlamaForCausalLM : public AbstractModel
+        class LlamaForCausalLM : public AbstractModel
         {
         public:
                                    

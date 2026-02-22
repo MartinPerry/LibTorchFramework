@@ -9,19 +9,21 @@ class UnicodeRegex;
 #include "./Tokenizers.h"
 #include "./TokenizerJsonLoader.h"
 
-class TokenizerBPE
+class TokenizerBPE : public Tokenizer
 {
 public:
 	TokenizerBPE(const std::string& jsonPath);
-	~TokenizerBPE();
+	virtual ~TokenizerBPE();
 
 	const Token& GetBos() const;
 	const Token& GetEos() const;
 
 	void Load();
 
+	std::vector<TokenId> Encode(const StringUtf8& str) override;
 	std::vector<TokenId> Encode(const StringUtf8& str, bool addBos, bool addEos);
-	StringUtf8 Decode(const std::vector<TokenId>& ids);
+	
+	StringUtf8 Decode(const std::vector<TokenId>& ids) override;
 
 protected:
 

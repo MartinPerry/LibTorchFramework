@@ -17,8 +17,8 @@ public:
 	virtual const char* GetName() const = 0;
 	
 	template <typename OptimType, typename Options>
-	void CreateOptimizer(const Options& options = {});
-
+	void CreateOptimizer(const Options& options = {}, bool onlyGradientParams = true);
+	
 	void RemoveOptimizer();
 
 	virtual std::vector<torch::Tensor> RunForward(DataLoaderData& batch) = 0;
@@ -37,9 +37,29 @@ protected:
 };
 
 template <typename OptimType, typename Options>
-void AbstractModel::CreateOptimizer(const Options& options)
-{
+void AbstractModel::CreateOptimizer(const Options& options, bool onlyGradientParams)
+{	
 	this->optimizer = std::make_shared<OptimType>(this->parameters(), options);
+	/*
+	if (onlyGradientParams)
+	{
+		std::vector<torch::optim::OptimizerParamGroup> paramGroups;
+		for (auto& p : this->parameters())
+		{
+			if (p.requires_grad())
+			{
+				paramGroups.emplace_back(p);
+			}
+		}
+
+		this->optimizer = std::make_shared<OptimType>(paramGroups, options);
+	}
+	else
+	{
+		this->optimizer = std::make_shared<OptimType>(this->parameters(), options);
+	}	
+	*/
 }
+
 
 #endif

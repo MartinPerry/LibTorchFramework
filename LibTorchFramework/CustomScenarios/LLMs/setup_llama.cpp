@@ -15,6 +15,7 @@
 
 #include "../../core/Modules/LossFunctions/DiceLoss.h"
 #include "../../core/Modules/LossFunctions/MultiBceLoss.h"
+#include "../../core/Modules/LoRALinear.h"
 
 #include "../../core/Snapshot/PretrainedManager.h"
 #include "../../core/Snapshot/SnapshotSaver.h"
@@ -32,7 +33,7 @@
 #include "../../InputProcessing/InputLoader.h"
 #include "../../InputProcessing/DataLoaderData.h"
 
-#include "../../InputProcessing/InputLoaders/SegmentationInputLoader.h"
+#include "../../InputProcessing/InputLoaders/TextFilesInputLoader.h"
 
 //=========================================================
 // ModelZoo
@@ -45,6 +46,7 @@
 // Utils
 //=========================================================
 
+#include "../../Utils/ModelInfo.h"
 #include "../../Utils/TorchUtils.h"
 #include "../../Utils/TorchImageUtils.h"
 #include "../../Utils/TrainingHelper.h"
@@ -163,30 +165,80 @@ namespace CustomScenarios::LLMs::Llama
         		
         std::string modelDir = "e:\\_models_\\Llama-3.2-3B-Instruct\\";
 
-        auto bpe = TokenizerBPE("d://tokenizer.json");
-        bpe.Load();
+        std::shared_ptr<TokenizerBPE> bpe = std::make_shared<TokenizerBPE>("d://tokenizer.json");
+        bpe->Load();
         //RunBpeJsonTests("D://res_tokenizer_llama3.2.json", bpe);
 
         StringUtf8 prompt = LlamaConfig::InstructPrompt(u8"Hello! Briefly explain what weather warnings are.\n");
 
         std::vector<TokenId> ids;
-        ids = bpe.Encode(prompt, false, false);
+        ids = bpe->Encode(prompt, false, false);
 
 		LlamaConfig cfg = LlamaConfig::FromJsonFile(modelDir + "config.json");
 
-		LlamaForCausalLM llama(cfg);
-
+        auto llama = std::make_shared<ModelZoo::llama::LlamaForCausalLM>(cfg);
+		
 		LLamaSafeTensorLoader tl;
-		tl.LoadFromHfSafetensors(llama, modelDir);
+		tl.LoadFromHfSafetensors(*llama.get(), modelDir);
 
 		
         auto device = torch::kCUDA;
         
-        llama.to(device);
+        llama->to(device);
 
-        GreedySmokeTestInference(llama, bpe, 256, 40);
-        SmokeTestInference(llama, bpe, 256, 40);
+        //GreedySmokeTestInference(llama, bpe, 256, 40);
+        //SmokeTestInference(llama, bpe, 256, 40);
 
+        
+        int lora_r = 8;
+        float lora_alpha = 16.0f;
+        float lora_dropout = 0.05f;
+        std::unordered_set<std::string> targets = { "q_proj","k_proj","v_proj","o_proj" };
+        LoRAWrap(llama, "", lora_r, lora_alpha, lora_dropout, targets);
+
+        ModelInfo mi(*llama.get());
+        auto params = mi.CountParams();
+        MY_LOG_INFO("Params trainable: %f M / total %f M", params.trainable / 1e6, params.total / 1e6);
+        
+        
+        Settings sets;
+        //-----
+        //model debug
+        sets.numWorkers = 4;
+        sets.device = torch::kCUDA;
+        sets.perf.enableAutoCast = true;
+        //-----
+
+
+        sets.batchSize = 3;
+        //sets.metricsInitFn = [predEval = predEval]() -> auto {
+        //    auto metr = std::make_shared<MetricsImage>(MetricsImage::MetricsType::SEGMENTATION);
+        //    metr->SetPredictionEvaluator(predEval);
+        //    return metr;
+        //    };
+        
+        sets.lossFn = [&](const auto& output, const auto& targets) {
+            //F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
+            return torch::cross_entropy_loss(output[0], targets);
+        };
+
+
+
+        auto ilw = std::make_shared<InputLoadersWrapper>(std::vector<uint16_t>{ 4096 });
+        ilw->InitLoaders<TextFilesInputLoader, std::shared_ptr<Tokenizer>, int32_t, std::string>({ RunMode::TRAIN }, bpe, 4096,  "");
+
+                
+        llama->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(5e-5).weight_decay(0.01).betas(std::make_tuple(0.9, 0.95)));
+
+
+        sets.pretrainedManager = std::make_shared<PretrainedManager>("D://CppTorchModels");
+        sets.pretrainedManager->EnableTrainingSnapshot(false);
+        sets.pretrainedManager->EnableSaving(false);
+        sets.pretrainedManager->EnableLoading(false);
+
+        TrainingHelper th(sets, llama);
+        th.Run(ilw);
+        
         printf("=====");
 	}
 }

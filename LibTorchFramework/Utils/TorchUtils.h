@@ -2,6 +2,7 @@
 #define TORCH_UTILS_H
 
 #include <utility>
+#include <tuple>
 
 #include <ATen/ATen.h>
 #include <torch/torch.h>
@@ -19,6 +20,7 @@
 
 #define AUTO_REGISTER_NEW_BUFFER(var, ...) \
     var = register_buffer(#var __VA_OPT__(,) __VA_ARGS__)
+
 
 //===============================================================================
 
@@ -45,6 +47,9 @@ struct tensor_type_traits<float> {
 class TorchUtils
 {
 public:
+    
+    static bool IsBf16Supported();
+
 	template <typename T, typename A>
 	static at::Tensor make_tensor(std::vector<T, A>&& vec, 
         torch::TensorOptions options = {});
@@ -53,6 +58,17 @@ public:
     static at::Tensor make_tensor(std::vector<T, A>&& vec, at::IntArrayRef size, 
         torch::TensorOptions options = {});
 
+    template<typename... T>
+    static at::Tensor Create1dTensor(T... val);
+
+    template<typename... T>
+    static at::Tensor CreateTensor(at::IntArrayRef size, T... val);
+
+    template <typename T>
+    static T CastAnyModule(torch::nn::AnyModule m);
+
+    static void TensorPrintInfo(const char* desc, const at::Tensor& t);
+    
 };
 
 //===============================================================================
@@ -104,6 +120,46 @@ at::Tensor TorchUtils::make_tensor(std::vector<T, A>&& vec, at::IntArrayRef size
     // we only release the buffer now in case from_blob throws
     buf.release();
     return ten;
+}
+
+template<typename... T>
+at::Tensor TorchUtils::Create1dTensor(T... val)
+{
+    constexpr std::size_t n = sizeof...(T);
+    return TorchUtils::CreateTensor({ n }, std::forward<T>(val)...);
+}
+
+template<typename... T>
+at::Tensor TorchUtils::CreateTensor(at::IntArrayRef size, T... val)
+{
+    auto options = torch::TensorOptions()
+        .dtype(torch::kFloat32)
+        .layout(torch::kStrided);
+
+    at::Tensor res = torch::empty(size, options);
+    float* arr = res.data_ptr<float>();
+    size_t i = 0;
+    (void(arr[i++] = static_cast<float>(val)), ...);
+
+    return res;
+}
+
+template <typename T>
+T TorchUtils::CastAnyModule(torch::nn::AnyModule m)
+{
+    try
+    {
+        if (auto tmp = m.get<T>())
+        {
+            return tmp;
+        }
+    }
+    catch (...)
+    {
+        return nullptr;
+    }
+
+    return nullptr;
 }
 
 #endif

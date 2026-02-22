@@ -602,6 +602,10 @@ std::vector<TokenId> TokenizerBPE::EncodePiece(const std::vector<UnicodeCodePoin
 	return ids;
 }
 
+std::vector<TokenId> TokenizerBPE::Encode(const StringUtf8& str)
+{
+	return this->Encode(str, false, false);
+}
 
 /// <summary>
 /// str - unicode string

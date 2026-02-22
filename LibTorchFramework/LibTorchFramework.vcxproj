@@ -67,6 +67,7 @@
       <OpenMPSupport>
       </OpenMPSupport>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <DisableSpecificWarnings>4251;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -109,6 +110,7 @@
     <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel.cpp" />
     <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel_autocast.cpp" />
     <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel_autograd.cpp" />
+    <ClCompile Include="core\Modules\LoRALinear.cpp" />
     <ClCompile Include="core\Modules\LossFunctions\FocalFrequencyLoss.cpp" />
     <ClCompile Include="core\Modules\LossFunctions\SSIMLoss.cpp" />
     <ClCompile Include="core\Modules\WeightsInit\TruncatedNormalInit.cpp" />
@@ -135,6 +137,7 @@
     <ClCompile Include="InputProcessing\InputLoadersWrapper.cpp" />
     <ClCompile Include="InputProcessing\InputLoaders\EncoderDecoderInputLoader.cpp" />
     <ClCompile Include="InputProcessing\InputLoaders\SegmentationInputLoader.cpp" />
+    <ClCompile Include="InputProcessing\InputLoaders\TextFilesInputLoader.cpp" />
     <ClCompile Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModelZoo\LLMs\llama.cpp" />
@@ -149,8 +152,10 @@
     <ClCompile Include="ModelZoo\U2Net\U2NetModel.cpp" />
     <ClCompile Include="ModelZoo\UNet\UNetModel.cpp" />
     <ClCompile Include="PerformanceSettings.cpp" />
+    <ClCompile Include="Utils\ModelInfo.cpp" />
     <ClCompile Include="Utils\ProgressBar.cpp" />
     <ClCompile Include="Utils\TorchImageUtils.cpp" />
+    <ClCompile Include="Utils\TorchUtils.cpp" />
     <ClCompile Include="Utils\TrainingHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -165,6 +170,7 @@
     <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d.h" />
     <ClInclude Include="core\Modules\DownSample2d.h" />
     <ClInclude Include="core\Modules\gradscaler.hpp" />
+    <ClInclude Include="core\Modules\LoRALinear.h" />
     <ClInclude Include="core\Modules\LossFunctions\DiceLoss.h" />
     <ClInclude Include="core\Modules\LossFunctions\FocalFrequencyLoss.h" />
     <ClInclude Include="core\Modules\LossFunctions\MultiBceLoss.h" />
@@ -200,6 +206,7 @@
     <ClInclude Include="InputProcessing\InputLoadersWrapper.h" />
     <ClInclude Include="InputProcessing\InputLoaders\EncoderDecoderInputLoader.h" />
     <ClInclude Include="InputProcessing\InputLoaders\SegmentationInputLoader.h" />
+    <ClInclude Include="InputProcessing\InputLoaders\TextFilesInputLoader.h" />
     <ClInclude Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.h" />
     <ClInclude Include="ModelZoo\LLMs\llama.h" />
     <ClInclude Include="ModelZoo\LLMs\LLamaSafeTensorLoader.h" />
@@ -214,6 +221,8 @@
     <ClInclude Include="ModelZoo\UNet\UNetModel.h" />
     <ClInclude Include="PerformanceSettings.h" />
     <ClInclude Include="Settings.h" />
+    <ClInclude Include="Utils\HelperMacros.h" />
+    <ClInclude Include="Utils\ModelInfo.h" />
     <ClInclude Include="Utils\ProgressBar.h" />
     <ClInclude Include="Utils\TorchImageUtils.h" />
     <ClInclude Include="Utils\TorchUtils.h" />
