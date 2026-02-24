@@ -548,6 +548,9 @@
     <ClInclude Include="core\Modules\LoRALinear.h">
       <Filter>Header Files\core\Modules</Filter>
     </ClInclude>
+    <ClInclude Include="core\Modules\ChangableModule.h">
+      <Filter>Header Files\core\Modules</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Libtorch.natvis">

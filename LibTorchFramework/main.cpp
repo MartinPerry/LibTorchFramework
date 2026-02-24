@@ -118,12 +118,38 @@
 #include "./core/Modules/Convolutions/DeformConv.h"
 #include "./core/Modules/Convolutions/DeformConvImpl/deform_conv2d.h"
 
+#include "./core/Modules/ChangableModule.h"
+
+
+class Test : public ChangableModule<torch::nn::Linear>
+{
+public:
+
+    Test()
+    {
+        linear = torch::nn::Linear(torch::nn::LinearOptions(10, 20).bias(false));
+
+        AUTO_REGISTER_CHANGABLE_MODULE(linear);
+    }
+
+private:
+
+    torch::nn::Linear linear{ nullptr };
+};
+
 int main()
 {
     auto log = MyUtils::Logger::GetInstance();
     log->Enable(MyUtils::Logger::LogType::Error, MyUtils::Logger::LogOutput::StdOut);
     log->Enable(MyUtils::Logger::LogType::Warning, MyUtils::Logger::LogOutput::StdOut);
     log->Enable(MyUtils::Logger::LogType::Info, MyUtils::Logger::LogOutput::StdOut);
+
+    Test rr;
+
+    auto linear2 = torch::nn::Linear(torch::nn::LinearOptions(30, 20).bias(false));
+    rr.ReplaceModule("linear", linear2);
+
+    printf("x");
 
     
     //std::cout << "Hello World!\n";

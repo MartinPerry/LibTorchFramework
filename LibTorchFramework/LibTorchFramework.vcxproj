@@ -163,6 +163,7 @@
     <ClInclude Include="core\Metrics\MetricsDefault.h" />
     <ClInclude Include="core\Metrics\MetricsImage.h" />
     <ClInclude Include="core\Metrics\PredictionEvaluators.h" />
+    <ClInclude Include="core\Modules\ChangableModule.h" />
     <ClInclude Include="core\Modules\Convolutions\ConvGRU.h" />
     <ClInclude Include="core\Modules\Convolutions\CoordConv.h" />
     <ClInclude Include="core\Modules\Convolutions\DeformConv.h" />
