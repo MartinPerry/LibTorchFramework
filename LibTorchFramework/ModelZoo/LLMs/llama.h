@@ -9,6 +9,7 @@
 #include <torch/torch.h>
 
 #include "../../core/Modules/ModulesOptions.h"
+#include "../../core/Modules/ChangableModule.h"
 
 #include "../../core/AbstractModel.h"
 
@@ -71,7 +72,7 @@ namespace ModelZoo
 
         //========================================================================
 
-        struct AttentionImpl : torch::nn::Module 
+        struct AttentionImpl : ChangableModule<torch::nn::AnyModule>
         {       
         public:
            
@@ -88,10 +89,10 @@ namespace ModelZoo
             int64_t n_heads;
             int64_t n_kv_heads;
             int64_t head_dim;
-            torch::nn::Linear q_proj{ nullptr };
-            torch::nn::Linear k_proj{ nullptr };
-            torch::nn::Linear v_proj{ nullptr };
-            torch::nn::Linear o_proj{ nullptr };
+            torch::nn::AnyModule q_proj;
+            torch::nn::AnyModule k_proj;
+            torch::nn::AnyModule v_proj;
+            torch::nn::AnyModule o_proj;
 
             torch::Tensor apply_rope(const torch::Tensor& x, 
                 const torch::Tensor& cos, const torch::Tensor& sin,

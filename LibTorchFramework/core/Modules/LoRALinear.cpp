@@ -1,5 +1,7 @@
 #include "./LoRALinear.h"
 
+#include "./ChangableModule.h"
+
 inline bool isLinearModule(std::shared_ptr<torch::nn::Module> m)
 {
     return std::dynamic_pointer_cast<torch::nn::Linear>(m) != nullptr;
@@ -31,18 +33,23 @@ void LoRAWrap(torch::nn::Module& m,
 
         if (targets.find(child_name) != targets.end()) 
         {            
-            auto linearImpl = std::dynamic_pointer_cast<torch::nn::LinearImpl>(child);            
-            if (linearImpl)
+            auto parent = dynamic_cast<ChangableModule<torch::nn::AnyModule>*>(&m);
+            if (parent)
             {
+                auto linearImpl = std::dynamic_pointer_cast<torch::nn::LinearImpl>(child);
+                if (linearImpl)
+                {
 
-                auto linear = torch::nn::Linear(linearImpl);
+                    auto linear = torch::nn::Linear(linearImpl);
 
-                auto wrapped = LoRALinear(linear, rank, alpha, dropout);
+                    auto wrapped = LoRALinear(linear, rank, alpha, dropout);
+                    auto wrappedAny = torch::nn::AnyModule(wrapped);
 
-                               
-                wrapped = m.replace_module(child_name, wrapped);
-                continue;
-            }            
+                    parent->ReplaceModule(child_name, wrappedAny);
+
+                    continue;
+                }
+            }
         }
         
 

@@ -159,11 +159,11 @@ AttentionImpl::AttentionImpl(int64_t dim, int64_t n_heads, std::optional<int64_t
 	head_dim(dim / n_heads)
 {
 	TORCH_CHECK(dim % n_heads == 0, "dim must be divisible by n_heads");
-
-	AUTO_REGISTER_NEW_MODULE(q_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, n_heads * head_dim).bias(false)));
-	AUTO_REGISTER_NEW_MODULE(k_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, n_kv_heads * head_dim).bias(false)));
-	AUTO_REGISTER_NEW_MODULE(v_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, n_kv_heads * head_dim).bias(false)));
-	AUTO_REGISTER_NEW_MODULE(o_proj, torch::nn::Linear(torch::nn::LinearOptions(n_heads * head_dim, dim).bias(false)));
+	
+	AUTO_REGISTER_CHANGABLE_MODULE(q_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, n_heads * head_dim).bias(false)));
+	AUTO_REGISTER_CHANGABLE_MODULE(k_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, n_kv_heads * head_dim).bias(false)));
+	AUTO_REGISTER_CHANGABLE_MODULE(v_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, n_kv_heads * head_dim).bias(false)));
+	AUTO_REGISTER_CHANGABLE_MODULE(o_proj, torch::nn::Linear(torch::nn::LinearOptions(n_heads * head_dim, dim).bias(false)));
 }
 
 torch::Tensor AttentionImpl::apply_rope(const torch::Tensor& x,
@@ -202,9 +202,9 @@ std::pair<torch::Tensor, std::optional<KVCache>> AttentionImpl::forward(const to
 	auto B = x.size(0);
 	auto T = x.size(1);
 
-	auto q = q_proj(x).view({ B, T, n_heads, head_dim });
-	auto k = k_proj(x).view({ B, T, n_kv_heads, head_dim });
-	auto v = v_proj(x).view({ B, T, n_kv_heads, head_dim });
+	auto q = q_proj.forward(x).view({ B, T, n_heads, head_dim });
+	auto k = k_proj.forward(x).view({ B, T, n_kv_heads, head_dim });
+	auto v = v_proj.forward(x).view({ B, T, n_kv_heads, head_dim });
 
 	q = apply_rope(q, cos, sin, static_cast<int>(cache_position));
 	k = apply_rope(k, cos, sin, static_cast<int>(cache_position));
@@ -238,7 +238,7 @@ std::pair<torch::Tensor, std::optional<KVCache>> AttentionImpl::forward(const to
 	auto out = torch::matmul(att, v);
 
 	out = out.transpose(1, 2).contiguous().view({ B, T, n_heads * head_dim });
-	return { o_proj(out), present_kv };
+	return { o_proj.forward(out), present_kv };
 }
 
 //========================================================================

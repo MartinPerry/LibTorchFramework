@@ -121,20 +121,20 @@
 #include "./core/Modules/ChangableModule.h"
 
 
-class Test : public ChangableModule<torch::nn::Linear>
+class Test : public ChangableModule<torch::nn::AnyModule>
 {
 public:
 
     Test()
-    {
-        linear = torch::nn::Linear(torch::nn::LinearOptions(10, 20).bias(false));
+    {                              
+        AUTO_REGISTER_CHANGABLE_MODULE(linearAny, torch::nn::Linear(torch::nn::LinearOptions(10, 20).bias(false)));
 
-        AUTO_REGISTER_CHANGABLE_MODULE(linear);
+        
     }
 
 private:
-
-    torch::nn::Linear linear{ nullptr };
+    
+    torch::nn::AnyModule linearAny;
 };
 
 int main()
@@ -146,8 +146,9 @@ int main()
 
     Test rr;
 
-    auto linear2 = torch::nn::Linear(torch::nn::LinearOptions(30, 20).bias(false));
-    rr.ReplaceModule("linear", linear2);
+    torch::nn::AnyModule conv2 = torch::nn::AnyModule(torch::nn::Conv2d(torch::nn::Conv2dOptions(5, 6, 3)));
+    torch::nn::AnyModule linear2 = torch::nn::AnyModule(torch::nn::Linear(torch::nn::LinearOptions(30, 20).bias(false)));
+    rr.ReplaceModule("linearAny", conv2);
 
     printf("x");
 
