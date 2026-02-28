@@ -169,6 +169,12 @@
     <Filter Include="Header Files\CustomScenarios\LLMs">
       <UniqueIdentifier>{74aa1bef-6bf3-4fb8-a103-192c0fc96582}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\core\Optimizers">
+      <UniqueIdentifier>{640e19d9-09f4-4401-84e6-7e9c30cbc2b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Optimizers">
+      <UniqueIdentifier>{e2d27ee3-052e-40e3-b81e-ac08ef589d93}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -341,6 +347,9 @@
     </ClCompile>
     <ClCompile Include="core\Modules\LoRALinear.cpp">
       <Filter>Source Files\core\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Optimizers\AdamW8bit.cpp">
+      <Filter>Source Files\core\Optimizers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -550,6 +559,9 @@
     </ClInclude>
     <ClInclude Include="core\Modules\ChangableModule.h">
       <Filter>Header Files\core\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Optimizers\AdamW8bit.h">
+      <Filter>Header Files\core\Optimizers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -114,6 +114,7 @@
     <ClCompile Include="core\Modules\LossFunctions\FocalFrequencyLoss.cpp" />
     <ClCompile Include="core\Modules\LossFunctions\SSIMLoss.cpp" />
     <ClCompile Include="core\Modules\WeightsInit\TruncatedNormalInit.cpp" />
+    <ClCompile Include="core\Optimizers\AdamW8bit.cpp" />
     <ClCompile Include="core\Runner.cpp" />
     <ClCompile Include="core\Snapshot\PretrainedManager.cpp" />
     <ClCompile Include="core\Snapshot\SafeTensorLoader.cpp" />
@@ -180,6 +181,7 @@
     <ClInclude Include="core\Modules\ResNetBlock.h" />
     <ClInclude Include="core\Modules\UpSample2d.h" />
     <ClInclude Include="core\Modules\WeightsInit\TruncatedNormalInit.h" />
+    <ClInclude Include="core\Optimizers\AdamW8bit.h" />
     <ClInclude Include="core\Runner.h" />
     <ClInclude Include="core\Snapshot\FreezeInfo.h" />
     <ClInclude Include="core\Snapshot\PretrainedManager.h" />

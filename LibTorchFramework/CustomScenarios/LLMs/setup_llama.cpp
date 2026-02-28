@@ -17,6 +17,8 @@
 #include "../../core/Modules/LossFunctions/MultiBceLoss.h"
 #include "../../core/Modules/LoRALinear.h"
 
+#include "../../core/Optimizers/AdamW8bit.h"
+
 #include "../../core/Snapshot/PretrainedManager.h"
 #include "../../core/Snapshot/SnapshotSaver.h"
 #include "../../core/Snapshot/SnapshotLoader.h"
@@ -219,7 +221,7 @@ namespace CustomScenarios::LLMs::Llama
         //-----
 
 
-        sets.batchSize = 3;
+        sets.batchSize = 1;
         //sets.metricsInitFn = [predEval = predEval]() -> auto {
         //    auto metr = std::make_shared<MetricsImage>(MetricsImage::MetricsType::SEGMENTATION);
         //    metr->SetPredictionEvaluator(predEval);
@@ -265,13 +267,13 @@ namespace CustomScenarios::LLMs::Llama
         MY_LOG_INFO("Params trainable: %f M / total %f M", params.trainable / 1e6, params.total / 1e6);
 
 
-
-        auto ilw = std::make_shared<InputLoadersWrapper>(std::vector<uint16_t>{ 4096 });
-        ilw->InitLoaders<TextFilesInputLoader, std::shared_ptr<Tokenizer>, int32_t, std::string>({ RunMode::TRAIN }, bpe, 4096,  "");
+        uint16_t ctxLen = 128;
+        auto ilw = std::make_shared<InputLoadersWrapper>(std::vector<uint16_t>{ ctxLen });
+        ilw->InitLoaders<TextFilesInputLoader, std::shared_ptr<Tokenizer>, int32_t, std::string>({ RunMode::TRAIN }, bpe, ctxLen,  "");
 
                 
-        llama->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(5e-5).weight_decay(0.01).betas(std::make_tuple(0.9, 0.95)));
-        
+        //llama->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(5e-5).weight_decay(0.01).betas(std::make_tuple(0.9, 0.95)));
+        llama->CreateOptimizer<AdamW8bit>(AdamW8bitOptions());
 
         //sets.pretrainedManager = std::make_shared<PretrainedManager>("D://CppTorchModels");
         //sets.pretrainedManager->EnableTrainingSnapshot(false);

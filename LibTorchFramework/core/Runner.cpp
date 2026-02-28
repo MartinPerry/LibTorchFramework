@@ -59,10 +59,7 @@ torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch)
     }
 
     if (this->metrics)
-    {
-        //???
-        //outputs = outputs.detach()
-
+    {        
         this->metrics->UpdateProcessCounter();
         if (this->metrics->CanProcess())
         {

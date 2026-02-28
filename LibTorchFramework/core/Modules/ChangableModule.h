@@ -20,6 +20,8 @@
 
 #include <torch/torch.h>
 
+#include <Utils/Logger.h>
+
 template <typename... HolderTypes>
 struct ChangableModule : torch::nn::Module
 {
@@ -36,6 +38,7 @@ public:
         auto it = tmp.find(name); 
         if (it == tmp.end()) 
         {
+            MY_LOG_ERROR("Module %s not replaced", name.c_str());
             return m.ptr(); 
         } 
         
@@ -50,6 +53,7 @@ public:
         auto it = tmp.find(name);
         if (it == tmp.end())
         {
+            MY_LOG_ERROR("Module %s not replaced", name.c_str());
             return m.ptr();
         }
 

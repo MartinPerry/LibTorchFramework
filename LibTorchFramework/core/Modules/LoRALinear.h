@@ -54,7 +54,7 @@ struct LoRALinearImpl : torch::nn::Module
         // Freeze base weights by default
         for (auto& p : base->parameters()) 
         {
-            p.requires_grad_(false);
+            p.set_requires_grad(false);            
         }
     }
 

@@ -108,12 +108,12 @@ void MetricsDefault::AddDataIndices(const std::vector<int64_t>& indices)
 
 void MetricsDefault::AddPredictionTarget(torch::Tensor pred, torch::Tensor target, bool firstDimensionIsBatch)
 {
-	this->pred = pred;
-	this->target = target;
+	this->pred = pred.detach();
+	this->target = target.detach();
 
 	if (firstDimensionIsBatch)
 	{
-		batchesCount += pred.size(0);
+		batchesCount += this->pred.size(0);
 	}
 	else
 	{		
