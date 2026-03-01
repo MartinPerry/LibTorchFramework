@@ -190,8 +190,7 @@ public:
 
 		if (optimizer_state["stage"] == OptState::UNSCALED)
 			throw std::runtime_error("unscale_() has already been called on this optimizer since the last update().");
-		else
-		if (optimizer_state["stage"] == OptState::STEPPED)
+		else if (optimizer_state["stage"] == OptState::STEPPED)
 			throw std::runtime_error("unscale_() is being called after step().");
 
 		assert(_scale.defined());
@@ -205,9 +204,10 @@ public:
 
 	auto _maybe_opt_step(torch::optim::Optimizer& optimizer, OptimizerStates& optimizer_state, torch::optim::Optimizer::LossClosure args) -> c10::optional<c10::Scalar>
 	{
-		if (optimizer_state.contains("found_inf_per_device"))
+		auto it = optimizer_state.find("found_inf_per_device");
+		if (it != optimizer_state.end())
 		{
-			auto& found_inf_per_device = std::get<1>(optimizer_state["found_inf_per_device"]);
+			auto& found_inf_per_device = std::get<1>(it->second);
 			if (!sum(found_inf_per_device))
 			{
 				auto tensor = optimizer.step(args);
@@ -236,7 +236,9 @@ public:
 
 		auto& optimizer_state = get_per_optimizer_states(id(optimizer));
 
-		if (optimizer_state["stage"] == OptState::STEPPED)
+		auto stage = optimizer_state.find("stage");
+
+		if (stage->second == OptState::STEPPED)
 			throw std::runtime_error("step() has already been called since the last update().");
 
 		c10::optional<c10::Scalar> retval;
@@ -256,7 +258,7 @@ public:
 			// ------------------------------------------------------------------------ 
 		}
 
-		if (optimizer_state["stage"] == OptState::READY)
+		if (stage->second == OptState::READY)
 			unscale_(optimizer);
 
 		auto&& found_inf_per_device = std::get<1>(optimizer_state["found_inf_per_device"]);
