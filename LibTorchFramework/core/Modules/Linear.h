@@ -19,6 +19,7 @@ struct CustomLinearOptions
     /// If set to false, the layer will not learn an additive bias. Default: true
     TORCH_ARG(bool, bias) = true;
 
+    /// If set to false, the layer will not init weights to random during creations. Default: true
     TORCH_ARG(bool, init_params) = true;
 };
 

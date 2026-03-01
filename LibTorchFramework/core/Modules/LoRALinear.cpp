@@ -1,6 +1,7 @@
 #include "./LoRALinear.h"
 
 #include "./ChangableModule.h"
+#include "./Linear.h"
 
 inline bool isLinearModule(std::shared_ptr<torch::nn::Module> m)
 {
@@ -42,7 +43,21 @@ void LoRAWrap(torch::nn::Module& m,
 
                     auto linear = torch::nn::Linear(linearImpl);
 
-                    auto wrapped = LoRALinear(linear, rank, alpha, dropout);
+                    auto wrapped = std::make_shared<LoRALinearImpl<torch::nn::Linear>>(linear, rank, alpha, dropout);
+                    auto wrappedAny = torch::nn::AnyModule(wrapped);
+
+                    parent->ReplaceModule(child_name, wrappedAny);
+
+                    continue;
+                }
+
+                auto cLinearImpl = std::dynamic_pointer_cast<CustomLinearImpl>(child);
+                if (cLinearImpl)
+                {
+
+                    auto linear = CustomLinear(cLinearImpl);
+
+                    auto wrapped = std::make_shared<LoRALinearImpl<CustomLinear>>(linear, rank, alpha, dropout);
                     auto wrappedAny = torch::nn::AnyModule(wrapped);
 
                     parent->ReplaceModule(child_name, wrappedAny);

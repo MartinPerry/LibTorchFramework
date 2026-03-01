@@ -10,9 +10,10 @@
 
 #include "../../Utils/TorchUtils.h"
 
+template <typename LinearType = torch::nn::Linear>
 struct LoRALinearImpl : torch::nn::Module 
 {    
-    torch::nn::Linear base{ nullptr };      // frozen by default
+    LinearType base{ nullptr };      // frozen by default
     int64_t r = 0;
     double alpha = 0.0;
     double scaling = 0.0;
@@ -23,7 +24,7 @@ struct LoRALinearImpl : torch::nn::Module
     torch::Tensor B; // (out, r)
 
     
-    LoRALinearImpl(const torch::nn::Linear& base,
+    LoRALinearImpl(const LinearType& base,
         uint64_t rank,
         double alpha,
         double dropout = 0.0) : 
@@ -78,7 +79,6 @@ struct LoRALinearImpl : torch::nn::Module
     }
 };
 
-TORCH_MODULE(LoRALinear);
 
 void LoRAWrap(std::shared_ptr<torch::nn::Module> m,
     const std::string& name,

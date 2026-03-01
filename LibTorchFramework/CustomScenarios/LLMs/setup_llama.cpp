@@ -164,7 +164,7 @@ namespace CustomScenarios::LLMs::Llama
 
         auto base = torch::nn::Linear(
             torch::nn::LinearOptions(in_features, out_features).bias(false));
-        auto lora = LoRALinear(base, r, alpha, dropout);
+        auto lora = std::make_shared<LoRALinearImpl<torch::nn::Linear>>(base, r, alpha, dropout);
 
         // Dummy input
         auto x = torch::randn({ 2, in_features }, torch::kFloat32);
