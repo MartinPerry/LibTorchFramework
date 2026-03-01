@@ -1,4 +1,4 @@
-#include "./smoke_tests.h"
+#include "./llm_smoke_tests.h"
 
 #include <vector>
 
@@ -10,7 +10,7 @@
 
 using namespace ModelZoo::llama;
 
-namespace CustomScenarios::LLMs::Llama
+namespace CustomScenarios::_tests_::Llama
 {
 
 	std::vector<int64_t> TensorToInt64Vector(const torch::Tensor& t)

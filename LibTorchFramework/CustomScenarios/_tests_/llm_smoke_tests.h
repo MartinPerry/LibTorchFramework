@@ -14,7 +14,7 @@ namespace ModelZoo
 
 namespace CustomScenarios
 {
-	namespace LLMs
+	namespace _tests_
 	{
 		namespace Llama
 		{
