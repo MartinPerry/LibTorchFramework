@@ -351,6 +351,9 @@
     <ClCompile Include="core\Optimizers\AdamW8bit.cpp">
       <Filter>Source Files\core\Optimizers</Filter>
     </ClCompile>
+    <ClCompile Include="core\Modules\Linear.cpp">
+      <Filter>Source Files\core\Modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InputProcessing\DefaultDataset.h">
@@ -562,6 +565,9 @@
     </ClInclude>
     <ClInclude Include="core\Optimizers\AdamW8bit.h">
       <Filter>Header Files\core\Optimizers</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Linear.h">
+      <Filter>Header Files\core\Modules</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -110,6 +110,7 @@
     <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel.cpp" />
     <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel_autocast.cpp" />
     <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel_autograd.cpp" />
+    <ClCompile Include="core\Modules\Linear.cpp" />
     <ClCompile Include="core\Modules\LoRALinear.cpp" />
     <ClCompile Include="core\Modules\LossFunctions\FocalFrequencyLoss.cpp" />
     <ClCompile Include="core\Modules\LossFunctions\SSIMLoss.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d.h" />
     <ClInclude Include="core\Modules\DownSample2d.h" />
     <ClInclude Include="core\Modules\gradscaler.hpp" />
+    <ClInclude Include="core\Modules\Linear.h" />
     <ClInclude Include="core\Modules\LoRALinear.h" />
     <ClInclude Include="core\Modules\LossFunctions\DiceLoss.h" />
     <ClInclude Include="core\Modules\LossFunctions\FocalFrequencyLoss.h" />

@@ -10,9 +10,8 @@
 #include <torch/torch.h>
 #include <torch/optim/optimizer.h>
 
-
-
-struct AdamW8bitOptions {
+struct AdamW8bitOptions 
+{
     double lr = 1e-3;
     std::pair<double, double> betas = {0.9, 0.999};
     double eps = 1e-8;
@@ -25,22 +24,28 @@ struct AdamW8bitOptions {
     bool bf16_stochastic_round = false;
 };
 
-class AdamW8bit : public torch::optim::Optimizer {
+class AdamW8bit : public torch::optim::Optimizer 
+{
 public:
     explicit AdamW8bit(std::vector<torch::Tensor> params, AdamW8bitOptions options = {});
 
     torch::Tensor step(torch::optim::Optimizer::LossClosure closure = nullptr) override;
 
-    const AdamW8bitOptions& options() const noexcept { return options_; }
+    const AdamW8bitOptions& options() const noexcept 
+    { 
+        return options_; 
+    }
 
 private:
-    struct QuantizedState {
+    struct QuantizedState 
+    {
         torch::Tensor codes; // uint8
         torch::Tensor scale; // float32, one value per block
         torch::Tensor qmap;  // float32, 256 entries
     };
 
-    struct ParamState {
+    struct ParamState 
+    {
         int64_t step = 0;
         bool quantized = false;
 
@@ -53,7 +58,12 @@ private:
         torch::Tensor max_exp_avg_sq_fp32;
     };
 
-private:
+    AdamW8bitOptions options_;
+    std::unordered_map<void*, ParamState> state_;
+
+    torch::Tensor qmap_signed_cpu_;
+    torch::Tensor qmap_unsigned_cpu_;
+
     static void validate_options(const AdamW8bitOptions& options);
     static torch::Tensor create_dynamic_map(bool signed_map, int max_exponent_bits = 7, int total_bits = 8);
 
@@ -67,13 +77,6 @@ private:
     QuantizedState new_quantized_state(const torch::Tensor& param, bool signed_map) const;
     ParamState& get_or_init_state(const torch::Tensor& param);
     void save_state_tensor(ParamState& state, bool is_first_moment, const torch::Tensor& value_fp32);
-    void save_max_state_tensor(ParamState& state, const torch::Tensor& value_fp32);
-
-private:
-    AdamW8bitOptions options_;
-    std::unordered_map<void*, ParamState> state_;
-
-    torch::Tensor qmap_signed_cpu_;
-    torch::Tensor qmap_unsigned_cpu_;
+    void save_max_state_tensor(ParamState& state, const torch::Tensor& value_fp32);   
 };
 

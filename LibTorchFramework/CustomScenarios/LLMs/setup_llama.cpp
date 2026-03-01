@@ -216,6 +216,7 @@ namespace CustomScenarios::LLMs::Llama
         //-----
         //model debug
         sets.numWorkers = 0;
+        sets.epochCount = 1;
         sets.device = torch::kCUDA;
         sets.perf.enableAutoCast = true;
         //-----

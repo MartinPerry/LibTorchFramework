@@ -10,6 +10,7 @@
 
 #include "../../core/Modules/ModulesOptions.h"
 #include "../../core/Modules/ChangableModule.h"
+#include "../../core/Modules/Linear.h"
 
 #include "../../core/AbstractModel.h"
 
@@ -59,13 +60,13 @@ namespace ModelZoo
         struct MLPImpl : torch::nn::Module 
         {            
         public:
-            MLPImpl(int64_t dim, int64_t hidden_dim);
+            MLPImpl(int64_t dim, int64_t hidden_dim, bool initWeights = true);
             torch::Tensor forward(const torch::Tensor& x);
 
         private:
-            torch::nn::Linear gate_proj{ nullptr };
-            torch::nn::Linear up_proj{ nullptr };
-            torch::nn::Linear down_proj{ nullptr };
+            CustomLinear gate_proj{ nullptr };
+            CustomLinear up_proj{ nullptr };
+            CustomLinear down_proj{ nullptr };
 
         };
         TORCH_MODULE(MLP);
@@ -76,7 +77,9 @@ namespace ModelZoo
         {       
         public:
            
-            AttentionImpl(int64_t dim, int64_t n_heads, std::optional<int64_t> n_kv_heads_opt = std::nullopt);
+            AttentionImpl(int64_t dim, int64_t n_heads, 
+                std::optional<int64_t> n_kv_heads_opt = std::nullopt,
+                bool initWeights = true);
            
             std::pair<torch::Tensor, std::optional<KVCache>> forward(const torch::Tensor& x,
                 const torch::Tensor& cos, const torch::Tensor& sin,
@@ -106,8 +109,10 @@ namespace ModelZoo
         {
         public:
             
-            BlockImpl(int64_t dim, int64_t n_heads, int64_t hidden_dim, std::optional<int64_t> n_kv_heads = std::nullopt,
-                double rms_eps = 1e-6);
+            BlockImpl(int64_t dim, int64_t n_heads, int64_t hidden_dim, 
+                std::optional<int64_t> n_kv_heads = std::nullopt,
+                double rms_eps = 1e-6,
+                bool initWeights = true);
 
             std::pair<torch::Tensor, std::optional<KVCache>> forward(const torch::Tensor& x, 
                 const torch::Tensor& cos, const torch::Tensor& sin,
@@ -138,6 +143,8 @@ namespace ModelZoo
             double rms_norm_eps = 1e-6;
             double rope_theta = 10000.0;
             bool tie_word_embeddings = true;
+
+            bool randomInitWeights = false;
 
             static LlamaConfig FromJsonString(const std::string& jsonText);
             static LlamaConfig FromJsonFile(const std::string& filePath);

@@ -139,11 +139,11 @@ torch::Tensor RMSNormImpl::forward(const torch::Tensor& x)
 
 //========================================================================
 
-MLPImpl::MLPImpl(int64_t dim, int64_t hidden_dim)
+MLPImpl::MLPImpl(int64_t dim, int64_t hidden_dim, bool initWeights)
 {
-	AUTO_REGISTER_NEW_MODULE(gate_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, hidden_dim).bias(false)));
-	AUTO_REGISTER_NEW_MODULE(up_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, hidden_dim).bias(false)));
-	AUTO_REGISTER_NEW_MODULE(down_proj, torch::nn::Linear(torch::nn::LinearOptions(hidden_dim, dim).bias(false)));
+	AUTO_REGISTER_NEW_MODULE(gate_proj, CustomLinear(CustomLinearOptions(dim, hidden_dim).bias(false).init_params(initWeights)));
+	AUTO_REGISTER_NEW_MODULE(up_proj, CustomLinear(CustomLinearOptions(dim, hidden_dim).bias(false).init_params(initWeights)));
+	AUTO_REGISTER_NEW_MODULE(down_proj, CustomLinear(CustomLinearOptions(hidden_dim, dim).bias(false).init_params(initWeights)));
 }
 
 torch::Tensor MLPImpl::forward(const torch::Tensor& x)
@@ -153,17 +153,19 @@ torch::Tensor MLPImpl::forward(const torch::Tensor& x)
 
 //========================================================================
 
-AttentionImpl::AttentionImpl(int64_t dim, int64_t n_heads, std::optional<int64_t> n_kv_heads_opt) :
+AttentionImpl::AttentionImpl(int64_t dim, int64_t n_heads, 
+	std::optional<int64_t> n_kv_heads_opt,
+	bool initWeights) :
 	n_heads(n_heads),
 	n_kv_heads(n_kv_heads_opt.has_value() ? n_kv_heads_opt.value() : n_heads),
 	head_dim(dim / n_heads)
 {
 	TORCH_CHECK(dim % n_heads == 0, "dim must be divisible by n_heads");
 	
-	AUTO_REGISTER_CHANGABLE_MODULE(q_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, n_heads * head_dim).bias(false)));
-	AUTO_REGISTER_CHANGABLE_MODULE(k_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, n_kv_heads * head_dim).bias(false)));
-	AUTO_REGISTER_CHANGABLE_MODULE(v_proj, torch::nn::Linear(torch::nn::LinearOptions(dim, n_kv_heads * head_dim).bias(false)));
-	AUTO_REGISTER_CHANGABLE_MODULE(o_proj, torch::nn::Linear(torch::nn::LinearOptions(n_heads * head_dim, dim).bias(false)));
+	AUTO_REGISTER_CHANGABLE_MODULE(q_proj, CustomLinear(CustomLinearOptions(dim, n_heads * head_dim).bias(false).init_params(initWeights)));
+	AUTO_REGISTER_CHANGABLE_MODULE(k_proj, CustomLinear(CustomLinearOptions(dim, n_kv_heads * head_dim).bias(false).init_params(initWeights)));
+	AUTO_REGISTER_CHANGABLE_MODULE(v_proj, CustomLinear(CustomLinearOptions(dim, n_kv_heads * head_dim).bias(false).init_params(initWeights)));
+	AUTO_REGISTER_CHANGABLE_MODULE(o_proj, CustomLinear(CustomLinearOptions(n_heads * head_dim, dim).bias(false).init_params(initWeights)));
 }
 
 torch::Tensor AttentionImpl::apply_rope(const torch::Tensor& x,
@@ -206,8 +208,8 @@ std::pair<torch::Tensor, std::optional<KVCache>> AttentionImpl::forward(const to
 	auto k = k_proj.forward(x).view({ B, T, n_kv_heads, head_dim });
 	auto v = v_proj.forward(x).view({ B, T, n_kv_heads, head_dim });
 
-	q = apply_rope(q, cos, sin, static_cast<int>(cache_position));
-	k = apply_rope(k, cos, sin, static_cast<int>(cache_position));
+	q = this->apply_rope(q, cos, sin, static_cast<int>(cache_position));
+	k = this->apply_rope(k, cos, sin, static_cast<int>(cache_position));
 
 	q = q.transpose(1, 2);  // (B, H, T, D)
 	k = k.transpose(1, 2);  // (B, H_kv, T, D)
@@ -245,12 +247,13 @@ std::pair<torch::Tensor, std::optional<KVCache>> AttentionImpl::forward(const to
 
 BlockImpl::BlockImpl(int64_t dim, int64_t n_heads, int64_t hidden_dim,
 	std::optional<int64_t> n_kv_heads,
-	double rms_eps)
+	double rms_eps,
+	bool initWeights)
 {
 	AUTO_REGISTER_NEW_MODULE(attn_norm, RMSNorm(dim, rms_eps));
 	AUTO_REGISTER_NEW_MODULE(ffn_norm, RMSNorm(dim, rms_eps));
-	AUTO_REGISTER_NEW_MODULE(attn, Attention(dim, n_heads, n_kv_heads));
-	AUTO_REGISTER_NEW_MODULE(mlp, MLP(dim, hidden_dim));
+	AUTO_REGISTER_NEW_MODULE(attn, Attention(dim, n_heads, n_kv_heads, initWeights));
+	AUTO_REGISTER_NEW_MODULE(mlp, MLP(dim, hidden_dim, initWeights));
 }
 
 std::pair<torch::Tensor, std::optional<KVCache>> BlockImpl::forward(const torch::Tensor& x,
@@ -280,6 +283,7 @@ LlamaForCausalLM::LlamaForCausalLM(const LlamaConfig& cfg) :
 
 	AUTO_REGISTER_NEW_MODULE(layers, torch::nn::ModuleList());
 
+	/*
 	std::vector<Block> tmp(cfg.num_hidden_layers, nullptr);
 	std::vector<int64_t> indices(cfg.num_hidden_layers);
 	std::iota(indices.begin(), indices.end(), 0);
@@ -287,11 +291,18 @@ LlamaForCausalLM::LlamaForCausalLM(const LlamaConfig& cfg) :
 	std::for_each(std::execution::par, indices.begin(), indices.end(), [&](int64_t i) {
 		tmp[i] = Block(cfg.hidden_size, cfg.num_attention_heads, hidden_dim, n_kv_heads, cfg.rms_norm_eps);
 		});
-
+	*/
 	for (int64_t i = 0; i < cfg.num_hidden_layers; ++i)
 	{
-		//layers->push_back(Block(cfg.hidden_size, cfg.num_attention_heads, hidden_dim, n_kv_heads, cfg.rms_norm_eps));
-		layers->push_back(tmp[i]);
+		layers->push_back(Block(
+			cfg.hidden_size, 
+			cfg.num_attention_heads, 
+			hidden_dim, 
+			n_kv_heads, 
+			cfg.rms_norm_eps, 
+			cfg.randomInitWeights)
+		);
+		//layers->push_back(tmp[i]);
 	}
 
 	AUTO_REGISTER_NEW_MODULE(norm, RMSNorm(cfg.hidden_size, cfg.rms_norm_eps));
