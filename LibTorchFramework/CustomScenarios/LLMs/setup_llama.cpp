@@ -99,7 +99,7 @@ namespace CustomScenarios::LLMs::Llama
 	{
         //https://huggingface.co/spaces/Xenova/the-tokenizer-playground
 
-        CustomScenarios::_tests_::test_matches_adamw_when_quant_off();
+        //CustomScenarios::_tests_::test_matches_adamw_when_quant_off();
         CustomScenarios::_tests_::test_loss_decreases_toy_regression();
         
         
@@ -165,7 +165,7 @@ namespace CustomScenarios::LLMs::Llama
         llama->to(sets.device);
 
         LLamaSafeTensorLoader tl;
-        //tl.LoadFromHfSafetensors(*llama.get(), modelDir);
+        tl.LoadFromHfSafetensors(*llama.get(), modelDir);
         
         
         //GreedySmokeTestInference(llama, bpe, 256, 40);

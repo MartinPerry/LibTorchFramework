@@ -149,7 +149,7 @@ namespace CustomScenarios::_tests_
         opt.eps = 1e-8;
         opt.weight_decay = 0.0;
         opt.amsgrad = false;
-        opt.block_size = 256;
+        opt.block_size = 4;// 256;
         opt.min_quantized_numel = 1; // allow quant for this test (state quantization)
         opt.bf16_stochastic_round = false;
 

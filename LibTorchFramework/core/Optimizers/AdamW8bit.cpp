@@ -117,8 +117,7 @@ torch::Tensor AdamW8bit::step(torch::optim::Optimizer::LossClosure closure)
             torch::Tensor denom_base;
             if (options_.amsgrad) 
             {
-                auto max_exp_avg_sq_f32 =
-                    state.quantized ? dequant_to_fp32(state.max_exp_avg_sq_q) : state.max_exp_avg_sq_fp32;
+                auto max_exp_avg_sq_f32 = state.quantized ? dequant_to_fp32(state.max_exp_avg_sq_q) : state.max_exp_avg_sq_fp32;
                 max_exp_avg_sq_f32 = torch::maximum(max_exp_avg_sq_f32, exp_avg_sq_f32);
                 save_max_state_tensor(state, max_exp_avg_sq_f32);
                 denom_base = max_exp_avg_sq_f32;
@@ -256,31 +255,62 @@ std::pair<torch::Tensor, torch::Tensor> AdamW8bit::scale_tensor(const torch::Ten
 
 torch::Tensor AdamW8bit::quantize_8bit_with_qmap(const torch::Tensor& input, const torch::Tensor& qmap)
 {
+    //https://github.com/pytorch/ao/blob/main/torchao/optim/quant_utils.py
+    //# GPU-friendly binary search
+    //# https://blog.demofox.org/2017/06/20/simd-gpu-friendly-branchless-binary-search/
+
+    /*
+    codes = torch::where(input >= qmap[128], 128, 0);
+    codes += torch::where(input >= qmap[codes + 64], 64, 0);
+    codes += torch::where(input >= qmap[codes + 32], 32, 0);
+    codes += torch::where(input >= qmap[codes + 16], 16, 0);
+    codes += torch::where(input >= qmap[codes + 8], 8, 0);
+    codes += torch::where(input >= qmap[codes + 4], 4, 0);
+    codes += torch::where(input >= qmap[codes + 2], 2, 0);
+    codes += torch::where(input >= qmap[codes + 1], 1, 0);
+    */
+    
     auto in = input.contiguous().to(torch::kFloat32);
     auto map = qmap.to(in.device(), torch::kFloat32);
 
-    auto codes = torch::where(
-        in >= map.index({128}),
-        torch::full(in.sizes(), 128, in.options().dtype(torch::kInt32)),
-        torch::zeros(in.sizes(), in.options().dtype(torch::kInt32))
-    );
+    //first for 128    
+    auto thresh = map.index({ 128 });
+    auto mask = in >= thresh;
+    auto codes = mask.to(torch::kLong) * 128;
+           
+    //const int bits[] = {64, 32, 16, 8, 4, 2, 1};
+    //for (int bit : bits) 
+    for (int bit = 64; bit >= 2; bit /= 2)
+    {        
+        thresh = map.index({codes + bit});
 
-    const int bits[] = {64, 32, 16, 8, 4, 2, 1};
-    for (int bit : bits) 
-    {
-        auto idx = (codes + bit).to(torch::kLong);
-        auto thresh = map.index({idx});
-        auto add = torch::where(in >= thresh, torch::full_like(codes, bit), torch::zeros_like(codes));
-        codes = codes + add;
+        //map.index(idx) - what does it do:
+        //map = [10, 20, 30, 40, 50, 60]
+        //idx = [2, 4, 1]
+        // => result = [30, 50, 20]
+
+        mask = in >= thresh;
+                
+        codes += mask.to(codes.dtype()) * bit;        
     }
 
+    //last for 1
+    mask = in >= thresh;
+    thresh = map.index({ codes + 1 });
+    codes += mask.to(codes.dtype());
+
+
+
+    //rounding
     auto codes_up = (codes + 1).clamp_max(255);
-    auto val_down = map.index({codes.to(torch::kLong)});
-    auto val_up = map.index({codes_up.to(torch::kLong)});
+    
+    auto val_down = map.index({codes});
+    auto val_up = map.index({codes_up});
     auto residual = in - val_down;
+
     codes = torch::where(residual >= (val_up - val_down) * 0.5, codes_up, codes);
 
-    return codes.to(torch::kUInt8).contiguous();
+    return codes.to(torch::kUInt8).contiguous();    
 }
 
 torch::Tensor AdamW8bit::dequant_with_qmap(const torch::Tensor& codes, const torch::Tensor& qmap, const torch::Tensor& scale)
@@ -309,10 +339,12 @@ torch::Tensor AdamW8bit::dequant_to_fp32(const QuantizedState& qstate)
 AdamW8bit::QuantizedState AdamW8bit::new_quantized_state(const torch::Tensor& param, bool signed_map) const
 {
     const int64_t blocks = param.numel() / options_.block_size;
+    
     auto qmap = (signed_map ? qmap_signed_cpu_ : qmap_unsigned_cpu_).to(param.device(), torch::kFloat32);
     auto codes = torch::zeros(param.sizes(), param.options().dtype(torch::kUInt8));
     auto scale = torch::zeros({blocks}, param.options().dtype(torch::kFloat32));
-    return {codes.contiguous(), scale.contiguous(), qmap.contiguous()};
+
+    return {codes, scale, qmap};
 }
 
 AdamW8bit::ParamState& AdamW8bit::get_or_init_state(const torch::Tensor& param)
