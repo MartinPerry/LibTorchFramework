@@ -366,6 +366,9 @@
     <ClCompile Include="CustomScenarios\_tests_\tokenizer_tests.cpp">
       <Filter>Source Files\CustomScenarios\_tests_</Filter>
     </ClCompile>
+    <ClCompile Include="core\Optimizers\LAMB.cpp">
+      <Filter>Source Files\core\Optimizers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InputProcessing\DefaultDataset.h">
@@ -586,6 +589,9 @@
     </ClInclude>
     <ClInclude Include="CustomScenarios\_tests_\tokenizer_tests.h">
       <Filter>Header Files\CustomScenarios\_tests_</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Optimizers\LAMB.h">
+      <Filter>Header Files\core\Optimizers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

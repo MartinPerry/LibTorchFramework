@@ -11,22 +11,55 @@
 
 using torch::indexing::Slice;
 
-AdamW8bit::AdamW8bit(std::vector<torch::Tensor> params, AdamW8bitOptions options) : 
+AdamW8bit::AdamW8bit(const std::vector<torch::Tensor>& params, AdamW8bitOptions options) : 
+    AdamW8bit({ torch::optim::OptimizerParamGroup(std::move(params)) }, std::move(options))
+{
+}
+
+AdamW8bit::AdamW8bit(std::vector<torch::optim::OptimizerParamGroup> param_groups, AdamW8bitOptions options) :
     torch::optim::Optimizer(
-          std::move(params),
-          std::make_unique<torch::optim::AdamWOptions>(options.lr)
+        param_groups,
+        std::make_unique<torch::optim::AdamWOptions>(options.lr)
     ),
     options_(std::move(options))
 {
-    validate_options(options_);
+    validate_options(options_, this->param_groups());
+    
+    qmap_signed_cpu_ = create_dynamic_map(true);
+    qmap_unsigned_cpu_ = create_dynamic_map(false);
+}
 
-    if (param_groups().empty())
+
+void AdamW8bit::validate_options(const AdamW8bitOptions& options, 
+    const std::vector<torch::optim::OptimizerParamGroup>& param_groups)
+{
+    if (options.lr < 0.0) {
+        throw std::invalid_argument("Invalid learning rate.");
+    }
+    if (options.eps < 0.0) {
+        throw std::invalid_argument("Invalid epsilon value.");
+    }
+    if (options.weight_decay < 0.0) {
+        throw std::invalid_argument("Invalid weight_decay value.");
+    }
+    if (options.betas.first < 0.0 || options.betas.first >= 1.0 || options.betas.second < 0.0 ||
+        options.betas.second >= 1.0) {
+        throw std::invalid_argument("Invalid beta values.");
+    }
+    if (options.block_size < 1) {
+        throw std::invalid_argument("block_size must be >= 1.");
+    }
+    if (options.min_quantized_numel < 1) {
+        throw std::invalid_argument("min_quantized_numel must be >= 1.");
+    }
+
+    if (param_groups.empty())
     {
         throw std::invalid_argument("AdamW8bit requires at least one parameter tensor.");
     }
 
     bool any_param = false;
-    for (const auto& group : this->param_groups()) 
+    for (const auto& group : param_groups)
     {
         for (const auto& p : group.params())
         {
@@ -35,7 +68,7 @@ AdamW8bit::AdamW8bit(std::vector<torch::Tensor> params, AdamW8bitOptions options
             {
                 throw std::invalid_argument("AdamW8bit received an undefined parameter tensor.");
             }
-            if (!p.is_leaf()) 
+            if (!p.is_leaf())
             {
                 throw std::invalid_argument("AdamW8bit expects leaf tensors as parameters.");
             }
@@ -49,10 +82,8 @@ AdamW8bit::AdamW8bit(std::vector<torch::Tensor> params, AdamW8bitOptions options
     {
         throw std::invalid_argument("AdamW8bit requires at least one parameter tensor.");
     }
-
-    qmap_signed_cpu_ = create_dynamic_map(true);
-    qmap_unsigned_cpu_ = create_dynamic_map(false);
 }
+
 
 torch::Tensor AdamW8bit::step(torch::optim::Optimizer::LossClosure closure)
 {
@@ -147,28 +178,6 @@ torch::Tensor AdamW8bit::step(torch::optim::Optimizer::LossClosure closure)
     return loss;
 }
 
-void AdamW8bit::validate_options(const AdamW8bitOptions& options) 
-{
-    if (options.lr < 0.0) {
-        throw std::invalid_argument("Invalid learning rate.");
-    }
-    if (options.eps < 0.0) {
-        throw std::invalid_argument("Invalid epsilon value.");
-    }
-    if (options.weight_decay < 0.0) {
-        throw std::invalid_argument("Invalid weight_decay value.");
-    }
-    if (options.betas.first < 0.0 || options.betas.first >= 1.0 || options.betas.second < 0.0 ||
-        options.betas.second >= 1.0) {
-        throw std::invalid_argument("Invalid beta values.");
-    }
-    if (options.block_size < 1) {
-        throw std::invalid_argument("block_size must be >= 1.");
-    }
-    if (options.min_quantized_numel < 1) {
-        throw std::invalid_argument("min_quantized_numel must be >= 1.");
-    }
-}
 
 torch::Tensor AdamW8bit::create_dynamic_map(bool signed_map, int max_exponent_bits, int total_bits) 
 {
@@ -299,7 +308,7 @@ torch::Tensor AdamW8bit::quantize_8bit_with_qmap(const torch::Tensor& input, con
     thresh = map.index({ codes + 1 });
     codes += mask.to(codes.dtype());
 
-
+    //in codes, there is index of found value
 
     //rounding
     auto codes_up = (codes + 1).clamp_max(255);

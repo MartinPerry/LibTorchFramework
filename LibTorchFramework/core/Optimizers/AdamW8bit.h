@@ -27,7 +27,9 @@ struct AdamW8bitOptions
 class AdamW8bit : public torch::optim::Optimizer 
 {
 public:
-    explicit AdamW8bit(std::vector<torch::Tensor> params, AdamW8bitOptions options = {});
+    explicit AdamW8bit(const std::vector<torch::Tensor>& params, AdamW8bitOptions options = {});
+    explicit AdamW8bit(std::vector<torch::optim::OptimizerParamGroup> param_groups, AdamW8bitOptions options = {});
+    
 
     torch::Tensor step(torch::optim::Optimizer::LossClosure closure = nullptr) override;
 
@@ -64,7 +66,8 @@ private:
     torch::Tensor qmap_signed_cpu_;
     torch::Tensor qmap_unsigned_cpu_;
 
-    static void validate_options(const AdamW8bitOptions& options);
+    static void validate_options(const AdamW8bitOptions& options, 
+        const std::vector<torch::optim::OptimizerParamGroup>& param_groups);
     static torch::Tensor create_dynamic_map(bool signed_map, int max_exponent_bits = 7, int total_bits = 8);
 
     static std::pair<torch::Tensor, torch::Tensor> scale_tensor(const torch::Tensor& input, int64_t block_size);

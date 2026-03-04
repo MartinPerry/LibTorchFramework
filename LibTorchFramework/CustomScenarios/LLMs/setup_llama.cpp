@@ -18,6 +18,7 @@
 #include "../../core/Modules/LoRALinear.h"
 
 #include "../../core/Optimizers/AdamW8bit.h"
+#include "../../core/Optimizers/LAMB.h"
 
 #include "../../core/Snapshot/PretrainedManager.h"
 #include "../../core/Snapshot/SnapshotSaver.h"
@@ -65,6 +66,34 @@
 
 using namespace ModelZoo::llama;
 
+#include <memory>
+
+class LinearTestModule : public torch::nn::Module
+{
+public:
+    LinearTestModule(int64_t in_features, int64_t out_features);
+
+    torch::Tensor forward(const torch::Tensor& x);
+
+private:
+    torch::nn::Linear linear_{ nullptr };
+};
+
+LinearTestModule::LinearTestModule(int64_t in_features, int64_t out_features)
+{
+    linear_ = register_module(
+        "linear",
+        torch::nn::Linear(
+            torch::nn::LinearOptions(in_features, out_features)
+        )
+    );
+}
+
+torch::Tensor LinearTestModule::forward(const torch::Tensor& x)
+{
+    torch::Tensor output = linear_->forward(x);
+    return output;
+}
 
 namespace CustomScenarios::LLMs::Llama
 {
@@ -98,6 +127,14 @@ namespace CustomScenarios::LLMs::Llama
 	void setup()
 	{
         //https://huggingface.co/spaces/Xenova/the-tokenizer-playground
+
+        auto t = std::make_shared<LinearTestModule>(10, 30);
+        
+
+        LAMB lamb(t->parameters(), LambOptions(0.01).betas(std::make_pair(0.9, 0.95)));
+        //AdamW8bit lamb(t->parameters(), AdamW8bitOptions());
+        //torch::optim::AdamW lamb(t->parameters(), torch::optim::AdamWOptions(0.01).betas(std::make_tuple(0.9, 0.95)));
+        auto ooo = lamb.defaults();
 
         //CustomScenarios::_tests_::test_matches_adamw_when_quant_off();
         CustomScenarios::_tests_::test_loss_decreases_toy_regression();
@@ -193,6 +230,7 @@ namespace CustomScenarios::LLMs::Llama
                 
         //llama->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(5e-5).weight_decay(0.01).betas(std::make_tuple(0.9, 0.95)));
         llama->CreateOptimizer<AdamW8bit>(AdamW8bitOptions());
+
 
         //sets.pretrainedManager = std::make_shared<PretrainedManager>("D://CppTorchModels");
         //sets.pretrainedManager->EnableTrainingSnapshot(false);
