@@ -10,32 +10,46 @@
 #include <torch/torch.h>
 #include <torch/optim/optimizer.h>
 
-struct AdamW8bitOptions 
+struct AdamW8bitOptions : public torch::optim::OptimizerCloneableOptions<AdamW8bitOptions>
 {
-    double lr = 1e-3;
-    std::pair<double, double> betas = {0.9, 0.999};
-    double eps = 1e-8;
-    double weight_decay = 1e-2;
-    bool amsgrad = false;
+    AdamW8bitOptions(double lr = 1e-3);
+
+    typedef std::tuple<double, double> betas_t;
+
+    TORCH_ARG(double, lr) = 1e-3;
+    TORCH_ARG(betas_t, betas) = std::make_pair(0.9, 0.999);
+    TORCH_ARG(double, eps) = 1e-8;
+    TORCH_ARG(double, weight_decay) = 1e-2;
+    TORCH_ARG(bool, amsgrad) = false;
 
     // Matches ao_optim defaults/behavior.
-    int64_t block_size = 256;
-    int64_t min_quantized_numel = 4096;
-    bool bf16_stochastic_round = false;
+    TORCH_ARG(int64_t, block_size) = 256;
+    TORCH_ARG(int64_t, min_quantized_numel) = 4096;
+    TORCH_ARG(bool, bf16_stochastic_round) = false;   
+
+    void serialize(torch::serialize::InputArchive& archive) override;
+    void serialize(torch::serialize::OutputArchive& archive) const override;
+    TORCH_API friend bool operator==(
+        const AdamW8bitOptions& lhs,
+        const AdamW8bitOptions& rhs);
+    double get_lr() const override;
+    void set_lr(const double lr) override;
 };
+
+//======================================================================
 
 class AdamW8bit : public torch::optim::Optimizer 
 {
 public:
-    explicit AdamW8bit(const std::vector<torch::Tensor>& params, AdamW8bitOptions options = {});
-    explicit AdamW8bit(std::vector<torch::optim::OptimizerParamGroup> param_groups, AdamW8bitOptions options = {});
+    explicit AdamW8bit(const std::vector<torch::Tensor>& params, AdamW8bitOptions defaults = {});
+    explicit AdamW8bit(std::vector<torch::optim::OptimizerParamGroup> param_groups, AdamW8bitOptions defaults = {});
     
 
     torch::Tensor step(torch::optim::Optimizer::LossClosure closure = nullptr) override;
 
     const AdamW8bitOptions& options() const noexcept 
     { 
-        return options_; 
+        return *(dynamic_cast<AdamW8bitOptions*>(this->defaults_.get()));
     }
 
 private:
@@ -59,8 +73,7 @@ private:
         torch::Tensor exp_avg_sq_fp32;
         torch::Tensor max_exp_avg_sq_fp32;
     };
-
-    AdamW8bitOptions options_;
+        
     std::unordered_map<void*, ParamState> state_;
 
     torch::Tensor qmap_signed_cpu_;

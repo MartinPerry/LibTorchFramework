@@ -131,10 +131,10 @@ namespace CustomScenarios::LLMs::Llama
         auto t = std::make_shared<LinearTestModule>(10, 30);
         
 
-        LAMB lamb(t->parameters(), LambOptions(0.01).betas(std::make_pair(0.9, 0.95)));
-        //AdamW8bit lamb(t->parameters(), AdamW8bitOptions());
+        //LAMB lamb(t->parameters(), LambOptions(0.01).betas(std::make_tuple(0.9, 0.95)));
+        AdamW8bit lamb(t->parameters(), AdamW8bitOptions());
         //torch::optim::AdamW lamb(t->parameters(), torch::optim::AdamWOptions(0.01).betas(std::make_tuple(0.9, 0.95)));
-        auto ooo = lamb.defaults();
+        auto ooo = lamb.options();
 
         //CustomScenarios::_tests_::test_matches_adamw_when_quant_off();
         CustomScenarios::_tests_::test_loss_decreases_toy_regression();

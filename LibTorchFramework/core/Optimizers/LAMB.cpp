@@ -7,18 +7,23 @@
 Implements Lamb algorithm.
 It has been proposed in `Large Batch Optimization for Deep Learning : Training BERT in 76 minutes`_.
 
-lr(float, optional) : learning rate(default: 1e-3)
-betas(Tuple[float, float], optional) : coefficients used for computing
-            running averages of gradient and its square(default: (0.9, 0.999))
-    eps(float, optional) : term added to the denominator to improve
-            numerical stability(default: 1e-8)
-    weight_decay(float, optional) : weight decay(L2 penalty) (default: 0)
-    adam(bool, optional) : always use trust ratio = 1, which turns this into Adam. Useful for comparison purposes.
+lr : learning rate(default: 1e-3)
+betas : coefficients used for computing
+        running averages of gradient and its square(default: (0.9, 0.999))
+eps : term added to the denominator to improve
+      numerical stability(default: 1e-8)
+weight_decay : weight decay(L2 penalty) (default: 0)
+adam : always use trust ratio = 1, which turns this into Adam. Useful for comparison purposes.
 
-.._Large Batch Optimization for Deep Learning : Training BERT in 76 minutes :
-https ://arxiv.org/abs/1904.00962
+Large Batch Optimization for Deep Learning : Training BERT in 76 minutes :
+* https://arxiv.org/abs/1904.00962
+
+* https://towardsdatascience.com/an-intuitive-understanding-of-the-lamb-optimizer-46f8c0ae4866
+* https://github.com/cybertronai/pytorch-lamb
 
 */
+
+//https://github.com/pytorch/pytorch/tree/main/torch/csrc/api/src/optim
 
 // =======================
 // Options
@@ -29,24 +34,48 @@ LambOptions::LambOptions(double lr) :
 {    
 }
 
-double LambOptions::get_lr() const
+bool operator==(const LambOptions& lhs, const LambOptions& rhs) 
 {
-    return this->lr_;
+    return (lhs.lr() == rhs.lr()) &&
+        (std::get<0>(lhs.betas()) == std::get<0>(rhs.betas())) &&
+        (std::get<1>(lhs.betas()) == std::get<1>(rhs.betas())) &&
+        (lhs.eps() == rhs.eps()) && (lhs.weight_decay() == rhs.weight_decay()) &&
+        (lhs.adam() == rhs.adam());
 }
 
-void LambOptions::set_lr(const double lr)
+void LambOptions::serialize(torch::serialize::OutputArchive& archive) const 
 {
-    this->lr_ = lr;
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(lr);
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(betas);
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(eps);
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(weight_decay);
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(adam);
 }
+
+void LambOptions::serialize(torch::serialize::InputArchive& archive) 
+{
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(double, lr);
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(betas_t, betas);
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(double, eps);
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(double, weight_decay);
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(bool, adam);
+}
+
+double LambOptions::get_lr() const 
+{
+    return lr();
+}
+
+void LambOptions::set_lr(const double lr) 
+{
+    this->lr(lr);
+}
+
 
 // =======================
 // Constructor
 // =======================
 
-//https://towardsdatascience.com/an-intuitive-understanding-of-the-lamb-optimizer-46f8c0ae4866
-//https ://github.com/cybertronai/pytorch-lamb
-
-//https://github.com/pytorch/pytorch/tree/main/torch/csrc/api/src/optim
 
 LAMB::LAMB(const std::vector<torch::Tensor>& params, LambOptions defaults) :
     LAMB({ torch::optim::OptimizerParamGroup(std::move(params)) }, std::move(defaults))
@@ -57,7 +86,7 @@ LAMB::LAMB(const std::vector<torch::Tensor>& params, LambOptions defaults) :
 LAMB::LAMB(const std::vector<torch::optim::OptimizerParamGroup>& param_groups, LambOptions defaults) :
     torch::optim::Optimizer(
         param_groups,
-        std::make_unique<torch::optim::AdamWOptions>(0.01)
+        std::make_unique<LambOptions>(defaults)
     )
 {    
     TORCH_CHECK(defaults.lr() >= 0, "Invalid learning rate: ", defaults.lr());
@@ -117,34 +146,30 @@ torch::Tensor LAMB::step(torch::optim::Optimizer::LossClosure closure)
             state.step += 1;
 
             // m_t
-            state.exp_avg.mul_(opt.betas().first)
-                .add_(grad, 1.0 - opt.betas().first);
+            state.exp_avg.mul_(std::get<0>(opt.betas()))
+                .add_(grad, 1.0 - std::get<0>(opt.betas()));
 
             // v_t
-            state.exp_avg_sq.mul_(opt.betas().second)
-                .addcmul_(grad, grad, 1.0 - opt.betas().second);
+            state.exp_avg_sq.mul_(std::get<1>(opt.betas()))
+                .addcmul_(grad, grad, 1.0 - std::get<1>(opt.betas()));
 
             double step_size = opt.lr();
 
             torch::Tensor weight_norm =
                 p.pow(2).sum().sqrt().clamp(0.0, 10.0);
 
-            torch::Tensor adam_step =
-                state.exp_avg /
-                (state.exp_avg_sq.sqrt().add(opt.eps()));
+            torch::Tensor adam_step = state.exp_avg / (state.exp_avg_sq.sqrt().add(opt.eps()));
 
             if (opt.weight_decay() != 0.0)
             {
                 adam_step.add_(p, opt.weight_decay());
             }
 
-            torch::Tensor adam_norm =
-                adam_step.pow(2).sum().sqrt();
+            torch::Tensor adam_norm = adam_step.pow(2).sum().sqrt();
 
             torch::Tensor trust_ratio;
 
-            if (weight_norm.item<double>() == 0.0 ||
-                adam_norm.item<double>() == 0.0)
+            if (weight_norm.item<double>() == 0.0 || adam_norm.item<double>() == 0.0)
             {
                 trust_ratio = torch::ones_like(weight_norm);
             }

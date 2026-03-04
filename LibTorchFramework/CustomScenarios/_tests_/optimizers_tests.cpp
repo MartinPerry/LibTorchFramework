@@ -71,21 +71,20 @@ namespace CustomScenarios::_tests_
         seed_all(123);
 
         // Disable quantization by setting min_quantized_numel huge
-        AdamW8bitOptions myopt;
-        myopt.lr = 1e-3;
-        myopt.betas = { 0.9, 0.999 };
-        myopt.eps = 1e-8;
-        myopt.weight_decay = 0.01;
-        myopt.amsgrad = false;
-        myopt.block_size = 256;
-        myopt.min_quantized_numel = (int64_t)1e18; // disable
-        myopt.bf16_stochastic_round = false;
+        AdamW8bitOptions myopt(1e-3);
+        myopt.betas({ 0.9, 0.999 });
+        myopt.eps(1e-8);        
+        myopt.weight_decay(0.01);
+        myopt.amsgrad(false);
+        myopt.block_size(256);
+        myopt.min_quantized_numel((int64_t)1e18); // disable
+        myopt.bf16_stochastic_round(false);
 
         // Torch AdamW options
-        torch::optim::AdamWOptions awopt(myopt.lr);
-        awopt.betas(myopt.betas);
-        awopt.eps(myopt.eps);
-        awopt.weight_decay(myopt.weight_decay);
+        torch::optim::AdamWOptions awopt(myopt.lr());
+        awopt.betas(myopt.betas());
+        awopt.eps(myopt.eps());
+        awopt.weight_decay(myopt.weight_decay());
         awopt.amsgrad(false);
 
         // Two params, include non-multiple sizes to ensure no quant path triggers
@@ -143,17 +142,16 @@ namespace CustomScenarios::_tests_
 
         auto w = torch::zeros({ D, 1 }, torch::TensorOptions().device(dev).dtype(torch::kFloat32).requires_grad(true));
 
-        AdamW8bitOptions opt;
-        opt.lr = 5e-2;
-        opt.betas = { 0.9, 0.999 };
-        opt.eps = 1e-8;
-        opt.weight_decay = 0.0;
-        opt.amsgrad = false;
-        opt.block_size = 4;// 256;
-        opt.min_quantized_numel = 1; // allow quant for this test (state quantization)
-        opt.bf16_stochastic_round = false;
-
-        AdamW8bit my({ w }, opt);
+        AdamW8bitOptions myopt(5e-2);
+        myopt.betas({ 0.9, 0.999 });
+        myopt.eps(1e-8);
+        myopt.weight_decay(0.0);
+        myopt.amsgrad(false);
+        myopt.block_size(4);
+        myopt.min_quantized_numel(1);
+        myopt.bf16_stochastic_round(false);
+        
+        AdamW8bit my({ w }, myopt);
 
         auto loss_fn = [&]() {
             if (w.grad().defined()) {

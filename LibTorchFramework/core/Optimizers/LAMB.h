@@ -1,16 +1,17 @@
 #ifndef LAMB_OPTIMIZER_H
 #define LAMB_OPTIMIZER_H
 
-#include <torch/torch.h>
+#include <tuple>
 #include <vector>
 #include <unordered_map>
 
+#include <torch/torch.h>
 
-struct LambOptions : public torch::optim::OptimizerOptions
+struct LambOptions : public torch::optim::OptimizerCloneableOptions<LambOptions>
 {    
     LambOptions(double lr = 1e-3);
 
-    typedef std::pair<double, double> betas_t;
+    typedef std::tuple<double, double> betas_t;
 
     TORCH_ARG(double, lr) = 1e-3;    
     TORCH_ARG(betas_t, betas) = std::make_pair(0.9, 0.999);
@@ -18,9 +19,16 @@ struct LambOptions : public torch::optim::OptimizerOptions
     TORCH_ARG(double, weight_decay) = 1e-2;
     TORCH_ARG(bool, adam) = false;
 
+    void serialize(torch::serialize::InputArchive& archive) override;
+    void serialize(torch::serialize::OutputArchive& archive) const override;
+    TORCH_API friend bool operator==(
+        const LambOptions& lhs,
+        const LambOptions& rhs);
     double get_lr() const override;
     void set_lr(const double lr) override;
 };
+
+//======================================================================
 
 class LAMB : public torch::optim::Optimizer
 {

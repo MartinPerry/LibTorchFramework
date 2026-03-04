@@ -7,23 +7,81 @@
 
 #include <torch/optim/adamw.h>
 
+// =======================
+// Options
+// =======================
 
-
-using torch::indexing::Slice;
-
-AdamW8bit::AdamW8bit(const std::vector<torch::Tensor>& params, AdamW8bitOptions options) : 
-    AdamW8bit({ torch::optim::OptimizerParamGroup(std::move(params)) }, std::move(options))
+AdamW8bitOptions::AdamW8bitOptions(double lr) :
+    lr_(lr)
 {
 }
 
-AdamW8bit::AdamW8bit(std::vector<torch::optim::OptimizerParamGroup> param_groups, AdamW8bitOptions options) :
+bool operator==(const AdamW8bitOptions& lhs, const AdamW8bitOptions& rhs)
+{
+    return (lhs.lr() == rhs.lr()) &&
+        (std::get<0>(lhs.betas()) == std::get<0>(rhs.betas())) &&
+        (std::get<1>(lhs.betas()) == std::get<1>(rhs.betas())) &&
+        (lhs.eps() == rhs.eps()) && (lhs.weight_decay() == rhs.weight_decay()) &&
+        (lhs.amsgrad() == rhs.amsgrad()) &&
+        (lhs.block_size() == rhs.block_size()) &&
+        (lhs.min_quantized_numel() == rhs.min_quantized_numel()) &&
+        (lhs.bf16_stochastic_round() == rhs.bf16_stochastic_round());
+}
+
+void AdamW8bitOptions::serialize(torch::serialize::OutputArchive& archive) const
+{
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(lr);
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(betas);
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(eps);
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(weight_decay);
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(amsgrad);
+
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(block_size);
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(min_quantized_numel);
+    _TORCH_OPTIM_SERIALIZE_TORCH_ARG(bf16_stochastic_round);
+}
+
+void AdamW8bitOptions::serialize(torch::serialize::InputArchive& archive)
+{
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(double, lr);
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(betas_t, betas);
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(double, eps);
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(double, weight_decay);
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(bool, amsgrad);
+
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(int64_t, block_size);
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(int64_t, min_quantized_numel);
+    _TORCH_OPTIM_DESERIALIZE_TORCH_ARG(bool, bf16_stochastic_round);
+}
+
+double AdamW8bitOptions::get_lr() const
+{
+    return lr();
+}
+
+void AdamW8bitOptions::set_lr(const double lr)
+{
+    this->lr(lr);
+}
+
+// =======================
+// Constructor
+// =======================
+
+using torch::indexing::Slice;
+
+AdamW8bit::AdamW8bit(const std::vector<torch::Tensor>& params, AdamW8bitOptions defaults) :
+    AdamW8bit({ torch::optim::OptimizerParamGroup(std::move(params)) }, std::move(defaults))
+{
+}
+
+AdamW8bit::AdamW8bit(std::vector<torch::optim::OptimizerParamGroup> param_groups, AdamW8bitOptions defaults) :
     torch::optim::Optimizer(
         param_groups,
-        std::make_unique<torch::optim::AdamWOptions>(options.lr)
-    ),
-    options_(std::move(options))
+        std::make_unique<AdamW8bitOptions>(defaults)
+    )
 {
-    validate_options(options_, this->param_groups());
+    validate_options(defaults, this->param_groups());
     
     qmap_signed_cpu_ = create_dynamic_map(true);
     qmap_unsigned_cpu_ = create_dynamic_map(false);
@@ -33,23 +91,23 @@ AdamW8bit::AdamW8bit(std::vector<torch::optim::OptimizerParamGroup> param_groups
 void AdamW8bit::validate_options(const AdamW8bitOptions& options, 
     const std::vector<torch::optim::OptimizerParamGroup>& param_groups)
 {
-    if (options.lr < 0.0) {
+    if (options.lr() < 0.0) {
         throw std::invalid_argument("Invalid learning rate.");
     }
-    if (options.eps < 0.0) {
+    if (options.eps() < 0.0) {
         throw std::invalid_argument("Invalid epsilon value.");
     }
-    if (options.weight_decay < 0.0) {
+    if (options.weight_decay() < 0.0) {
         throw std::invalid_argument("Invalid weight_decay value.");
     }
-    if (options.betas.first < 0.0 || options.betas.first >= 1.0 || options.betas.second < 0.0 ||
-        options.betas.second >= 1.0) {
+    if (std::get<0>(options.betas()) < 0.0 || std::get<0>(options.betas()) >= 1.0 || 
+        std::get<1>(options.betas()) < 0.0 || std::get<1>(options.betas()) >= 1.0) {
         throw std::invalid_argument("Invalid beta values.");
     }
-    if (options.block_size < 1) {
+    if (options.block_size() < 1) {
         throw std::invalid_argument("block_size must be >= 1.");
     }
-    if (options.min_quantized_numel < 1) {
+    if (options.min_quantized_numel() < 1) {
         throw std::invalid_argument("min_quantized_numel must be >= 1.");
     }
 
@@ -95,11 +153,13 @@ torch::Tensor AdamW8bit::step(torch::optim::Optimizer::LossClosure closure)
     }
     torch::NoGradGuard no_grad;
 
-    const double beta1 = options_.betas.first;
-    const double beta2 = options_.betas.second;
-    const double lr = options_.lr;
-    const double eps = options_.eps;
-    const double weight_decay = options_.weight_decay;
+    auto& opt = this->options();
+
+    const double beta1 = std::get<0>(opt.betas());
+    const double beta2 = std::get<1>(opt.betas());
+    const double lr = opt.lr();
+    const double eps = opt.eps();
+    const double weight_decay = opt.weight_decay();
 
     for (auto& group : this->param_groups()) 
     {
@@ -146,7 +206,7 @@ torch::Tensor AdamW8bit::step(torch::optim::Optimizer::LossClosure closure)
             save_state_tensor(state, false, exp_avg_sq_f32);
 
             torch::Tensor denom_base;
-            if (options_.amsgrad) 
+            if (opt.amsgrad())
             {
                 auto max_exp_avg_sq_f32 = state.quantized ? dequant_to_fp32(state.max_exp_avg_sq_q) : state.max_exp_avg_sq_fp32;
                 max_exp_avg_sq_f32 = torch::maximum(max_exp_avg_sq_f32, exp_avg_sq_f32);
@@ -163,7 +223,7 @@ torch::Tensor AdamW8bit::step(torch::optim::Optimizer::LossClosure closure)
             auto denom = (denom_base.sqrt() / std::sqrt(bias_correction2)).add(eps);
             auto new_p_f32 = p_f32 - lr * (exp_avg_f32 / bias_correction1) / denom;
 
-            if (options_.bf16_stochastic_round && p.scalar_type() == torch::kBFloat16) 
+            if (opt.bf16_stochastic_round() && p.scalar_type() == torch::kBFloat16)
             {
                 // Keep API parity with ao_optim; this C++ path currently falls back to deterministic cast.
                 p.copy_(new_p_f32.to(torch::kBFloat16));
@@ -347,7 +407,9 @@ torch::Tensor AdamW8bit::dequant_to_fp32(const QuantizedState& qstate)
 
 AdamW8bit::QuantizedState AdamW8bit::new_quantized_state(const torch::Tensor& param, bool signed_map) const
 {
-    const int64_t blocks = param.numel() / options_.block_size;
+    auto& opt = this->options();
+
+    const int64_t blocks = param.numel() / opt.block_size();
     
     auto qmap = (signed_map ? qmap_signed_cpu_ : qmap_unsigned_cpu_).to(param.device(), torch::kFloat32);
     auto codes = torch::zeros(param.sizes(), param.options().dtype(torch::kUInt8));
@@ -365,14 +427,16 @@ AdamW8bit::ParamState& AdamW8bit::get_or_init_state(const torch::Tensor& param)
         return it->second;
     }
 
+    auto& opt = this->options();
+
     ParamState s;
-    s.quantized = (param.numel() >= options_.min_quantized_numel) && (param.numel() % options_.block_size == 0);
+    s.quantized = (param.numel() >= opt.min_quantized_numel()) && (param.numel() % opt.block_size() == 0);
 
     if (s.quantized) 
     {
         s.exp_avg_q = new_quantized_state(param, true);
         s.exp_avg_sq_q = new_quantized_state(param, false);
-        if (options_.amsgrad) 
+        if (opt.amsgrad()) 
         {
             s.max_exp_avg_sq_q = new_quantized_state(param, false);
         }
@@ -382,7 +446,7 @@ AdamW8bit::ParamState& AdamW8bit::get_or_init_state(const torch::Tensor& param)
         auto fp32_opts = param.options().dtype(torch::kFloat32);
         s.exp_avg_fp32 = torch::zeros(param.sizes(), fp32_opts);
         s.exp_avg_sq_fp32 = torch::zeros(param.sizes(), fp32_opts);
-        if (options_.amsgrad)
+        if (opt.amsgrad())
         {
             s.max_exp_avg_sq_fp32 = torch::zeros(param.sizes(), fp32_opts);
         }
@@ -395,17 +459,19 @@ AdamW8bit::ParamState& AdamW8bit::get_or_init_state(const torch::Tensor& param)
 
 void AdamW8bit::save_state_tensor(ParamState& state, bool is_first_moment, const torch::Tensor& value_fp32)
 {
+    auto& opt = this->options();
+
     if (state.quantized)
     {
         if (is_first_moment) 
         {
-            auto q = quantize_from_fp32(value_fp32, state.exp_avg_q.qmap, options_.block_size);
+            auto q = quantize_from_fp32(value_fp32, state.exp_avg_q.qmap, opt.block_size());
             state.exp_avg_q.codes = q.codes;
             state.exp_avg_q.scale = q.scale;
         } 
         else
         {
-            auto q = quantize_from_fp32(value_fp32, state.exp_avg_sq_q.qmap, options_.block_size);
+            auto q = quantize_from_fp32(value_fp32, state.exp_avg_sq_q.qmap, opt.block_size());
             state.exp_avg_sq_q.codes = q.codes;
             state.exp_avg_sq_q.scale = q.scale;
         }
@@ -425,9 +491,11 @@ void AdamW8bit::save_state_tensor(ParamState& state, bool is_first_moment, const
 
 void AdamW8bit::save_max_state_tensor(ParamState& state, const torch::Tensor& value_fp32) 
 {
+    auto& opt = this->options();
+
     if (state.quantized) 
     {
-        auto q = quantize_from_fp32(value_fp32, state.max_exp_avg_sq_q.qmap, options_.block_size);
+        auto q = quantize_from_fp32(value_fp32, state.max_exp_avg_sq_q.qmap, opt.block_size());
         state.max_exp_avg_sq_q.codes = q.codes;
         state.max_exp_avg_sq_q.scale = q.scale;
     } 
