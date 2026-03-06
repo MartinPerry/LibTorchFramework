@@ -172,28 +172,28 @@ torch::Tensor AttentionImpl::apply_rope(const torch::Tensor& x,
 	const torch::Tensor& cos, const torch::Tensor& sin,
 	int startPos)
 {
-	// x: (B, T, H, D), cos/sin: (T, D/2)
-	auto B = x.size(0);
-	auto T = x.size(1);
-	auto H = x.size(2);
-	auto D = x.size(3);
+	// x: (B, T, H, D), cos/sin: (T, D/2)	
+	const auto B = x.size(0);
+	const auto T = x.size(1);
+	const auto H = x.size(2);
+	const auto D = x.size(3);
+	
+	auto x_ = x.view({ B, T, H, D / 2, 2 });
+	auto x1 = x_.select(-1, 0);
+	auto x2 = x_.select(-1, 1);
 
-	auto x1 = x.index({ Slice(), Slice(), Slice(), Slice(0, torch::indexing::None, 2) });
-	auto x2 = x.index({ Slice(), Slice(), Slice(), Slice(1, torch::indexing::None, 2) });
+	auto cos_t = cos.slice(0, startPos, startPos + T).unsqueeze(0).unsqueeze(2);
+	auto sin_t = sin.slice(0, startPos, startPos + T).unsqueeze(0).unsqueeze(2);
 
-	auto cos_t = cos.index({ Slice(startPos, startPos + T) }).unsqueeze(0).unsqueeze(2);  // (1, T, 1, D/2)
-	auto sin_t = sin.index({ Slice(startPos, startPos + T) }).unsqueeze(0).unsqueeze(2);
 
 	auto y1 = x1 * cos_t - x2 * sin_t;
 	auto y2 = x1 * sin_t + x2 * cos_t;
 
-	auto y = torch::empty_like(x);
-	y.index_put_({ Slice(), Slice(), Slice(), Slice(0, torch::indexing::None, 2) }, y1);
-	y.index_put_({ Slice(), Slice(), Slice(), Slice(1, torch::indexing::None, 2) }, y2);
-	return y;
+	return torch::stack({ y1, y2 }, -1).flatten(-2);
 }
 
-std::pair<torch::Tensor, std::optional<KVCache>> AttentionImpl::forward(const torch::Tensor& x,
+std::pair<torch::Tensor, std::optional<KVCache>> AttentionImpl::forward(
+	const torch::Tensor& x,
 	const torch::Tensor& cos,
 	const torch::Tensor& sin,
 	const torch::Tensor& attn_mask,
@@ -201,8 +201,9 @@ std::pair<torch::Tensor, std::optional<KVCache>> AttentionImpl::forward(const to
 	bool use_cache,
 	int64_t cache_position)
 {
-	auto B = x.size(0);
-	auto T = x.size(1);
+	const auto B = x.size(0);
+	const auto T = x.size(1);
+	const auto q_len = T;
 
 	auto q = q_proj.forward(x).view({ B, T, n_heads, head_dim });
 	auto k = k_proj.forward(x).view({ B, T, n_kv_heads, head_dim });
@@ -214,34 +215,62 @@ std::pair<torch::Tensor, std::optional<KVCache>> AttentionImpl::forward(const to
 	q = q.transpose(1, 2);  // (B, H, T, D)
 	k = k.transpose(1, 2);  // (B, H_kv, T, D)
 	v = v.transpose(1, 2);  // (B, H_kv, T, D)
-
-	if (past_kv.has_value())
+	
+	if (past_kv.has_value()) 
 	{
-		k = torch::cat({ past_kv->k, k }, 2);
-		v = torch::cat({ past_kv->v, v }, 2);
+		k = torch::cat({ past_kv->k, k }, /*dim=*/2);
+		v = torch::cat({ past_kv->v, v }, /*dim=*/2);
 	}
 
-	std::optional<KVCache> present_kv = std::nullopt;
-	if (use_cache)
+	std::optional<KVCache> present_kv;
+	if (use_cache) 
 	{
-		present_kv = KVCache(k, v);
+		present_kv = KVCache{ k, v };
 	}
 
-	if (n_kv_heads != n_heads)
+	torch::Tensor k_attn = k;
+	torch::Tensor v_attn = v;
+
+	if (n_kv_heads != n_heads) 
 	{
-		auto repeat = n_heads / n_kv_heads;
-		k = k.repeat_interleave(repeat, 1);
-		v = v.repeat_interleave(repeat, 1);
+		const auto repeat = n_heads / n_kv_heads;
+		
+		//k = k.repeat_interleave(repeat, 1);
+		//v = v.repeat_interleave(repeat, 1);
+
+		// cheaper logical expand than repeat_interleave materialization
+		k_attn = k.unsqueeze(2)
+			.expand({ B, n_kv_heads, repeat, k.size(2), head_dim })
+			.reshape({ B, n_heads, k.size(2), head_dim });
+
+		v_attn = v.unsqueeze(2)
+			.expand({ B, n_kv_heads, repeat, v.size(2), head_dim })
+			.reshape({ B, n_heads, v.size(2), head_dim });
 	}
 
-	auto att = torch::matmul(q, k.transpose(-2, -1)) / std::sqrt(static_cast<double>(head_dim));
-	att = att + attn_mask;
+	auto att = torch::matmul(q, k_attn.transpose(-2, -1));
+	att.mul_(1.0 / std::sqrt(static_cast<double>(head_dim)));
+	att.add_(attn_mask);
 	att = torch::softmax(att, -1);
-	auto out = torch::matmul(att, v);
+	auto out = torch::matmul(att, v_attn);
+	
+	/*
+	auto out = at::scaled_dot_product_attention(
+		q,
+		k,
+		v,
+		attn_mask,
+		0.0, //dropout_p
+		false, //is_causal
+		std::nullopt //scale
+	);
+	*/
+	
+	out = out.transpose(1, 2).reshape({ B, q_len, n_heads * head_dim });
 
-	out = out.transpose(1, 2).contiguous().view({ B, T, n_heads * head_dim });
 	return { o_proj.forward(out), present_kv };
 }
+
 
 //========================================================================
 

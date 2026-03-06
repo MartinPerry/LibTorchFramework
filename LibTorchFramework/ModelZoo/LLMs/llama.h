@@ -82,11 +82,12 @@ namespace ModelZoo
                 std::optional<int64_t> n_kv_heads_opt = std::nullopt,
                 bool initWeights = true);
            
+          
             std::pair<torch::Tensor, std::optional<KVCache>> forward(const torch::Tensor& x,
                 const torch::Tensor& cos, const torch::Tensor& sin,
-                const torch::Tensor& attn_mask, 
-                const std::optional<KVCache>& past_kv = std::nullopt, 
-                bool use_cache = false, 
+                const torch::Tensor& attn_mask,
+                const std::optional<KVCache>& past_kv = std::nullopt,
+                bool use_cache = false,
                 int64_t cache_position = 0);
 
         protected:            
