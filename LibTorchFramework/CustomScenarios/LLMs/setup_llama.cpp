@@ -18,6 +18,7 @@
 #include "../../core/Modules/LoRALinear.h"
 
 #include "../../core/Optimizers/AdamW8bit.h"
+#include "../../core/Optimizers/FusedAdamW8bit.h"
 #include "../../core/Optimizers/LAMB.h"
 
 #include "../../core/Snapshot/PretrainedManager.h"
@@ -132,12 +133,14 @@ namespace CustomScenarios::LLMs::Llama
         
 
         //LAMB lamb(t->parameters(), LambOptions(0.01).betas(std::make_tuple(0.9, 0.95)));
-        AdamW8bit lamb(t->parameters(), AdamW8bitOptions());
+        //AdamW8bit lamb(t->parameters(), AdamW8bitOptions());
+        FusedAdamW8bit lamb(t->parameters(), FusedAdamW8bitOptions());
         //torch::optim::AdamW lamb(t->parameters(), torch::optim::AdamWOptions(0.01).betas(std::make_tuple(0.9, 0.95)));
         auto ooo = lamb.options();
 
         //CustomScenarios::_tests_::test_matches_adamw_when_quant_off();
-        CustomScenarios::_tests_::test_loss_decreases_toy_regression();
+        CustomScenarios::_tests_::test_loss_decreases_toy_regression_adamw8();
+        CustomScenarios::_tests_::test_loss_decreases_toy_regression_fused_adamw8();
         
         
         //auto bpeGemma = TokenizerBPE("d://tokenizer_gemma.json");
@@ -146,8 +149,8 @@ namespace CustomScenarios::LLMs::Llama
         //auto idsGemma = bpeGemma.Encode(u8"Hello! Briefly explain what weather warnings are.\n", false, false);
 
         		
-        //std::string modelDir = "e:\\_models_\\Llama-3.2-3B-Instruct\\";
-        std::string modelDir = "e:\\_models_\\Llama-3.2-1B\\";
+        std::string modelDir = "e:\\_models_\\Llama-3.2-3B-Instruct\\";
+        //std::string modelDir = "e:\\_models_\\Llama-3.2-1B\\";
 
         std::shared_ptr<TokenizerBPE> bpe = std::make_shared<TokenizerBPE>("d://tokenizer.json");
         bpe->Load();
@@ -205,8 +208,8 @@ namespace CustomScenarios::LLMs::Llama
         tl.LoadFromHfSafetensors(*llama.get(), modelDir);
         
         
-        //GreedySmokeTestInference(llama, bpe, 256, 40);
-        //SmokeTestInference(llama, bpe, 256, 40);
+        //CustomScenarios::_tests_::Llama::GreedySmokeTestInference(llama, bpe, 256, 40);
+        //CustomScenarios::_tests_::Llama::SmokeTestInference(llama, bpe, 256, 40);
         //return;
 
         int lora_r = 8;
@@ -229,7 +232,8 @@ namespace CustomScenarios::LLMs::Llama
 
                 
         //llama->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(5e-5).weight_decay(0.01).betas(std::make_tuple(0.9, 0.95)));
-        llama->CreateOptimizer<AdamW8bit>(AdamW8bitOptions());
+        //llama->CreateOptimizer<AdamW8bit>(AdamW8bitOptions());
+        llama->CreateOptimizer<FusedAdamW8bit>(FusedAdamW8bitOptions());
 
 
         //sets.pretrainedManager = std::make_shared<PretrainedManager>("D://CppTorchModels");

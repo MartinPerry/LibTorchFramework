@@ -185,8 +185,7 @@ torch::Tensor AdamW8bit::step(torch::optim::Optimizer::LossClosure closure)
 
             auto& state = get_or_init_state(p);
             state.step += 1;
-            const double step_d = static_cast<double>(state.step);
-
+            
             auto grad_f32 = grad.contiguous().to(torch::kFloat32);
             auto p_f32 = p.contiguous().to(torch::kFloat32);
 
@@ -218,6 +217,7 @@ torch::Tensor AdamW8bit::step(torch::optim::Optimizer::LossClosure closure)
                 denom_base = exp_avg_sq_f32;
             }
 
+            const double step_d = static_cast<double>(state.step);
             const double bias_correction1 = 1.0 - std::pow(beta1, step_d);
             const double bias_correction2 = 1.0 - std::pow(beta2, step_d);
             auto denom = (denom_base.sqrt() / std::sqrt(bias_correction2)).add(eps);

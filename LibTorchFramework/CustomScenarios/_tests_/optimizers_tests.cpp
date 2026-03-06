@@ -17,6 +17,7 @@
 #include <torch/torch.h>
 
 #include "../../core/Optimizers/AdamW8bit.h"
+#include "../../core/Optimizers/FusedAdamW8bit.h"
 
 namespace CustomScenarios::_tests_
 {
@@ -125,7 +126,11 @@ namespace CustomScenarios::_tests_
         std::cout << "  OK\n";
     }
 
-    void test_loss_decreases_toy_regression() 
+    //========================================================================================
+
+    
+    template <typename Opt, typename OptSets>
+    void test_loss_decreases_toy_regression(const OptSets& sets)
     {
         std::cout << "[TEST] loss decreases on toy regression...\n";
 
@@ -134,7 +139,7 @@ namespace CustomScenarios::_tests_
         seed_all(42);
 
         const int64_t N = 512;
-        const int64_t D = 32;
+        const int64_t D = 1024;
 
         auto X = torch::randn({ N, D }, torch::TensorOptions().device(dev).dtype(torch::kFloat32));
         auto true_w = torch::randn({ D, 1 }, torch::TensorOptions().device(dev).dtype(torch::kFloat32));
@@ -142,6 +147,7 @@ namespace CustomScenarios::_tests_
 
         auto w = torch::zeros({ D, 1 }, torch::TensorOptions().device(dev).dtype(torch::kFloat32).requires_grad(true));
 
+        /*
         AdamW8bitOptions myopt(5e-2);
         myopt.betas({ 0.9, 0.999 });
         myopt.eps(1e-8);
@@ -150,8 +156,9 @@ namespace CustomScenarios::_tests_
         myopt.block_size(4);
         myopt.min_quantized_numel(1);
         myopt.bf16_stochastic_round(false);
-        
-        AdamW8bit my({ w }, myopt);
+        */
+        Opt my({ w }, sets);
+       
 
         auto loss_fn = [&]() {
             if (w.grad().defined()) {
@@ -185,9 +192,38 @@ namespace CustomScenarios::_tests_
 
         std::cout << "  OK (loss0=" << loss0 << " last=" << loss_last << ")\n";
     }
+    
+    void test_loss_decreases_toy_regression_adamw8()
+    {
+        AdamW8bitOptions myopt(5e-2);
+        myopt.betas({ 0.9, 0.999 });
+        myopt.eps(1e-8);
+        myopt.weight_decay(0.0);
+        myopt.amsgrad(false);
+        myopt.block_size(4);
+        myopt.min_quantized_numel(1);
+        myopt.bf16_stochastic_round(false);
+
+        test_loss_decreases_toy_regression<AdamW8bit>(myopt);
+    }
+
+    void test_loss_decreases_toy_regression_fused_adamw8()
+    {
+        FusedAdamW8bitOptions myopt(5e-2);
+        myopt.betas({ 0.9, 0.999 });
+        myopt.eps(1e-8);
+        myopt.weight_decay(0.0);
+        myopt.amsgrad(false);
+        myopt.block_size(256);
+        myopt.min_quantized_numel(1);
+        myopt.bf16_stochastic_round(false);
+
+        test_loss_decreases_toy_regression<FusedAdamW8bit>(myopt);
+    }
+
 
     /*
-    static void test_quant_roundtrip_sanity(torch::Device dev) 
+    static void test_quant_roundtrip_sanity(torch::Device dev)
     {
         std::cout << "[TEST] quant/dequant sanity (finite, reasonable error)...\n";
 
@@ -215,15 +251,14 @@ namespace CustomScenarios::_tests_
 
         assert_finite(y, "dequant");
         auto rel = (x - y).abs().mean().item<double>() / (x.abs().mean().item<double>() + 1e-12);
-        if (!(rel < 0.2)) 
-        { 
+        if (!(rel < 0.2))
+        {
             // loose bound; 8-bit log-ish map
             std::cerr << "\n[FAIL] quant roundtrip too lossy: rel_mean_err=" << rel << "\n";
             std::exit(1);
         }
 
-        std::cout << "  OK (rel_mean_err=" << rel << ")\n";        
+        std::cout << "  OK (rel_mean_err=" << rel << ")\n";
     }
     */
-    
 }

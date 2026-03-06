@@ -11,6 +11,7 @@
 #include "../../core/Modules/ModulesOptions.h"
 #include "../../core/Modules/ChangableModule.h"
 #include "../../core/Modules/Linear.h"
+#include "../../core/Modules/Embedding.h"
 
 #include "../../core/AbstractModel.h"
 
@@ -181,7 +182,7 @@ namespace ModelZoo
                                                       
             torch::TensorOptions tOptDevice;
 
-            torch::nn::Embedding tok_emb{ nullptr };
+            CustomEmbedding tok_emb{ nullptr };
             torch::nn::ModuleList layers;
             RMSNorm norm{ nullptr };
             torch::nn::Linear lm_head{ nullptr };

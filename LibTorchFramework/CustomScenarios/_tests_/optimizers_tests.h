@@ -10,6 +10,8 @@ namespace CustomScenarios
 	{
 		void test_matches_adamw_when_quant_off();
 
-		void test_loss_decreases_toy_regression();
+		void test_loss_decreases_toy_regression_adamw8();
+		void test_loss_decreases_toy_regression_fused_adamw8();
+		
 	}
 }

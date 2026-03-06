@@ -369,6 +369,12 @@
     <ClCompile Include="core\Optimizers\LAMB.cpp">
       <Filter>Source Files\core\Optimizers</Filter>
     </ClCompile>
+    <ClCompile Include="core\Optimizers\FusedAdamW8bit.cpp">
+      <Filter>Source Files\core\Optimizers</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Embedding.cpp">
+      <Filter>Source Files\core\Modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InputProcessing\DefaultDataset.h">
@@ -593,6 +599,15 @@
     <ClInclude Include="core\Optimizers\LAMB.h">
       <Filter>Header Files\core\Optimizers</Filter>
     </ClInclude>
+    <ClInclude Include="core\Optimizers\FusedAdamW8bit.h">
+      <Filter>Header Files\core\Optimizers</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Optimizers\FusedAdamW8bit_cuda.h">
+      <Filter>Header Files\core\Optimizers</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Embedding.h">
+      <Filter>Header Files\core\Modules</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Libtorch.natvis">
@@ -602,6 +617,9 @@
   <ItemGroup>
     <CudaCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel.cu">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl</Filter>
+    </CudaCompile>
+    <CudaCompile Include="core\Optimizers\FusedAdamW8bit_cuda.cu">
+      <Filter>Source Files\core\Optimizers</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>
