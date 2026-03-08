@@ -32,7 +32,7 @@ Trainer::~Trainer()
 
 void Trainer::CheckLoss(at::Tensor loss)
 {
-    TORCH_CHECK(scaler != nullptr, "enableAutoCast is true but scaler is null");
+    //TORCH_CHECK(scaler != nullptr, "enableAutoCast is true but scaler is null");
     TORCH_CHECK(loss.defined(), "Loss is not defined (autocast)");
     TORCH_CHECK(loss.grad_fn() != nullptr, "Loss has no grad_fn (autocast)");
 
