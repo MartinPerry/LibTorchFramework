@@ -23,6 +23,7 @@ public:
 	Trainer(const Settings& sets, std::shared_ptr<AbstractModel> model);
 	virtual ~Trainer();    
 	
+	friend class CudaGraphHelper;
 
 protected:
 
@@ -34,6 +35,13 @@ protected:
 
 	void RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer);
 	void RunTrainStepsAutocast(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer);
+
+	void RunOptimizerFull(std::shared_ptr<torch::optim::Optimizer> optimizer);
+	void RunOptimizerAutoCast(std::shared_ptr<torch::optim::Optimizer> optimizer);
+
+	void RunStep(DataLoaderData& batch, std::shared_ptr<torch::optim::Optimizer> optimizer);
+
+	void ProgressLoss(float loss);
 
 	virtual void OnEpochStart() override;
 	virtual void ProcessBatch(DataLoaderData& batch) override;

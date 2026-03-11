@@ -544,12 +544,12 @@ private:
 	}
 };
 
-serialize::OutputArchive& operator<< (serialize::OutputArchive& archive, const GradScaler& scaler) 
+inline serialize::OutputArchive& operator<< (serialize::OutputArchive& archive, const GradScaler& scaler) 
 {
 	scaler.save(archive); return archive;
 }
 
-serialize::InputArchive& operator>>(serialize::InputArchive& archive, GradScaler& scaler)
+inline serialize::InputArchive& operator>>(serialize::InputArchive& archive, GradScaler& scaler)
 {
 	scaler.load(archive); return archive;
 }

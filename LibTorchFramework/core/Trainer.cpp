@@ -56,6 +56,10 @@ void Trainer::CheckLoss(at::Tensor loss)
         "Unexpected loss dtype: ", loss.dtype());
 }
 
+//============================================================================================
+// Full
+//============================================================================================
+
 void Trainer::RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer)
 {
 #ifdef _DEBUG
@@ -63,8 +67,13 @@ void Trainer::RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::O
 #endif
     loss.backward();
 
+    this->RunOptimizerFull(optimizer);
+}
+
+void Trainer::RunOptimizerFull(std::shared_ptr<torch::optim::Optimizer> optimizer)
+{
     if (sets.clippingFn)
-    {        
+    {
         sets.clippingFn(model->parameters());
     }
 
@@ -75,6 +84,10 @@ void Trainer::RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::O
     }
 }
 
+//============================================================================================
+// Autocast
+//============================================================================================
+
 void Trainer::RunTrainStepsAutocast(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer)
 {
 #ifdef _DEBUG
@@ -84,6 +97,11 @@ void Trainer::RunTrainStepsAutocast(at::Tensor loss, std::shared_ptr<torch::opti
     auto scaledLoss = scaler->scale(loss);
     scaledLoss.backward();
    
+    this->RunOptimizerAutoCast(optimizer);
+}
+
+void Trainer::RunOptimizerAutoCast(std::shared_ptr<torch::optim::Optimizer> optimizer)
+{
     if (sets.clippingFn)
     {
         if (optimizer)
@@ -103,6 +121,32 @@ void Trainer::RunTrainStepsAutocast(at::Tensor loss, std::shared_ptr<torch::opti
 }
 
 //============================================================
+// Steps
+//============================================================
+
+void Trainer::RunStep(DataLoaderData& batch, std::shared_ptr<torch::optim::Optimizer> optimizer)
+{
+    auto loss = this->ForwardAndLoss(batch);
+
+    if (sets.perf.enableAutoCast)
+    {
+        this->RunTrainStepsAutocast(loss, optimizer);
+    }
+    else
+    {
+        this->RunTrainStepsFull(loss, optimizer);
+    }
+
+    this->ProgressLoss(loss.item().toFloat());
+}
+
+void Trainer::ProgressLoss(float loss)
+{
+    this->pBar->SetParam("loss", std::to_string(loss));
+    this->pBar->NextStep();
+}
+
+//============================================================
 // Main loop callbacks
 //============================================================
 
@@ -117,12 +161,11 @@ void Trainer::OnEpochStart()
 
 void Trainer::ProcessBatch(DataLoaderData& batch)
 {
-    auto loss = this->ForwardAndLoss(batch);
 
     auto optimizer = this->model->optimizer;
     if ((sets.gradientAccumulationCount.has_value()) and (*sets.gradientAccumulationCount > 0))
     {
-        bool canUpdate = ((batchIndex + 1) % *sets.gradientAccumulationCount == 0) || 
+        bool canUpdate = ((batchIndex + 1) % *sets.gradientAccumulationCount == 0) ||
             (batchIndex + 1 == dataLoaderBatchesCount);
 
         if (canUpdate == false)
@@ -135,17 +178,7 @@ void Trainer::ProcessBatch(DataLoaderData& batch)
         MY_LOG_WARNING("No optimizer is set. Model wont train");
     }
 
-    if (sets.perf.enableAutoCast)
-    {
-        this->RunTrainStepsAutocast(loss, optimizer);
-    }
-    else
-    {
-        this->RunTrainStepsFull(loss, optimizer);
-    }
-
-    this->pBar->SetParam("loss", std::to_string(loss.item().toFloat()));
-    this->pBar->NextStep();
+    this->RunStep(batch, optimizer);
 }
 
 void Trainer::OnEpochEnd()

@@ -101,6 +101,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="core\AbstractModel.cpp" />
+    <ClCompile Include="core\CudaGraphHelper.cpp" />
     <ClCompile Include="core\Metrics\MetricsDefault.cpp" />
     <ClCompile Include="core\Metrics\MetricsImage.cpp" />
     <ClCompile Include="core\Modules\Convolutions\ConvGRU.cpp" />
@@ -167,6 +168,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\AbstractModel.h" />
+    <ClInclude Include="core\CudaGraphHelper.h" />
     <ClInclude Include="core\Metrics\MetricsDefault.h" />
     <ClInclude Include="core\Metrics\MetricsImage.h" />
     <ClInclude Include="core\Metrics\PredictionEvaluators.h" />

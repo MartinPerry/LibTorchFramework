@@ -375,6 +375,9 @@
     <ClCompile Include="core\Modules\Embedding.cpp">
       <Filter>Source Files\core\Modules</Filter>
     </ClCompile>
+    <ClCompile Include="core\CudaGraphHelper.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InputProcessing\DefaultDataset.h">
@@ -607,6 +610,9 @@
     </ClInclude>
     <ClInclude Include="core\Modules\Embedding.h">
       <Filter>Header Files\core\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="core\CudaGraphHelper.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
