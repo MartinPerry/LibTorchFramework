@@ -209,8 +209,8 @@ namespace CustomScenarios::LLMs::Llama
         
         
         //CustomScenarios::_tests_::Llama::GreedySmokeTestInference(llama, bpe, 256, 40);
-        CustomScenarios::_tests_::Llama::SmokeTestInference(llama, bpe, 256, 40);
-        return;
+        //CustomScenarios::_tests_::Llama::SmokeTestInference(llama, bpe, 256, 40);
+        //return;
 
         int lora_r = 8;
         float lora_alpha = 16.0f;

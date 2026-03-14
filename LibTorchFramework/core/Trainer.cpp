@@ -15,6 +15,8 @@
 
 #include "./Modules/gradscaler.hpp"
 
+#include "./CudaGraphHelper.h"
+
 Trainer::Trainer(const Settings& sets, std::shared_ptr<AbstractModel> model) :
 	Runner(RunMode::TRAIN, sets, model),
     scaler(nullptr),
@@ -24,6 +26,8 @@ Trainer::Trainer(const Settings& sets, std::shared_ptr<AbstractModel> model) :
     {
         scaler = std::make_shared<torch::amp::GradScaler>();        
     }
+
+    cudaGraph = std::make_shared<CudaGraphHelper>(this, 1, true, true);
 }
 
 Trainer::~Trainer()
@@ -178,7 +182,14 @@ void Trainer::ProcessBatch(DataLoaderData& batch)
         MY_LOG_WARNING("No optimizer is set. Model wont train");
     }
 
-    this->RunStep(batch, optimizer);
+    if (cudaGraph)
+    {
+        cudaGraph->Run(batch, optimizer);
+    }
+    else
+    {
+        this->RunStep(batch, optimizer);
+    }
 }
 
 void Trainer::OnEpochEnd()

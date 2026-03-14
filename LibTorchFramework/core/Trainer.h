@@ -6,6 +6,8 @@ class MetricsDefault;
 class AbstractModel;
 struct DataLoaderData;
 
+class CudaGraphHelper;
+
 namespace torch {
 	namespace amp {
 		class GradScaler;
@@ -26,6 +28,8 @@ public:
 	friend class CudaGraphHelper;
 
 protected:
+
+	std::shared_ptr<CudaGraphHelper> cudaGraph;
 
 	std::shared_ptr<torch::amp::GradScaler> scaler;
 

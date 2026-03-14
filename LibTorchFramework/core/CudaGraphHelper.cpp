@@ -10,6 +10,9 @@
 #include "./Modules/gradscaler.hpp"
 #include "./Trainer.h"
 
+#include <c10/cuda/CUDAGuard.h>
+#include <ATen/cuda/CUDAContext.h>
+
 CudaGraphHelper::CudaGraphHelper(Trainer* trainer, int warmupSteps,
     bool captureOptimizerStep, bool allowDynamicScalerGraph) : 
     trainer(trainer)
@@ -84,7 +87,7 @@ bool CudaGraphHelper::InitStaticBatch(DataLoaderData& src, DataLoaderData& dst)
 }
 
 /// <summary>
-/// CopyBatchToStatic copies the current batch tensors into the preallocated “static” batch buffers used by CUDA Graph replay.
+/// CopyBatchToStatic copies the current batch tensors into the preallocated ï¿½staticï¿½ batch buffers used by CUDA Graph replay.
 /// It is used to:
 /// reuse fixed CUDA memory addresses between steps(required by CUDA Graphs),
 /// check that shape / dtype / device still match the captured graph,
@@ -168,10 +171,10 @@ bool CudaGraphHelper::CheckNeedCapture(DataLoaderData& batch)
     bool needsCapture = (state.captured == false) || (!state.staticBatch.has_value());
     if ((needsCapture == false) && (CudaGraphHelper::CopyBatchToStatic(batch, *state.staticBatch) == false))
     {
-        return true;
+        needsCapture = true;
     }
 
-    return false;
+    return needsCapture;
 }
 
 void CudaGraphHelper::RunCapture(DataLoaderData& batch,
@@ -203,11 +206,15 @@ void CudaGraphHelper::RunCapture(DataLoaderData& batch,
 
     state.captured = false;
     state.staticBatch = batch;
+    const auto captureStream = at::cuda::getStreamFromPool(
+        /*isHighPriority=*/false,
+        batch.input.device().index());
+    c10::cuda::CUDAStreamGuard captureStreamGuard(captureStream);
     if (CudaGraphHelper::InitStaticBatch(batch, *state.staticBatch))
     {
         try
-        {
-            state.graph = std::make_unique<at::cuda::CUDAGraph>();
+        {            
+            state.graph = std::make_unique<at::cuda::CUDAGraph>();            
             state.graph->capture_begin();
 
             state.staticLoss = trainer->ForwardAndLoss(*state.staticBatch);
