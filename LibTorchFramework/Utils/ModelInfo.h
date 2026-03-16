@@ -14,10 +14,17 @@ public:
         int64_t total;
     };
 
+    struct MemoryInfo
+    {
+        size_t cpuBytes;
+        size_t gpuBytes;
+    };
+
 	ModelInfo(const torch::nn::Module& model);
 	~ModelInfo() = default;
 
     ModelParams CountParams() const;
+    MemoryInfo GetMemorySize() const;
 
 protected:
     const torch::nn::Module& model;

@@ -36,7 +36,8 @@ void CustomEmbeddingImpl::reset()
     {
         weight = register_parameter(
             "weight",
-            torch::empty({ options.num_embeddings(), options.embedding_dim() }));
+            torch::empty({ options.num_embeddings(), options.embedding_dim() })
+        );
 
         if (options.init_params())
         {

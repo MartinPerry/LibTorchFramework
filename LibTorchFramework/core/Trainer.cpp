@@ -19,6 +19,7 @@
 
 Trainer::Trainer(const Settings& sets, std::shared_ptr<AbstractModel> model) :
 	Runner(RunMode::TRAIN, sets, model),
+    cudaGraph(nullptr),
     scaler(nullptr),
     bestMetrics(nullptr)
 {
@@ -27,7 +28,7 @@ Trainer::Trainer(const Settings& sets, std::shared_ptr<AbstractModel> model) :
         scaler = std::make_shared<torch::amp::GradScaler>();        
     }
 
-    cudaGraph = std::make_shared<CudaGraphHelper>(this, 1, true, true);
+    //cudaGraph = std::make_shared<CudaGraphHelper>(this, 1, true, true);
 }
 
 Trainer::~Trainer()

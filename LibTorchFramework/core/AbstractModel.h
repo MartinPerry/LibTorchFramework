@@ -12,11 +12,12 @@ class Trainer;
 class AbstractModel : public torch::nn::Module
 {
 public:
+
 	AbstractModel();
 	virtual ~AbstractModel();
 
 	virtual const char* GetName() const = 0;
-	
+		
 	template <typename OptimType, typename Options>
 	void CreateOptimizer(const Options& options = {}, bool onlyGradientParams = true);
 	

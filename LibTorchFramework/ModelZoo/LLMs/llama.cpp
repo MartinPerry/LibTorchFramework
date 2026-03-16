@@ -308,7 +308,7 @@ LlamaForCausalLM::LlamaForCausalLM(const LlamaConfig& cfg) :
 	int64_t n_kv_heads = cfg.num_key_value_heads.has_value() ? cfg.num_key_value_heads.value() : cfg.num_attention_heads;
 	int64_t hidden_dim = cfg.intermediate_size.has_value() ? cfg.intermediate_size.value() : 4 * cfg.hidden_size;
 
-	AUTO_REGISTER_NEW_MODULE(tok_emb, CustomEmbedding(CustomEmbeddingOptions(cfg.vocab_size, cfg.hidden_size).init_params(false)));
+	AUTO_REGISTER_NEW_MODULE(tok_emb, CustomEmbedding(CustomEmbeddingOptions(cfg.vocab_size, cfg.hidden_size).init_params(cfg.randomInitWeights)));
 
 	AUTO_REGISTER_NEW_MODULE(layers, torch::nn::ModuleList());
 

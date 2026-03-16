@@ -67,6 +67,8 @@
 
 using namespace ModelZoo::llama;
 
+#include <Windows.h>
+#include <Psapi.h>
 #include <memory>
 
 class LinearTestModule : public torch::nn::Module
@@ -94,6 +96,37 @@ torch::Tensor LinearTestModule::forward(const torch::Tensor& x)
 {
     torch::Tensor output = linear_->forward(x);
     return output;
+}
+
+void PrintMemory(const char* label)
+{
+    PROCESS_MEMORY_COUNTERS_EX info{};
+    GetProcessMemoryInfo(GetCurrentProcess(),
+        reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&info), sizeof(info));
+
+    //Private Bytes 
+    // refer to the amount of memory that the process executable has asked for - 
+    // not necessarily the amount it is actually using. 
+
+    printf("[%s]\n", label);
+    printf("  WorkingSetSize     (current RSS) : %.3f GB\n",
+        (float)info.WorkingSetSize / 1024 / 1024 / 1024);
+    printf("  PeakWorkingSetSize (high watermark, never drops): %.3f GB\n",
+        (float)info.PeakWorkingSetSize / 1024 / 1024 / 1024);
+    printf("  PrivateUsage       (committed pages): %.3f GB\n",
+        (float)info.PrivateUsage / 1024 / 1024 / 1024);
+}
+
+#include <c10/core/CPUAllocator.h>
+
+void ReleaseCPUCache()
+{
+    // Release LibTorch's internal CPU memory cache
+    c10::GetCPUAllocator()->raw_deallocate(nullptr); // no-op but flushes
+
+    // The real one:
+    at::DataPtr empty;
+    c10::GetDefaultCPUAllocator()->raw_deallocate(nullptr);
 }
 
 namespace CustomScenarios::LLMs::Llama
@@ -163,13 +196,6 @@ namespace CustomScenarios::LLMs::Llama
 
         //--------------------------------------------------------------------
 
-        
-		LlamaConfig cfg = LlamaConfig::FromJsonFile(modelDir + "config.json");
-        cfg.randomInitWeights = false;
-
-        auto llama = std::make_shared<ModelZoo::llama::LlamaForCausalLM>(cfg);
-        llama->SetFrozen(std::make_shared<FreezeInfo>(true));
-
         Settings sets;
         //-----
         //model debug
@@ -178,8 +204,59 @@ namespace CustomScenarios::LLMs::Llama
         sets.device = torch::kCUDA;
         sets.perf.enableAutoCast = true;
         //-----
+        
+		LlamaConfig cfg = LlamaConfig::FromJsonFile(modelDir + "config.json");
+        cfg.randomInitWeights = false;
+
+        PrintMemory("Fresh start");
+
+        //torch::NoGradGuard();
+
+        /*
+        auto emb = CustomEmbedding(
+            CustomEmbeddingOptions(cfg.vocab_size, cfg.hidden_size).init_params(cfg.randomInitWeights)
+        );
+        PrintMemory("After Model Init");
+        emb->to(sets.device);
+
+        ReleaseCPUCache();
+        SetProcessWorkingSetSize(GetCurrentProcess(), (SIZE_T)-1, (SIZE_T)-1);
+        PrintMemory("After to CUDA");
+        */
+
+        //SetProcessWorkingSetSize(GetCurrentProcess(), (SIZE_T)-1, (SIZE_T)-1);
+        //PrintMemory("2");
+
+        auto llama = std::make_shared<ModelZoo::llama::LlamaForCausalLM>(cfg);        
+
+        ModelInfo mi(*llama.get());
+
+        PrintMemory("After Model Init");
+       
+        auto memInfo = mi.GetMemorySize();
+
+        MY_LOG_INFO("Model size: CPU> %f GB, GPU> %f GB",
+            memInfo.cpuBytes / float(1024 * 1024 * 1024),
+            memInfo.gpuBytes / float(1024 * 1024 * 1024));
 
 
+        ReleaseCPUCache();
+        SetProcessWorkingSetSize(GetCurrentProcess(), (SIZE_T)-1, (SIZE_T)-1);
+        PrintMemory("After to CUDA");
+
+        llama->to(sets.device);
+        
+        llama->SetFrozen(std::make_shared<FreezeInfo>(true));
+
+        
+
+        memInfo = mi.GetMemorySize();
+       
+        MY_LOG_INFO("Model size: CPU> %f GB, GPU> %f GB", 
+            memInfo.cpuBytes / float(1024 * 1024 * 1024),
+            memInfo.gpuBytes / float(1024 * 1024 * 1024));
+
+        
         sets.batchSize = 1;
         //sets.metricsInitFn = [predEval = predEval]() -> auto {
         //    auto metr = std::make_shared<MetricsImage>(MetricsImage::MetricsType::SEGMENTATION);
@@ -203,10 +280,16 @@ namespace CustomScenarios::LLMs::Llama
 
 
         llama->to(sets.device);
-
-        LLamaSafeTensorLoader tl;
-        tl.LoadFromHfSafetensors(*llama.get(), modelDir);
         
+        memInfo = mi.GetMemorySize();
+        MY_LOG_INFO("Model size: CPU> %f GB, GPU> %f GB",
+            memInfo.cpuBytes / float(1024 * 1024 * 1024),
+            memInfo.gpuBytes / float(1024 * 1024 * 1024));
+
+        {
+            LLamaSafeTensorLoader tl;
+            tl.LoadFromHfSafetensors(*llama.get(), modelDir);
+        }
         
         //CustomScenarios::_tests_::Llama::GreedySmokeTestInference(llama, bpe, 256, 40);
         //CustomScenarios::_tests_::Llama::SmokeTestInference(llama, bpe, 256, 40);
@@ -220,10 +303,13 @@ namespace CustomScenarios::LLMs::Llama
 
         llama->to(sets.device);
 
-        
-        ModelInfo mi(*llama.get());
+        memInfo = mi.GetMemorySize();
+        MY_LOG_INFO("Model size: CPU> %f GB, GPU> %f GB",
+            memInfo.cpuBytes / float(1024 * 1024 * 1024),
+            memInfo.gpuBytes / float(1024 * 1024 * 1024));
+                
         auto params = mi.CountParams();
-        MY_LOG_INFO("Params trainable: %f M / total %f M", params.trainable / 1e6, params.total / 1e6);
+        MY_LOG_INFO("Params: trainable> %f M, total> %f M", params.trainable / 1e6, params.total / 1e6);
 
 
         uint16_t ctxLen = 128;
