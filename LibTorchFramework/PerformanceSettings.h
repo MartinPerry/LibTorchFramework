@@ -32,8 +32,9 @@ struct PerformanceSettings
 
 	PerformanceSettings();
 
-	void EnableCudnn(bool val);
-	void EnableCudnnFloat32(bool val);
+	void EnableCuDNN(bool val);
+	void EnableCuDNNFloat32(bool val);
+	void EnableCuBLASFloat32(bool val);
 	void SetMatMulPrec(MatMulPrecision m);
 
 	MatMulPrecision GetMatMulPrec() const;

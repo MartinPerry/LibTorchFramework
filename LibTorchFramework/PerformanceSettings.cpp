@@ -2,9 +2,14 @@
 
 #include <torch/torch.h>
 
+//https://docs.pytorch.org/docs/2.10/notes/cuda.html
+
 PerformanceSettings::PerformanceSettings()
 {
-    this->EnableCudnn(true);
+    this->EnableCuDNN(true);
+
+    this->EnableCuDNNFloat32(true);
+    this->EnableCuBLASFloat32(true);
 }
 
 PerformanceSettings::MatMulPrecision PerformanceSettings::GetMatMulPrec() const
@@ -23,7 +28,7 @@ PerformanceSettings::MatMulPrecision PerformanceSettings::GetMatMulPrec() const
     }
 }
 
-void PerformanceSettings::EnableCudnn(bool val)
+void PerformanceSettings::EnableCuDNN(bool val)
 {
     this->useCudnn = val;
 
@@ -35,12 +40,17 @@ void PerformanceSettings::EnableCudnn(bool val)
 
 }
 
-void PerformanceSettings::EnableCudnnFloat32(bool val)
+void PerformanceSettings::EnableCuDNNFloat32(bool val)
 {
     if (torch::cuda::cudnn_is_available())
     {
         torch::globalContext().setAllowTF32CuDNN(val);
     }
+}
+
+void PerformanceSettings::EnableCuBLASFloat32(bool val)
+{
+    torch::globalContext().setAllowTF32CuBLAS(val);    
 }
 
 void PerformanceSettings::SetMatMulPrec(MatMulPrecision m)
@@ -49,11 +59,15 @@ void PerformanceSettings::SetMatMulPrec(MatMulPrecision m)
     {
     case MatMulPrecision::HIGHEST:
         torch::globalContext().setFloat32MatmulPrecision("highest");
+        break;
     case MatMulPrecision::HIGH:
         torch::globalContext().setFloat32MatmulPrecision("high");
+        break;
     case MatMulPrecision::MEDIUM:
         torch::globalContext().setFloat32MatmulPrecision("medium");
+        break;
     default:
         torch::globalContext().setFloat32MatmulPrecision("highest");
+        break;
     }
 }
