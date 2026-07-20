@@ -79,6 +79,7 @@
 #include "./ModelZoo/SimVPv2/SimVPv2Model.h"
 #include "./ModelZoo/ResNet/ResNetModel.h"
 #include "./ModelZoo/SDVAE/SDVAEModel.h"
+#include "./ModelZoo/exPreCast/exPreCastModel.h"
 
 //=========================================================
 // Utils
@@ -95,6 +96,7 @@
 #include "./CustomScenarios/UNetTraining/setup_unet.h"
 #include "./CustomScenarios/SDVAE/setup_sdvae.h"
 #include "./CustomScenarios/LLMs/setup_llama.h"
+#include "./CustomScenarios/exPreCastTraining/setup_exprecast.h"
 
 #include "./Settings.h"
 
@@ -143,6 +145,9 @@ int main()
     log->Enable(MyUtils::Logger::LogType::Error, MyUtils::Logger::LogOutput::StdOut);
     log->Enable(MyUtils::Logger::LogType::Warning, MyUtils::Logger::LogOutput::StdOut);
     log->Enable(MyUtils::Logger::LogType::Info, MyUtils::Logger::LogOutput::StdOut);
+
+    CustomScenarios::exPreCastTraining::setup();
+
 
     Test rr;
 

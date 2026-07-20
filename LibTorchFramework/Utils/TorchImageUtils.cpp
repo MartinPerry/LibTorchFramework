@@ -11,7 +11,7 @@
 #include <memory>
 
 #include <RasterData/ImageResize.h>
-#include <RasterData/ImageDrawing.h>
+#include <RasterData/Drawing/ImageDrawing.h>
 #include <RasterData/Colors/ColorSpace.h>
 
 #include <Utils/Logger.h>

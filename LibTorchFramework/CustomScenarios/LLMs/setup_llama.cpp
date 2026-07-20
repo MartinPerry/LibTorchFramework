@@ -67,6 +67,10 @@
 
 using namespace ModelZoo::llama;
 
+#include <c10/core/CPUAllocator.h>
+#include <c10/cuda/CUDACachingAllocator.h>
+
+
 #include <Windows.h>
 #include <Psapi.h>
 #include <memory>
@@ -109,15 +113,14 @@ void PrintMemory(const char* label)
     // not necessarily the amount it is actually using. 
 
     printf("[%s]\n", label);
-    printf("  WorkingSetSize     (current RSS) : %.3f GB\n",
-        (float)info.WorkingSetSize / 1024 / 1024 / 1024);
-    printf("  PeakWorkingSetSize (high watermark, never drops): %.3f GB\n",
-        (float)info.PeakWorkingSetSize / 1024 / 1024 / 1024);
+    //printf("  WorkingSetSize     (current RSS) : %.3f GB\n",
+    //    (float)info.WorkingSetSize / 1024 / 1024 / 1024);
+    //printf("  PeakWorkingSetSize (high watermark, never drops): %.3f GB\n",
+    //    (float)info.PeakWorkingSetSize / 1024 / 1024 / 1024);
     printf("  PrivateUsage       (committed pages): %.3f GB\n",
         (float)info.PrivateUsage / 1024 / 1024 / 1024);
 }
 
-#include <c10/core/CPUAllocator.h>
 
 void ReleaseCPUCache()
 {
@@ -161,6 +164,26 @@ namespace CustomScenarios::LLMs::Llama
 	void setup()
 	{
         //https://huggingface.co/spaces/Xenova/the-tokenizer-playground
+
+        PrintMemory("Before");
+
+        auto tensor = torch::zeros({ 16384, 16384, 4 });  // also  4GB float32
+        
+        PrintMemory("After Init");        
+        
+        //auto* tmp0 = tensor.unsafeGetTensorImpl();
+
+        tensor = tensor.to(torch::kCUDA);
+        //tensor.reset();
+
+        //auto* tmp = tensor.unsafeGetTensorImpl();
+
+        PrintMemory("After Cuda");
+
+        
+        c10::cuda::CUDACachingAllocator::emptyCache();
+
+        PrintMemory("After emptyCache");
 
         auto t = std::make_shared<LinearTestModule>(10, 30);
         
@@ -229,6 +252,8 @@ namespace CustomScenarios::LLMs::Llama
 
         auto llama = std::make_shared<ModelZoo::llama::LlamaForCausalLM>(cfg);        
 
+        llama->SetFrozen(std::make_shared<FreezeInfo>(true));
+
         ModelInfo mi(*llama.get());
 
         PrintMemory("After Model Init");
@@ -238,15 +263,12 @@ namespace CustomScenarios::LLMs::Llama
         MY_LOG_INFO("Model size: CPU> %f GB, GPU> %f GB",
             memInfo.cpuBytes / float(1024 * 1024 * 1024),
             memInfo.gpuBytes / float(1024 * 1024 * 1024));
-
+       
+        llama->to(sets.device);
 
         ReleaseCPUCache();
         SetProcessWorkingSetSize(GetCurrentProcess(), (SIZE_T)-1, (SIZE_T)-1);
         PrintMemory("After to CUDA");
-
-        llama->to(sets.device);
-        
-        llama->SetFrozen(std::make_shared<FreezeInfo>(true));
 
         
 

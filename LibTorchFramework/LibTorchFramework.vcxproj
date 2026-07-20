@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -111,11 +111,13 @@
     <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel.cpp" />
     <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel_autocast.cpp" />
     <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel_autograd.cpp" />
+    <ClCompile Include="core\Modules\DropPath.cpp" />
     <ClCompile Include="core\Modules\Embedding.cpp" />
     <ClCompile Include="core\Modules\Linear.cpp" />
     <ClCompile Include="core\Modules\LoRALinear.cpp" />
     <ClCompile Include="core\Modules\LossFunctions\FocalFrequencyLoss.cpp" />
     <ClCompile Include="core\Modules\LossFunctions\SSIMLoss.cpp" />
+    <ClCompile Include="core\Modules\MLP.cpp" />
     <ClCompile Include="core\Modules\WeightsInit\TruncatedNormalInit.cpp" />
     <ClCompile Include="core\Optimizers\AdamW8bit.cpp" />
     <ClCompile Include="core\Optimizers\FusedAdamW8bit.cpp" />
@@ -130,6 +132,7 @@
     <ClCompile Include="core\Tokenizers\TokenizerBPE.cpp" />
     <ClCompile Include="core\Tokenizers\TokenizerJsonLoader.cpp" />
     <ClCompile Include="core\Trainer.cpp" />
+    <ClCompile Include="CustomScenarios\exPreCastTraining\setup_exprecast.cpp" />
     <ClCompile Include="CustomScenarios\LLMs\setup_llama.cpp" />
     <ClCompile Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.cpp" />
     <ClCompile Include="CustomScenarios\MrmsDatasetTraining\MrmsLoss.cpp" />
@@ -148,6 +151,15 @@
     <ClCompile Include="InputProcessing\InputLoaders\TextFilesInputLoader.cpp" />
     <ClCompile Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ModelZoo\exPreCast\BasicLayerSkip.cpp" />
+    <ClCompile Include="ModelZoo\exPreCast\CubicDualUpsample.cpp" />
+    <ClCompile Include="ModelZoo\exPreCast\PatchEmbed3D.cpp" />
+    <ClCompile Include="ModelZoo\exPreCast\PatchExpanding3D.cpp" />
+    <ClCompile Include="ModelZoo\exPreCast\PatchMerging.cpp" />
+    <ClCompile Include="ModelZoo\exPreCast\PixelShuffle3D.cpp" />
+    <ClCompile Include="ModelZoo\exPreCast\SwinTransformerBlock3D.cpp" />
+    <ClCompile Include="ModelZoo\exPreCast\WindowAttention3D.cpp" />
+    <ClCompile Include="ModelZoo\exPreCast\WindowUtils.cpp" />
     <ClCompile Include="ModelZoo\LLMs\llama.cpp" />
     <ClCompile Include="ModelZoo\LLMs\LLamaSafeTensorLoader.cpp" />
     <ClCompile Include="ModelZoo\ResNet\ResNetModel.cpp" />
@@ -179,6 +191,7 @@
     <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\cuda_helpers.h" />
     <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d.h" />
     <ClInclude Include="core\Modules\DownSample2d.h" />
+    <ClInclude Include="core\Modules\DropPath.h" />
     <ClInclude Include="core\Modules\Embedding.h" />
     <ClInclude Include="core\Modules\gradscaler.hpp" />
     <ClInclude Include="core\Modules\Linear.h" />
@@ -187,6 +200,7 @@
     <ClInclude Include="core\Modules\LossFunctions\FocalFrequencyLoss.h" />
     <ClInclude Include="core\Modules\LossFunctions\MultiBceLoss.h" />
     <ClInclude Include="core\Modules\LossFunctions\SSIMLoss.h" />
+    <ClInclude Include="core\Modules\MLP.h" />
     <ClInclude Include="core\Modules\ModulesOptions.h" />
     <ClInclude Include="core\Modules\ResNetBlock.h" />
     <ClInclude Include="core\Modules\UpSample2d.h" />
@@ -208,6 +222,7 @@
     <ClInclude Include="core\Tokenizers\TokenizerJsonLoader.h" />
     <ClInclude Include="core\Tokenizers\Tokenizers.h" />
     <ClInclude Include="core\Trainer.h" />
+    <ClInclude Include="CustomScenarios\exPreCastTraining\setup_exprecast.h" />
     <ClInclude Include="CustomScenarios\LLMs\setup_llama.h" />
     <ClInclude Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.h" />
     <ClInclude Include="CustomScenarios\MrmsDatasetTraining\MrmsLoss.h" />
@@ -226,6 +241,15 @@
     <ClInclude Include="InputProcessing\InputLoaders\SegmentationInputLoader.h" />
     <ClInclude Include="InputProcessing\InputLoaders\TextFilesInputLoader.h" />
     <ClInclude Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.h" />
+    <ClInclude Include="ModelZoo\exPreCast\BasicLayerSkip.h" />
+    <ClInclude Include="ModelZoo\exPreCast\CubicDualUpsample.h" />
+    <ClInclude Include="ModelZoo\exPreCast\PatchEmbed3D.h" />
+    <ClInclude Include="ModelZoo\exPreCast\PatchExpanding3D.h" />
+    <ClInclude Include="ModelZoo\exPreCast\PatchMerging.h" />
+    <ClInclude Include="ModelZoo\exPreCast\PixelShuffle3D.h" />
+    <ClInclude Include="ModelZoo\exPreCast\SwinTransformerBlock3D.h" />
+    <ClInclude Include="ModelZoo\exPreCast\WindowAttention3D.h" />
+    <ClInclude Include="ModelZoo\exPreCast\WindowUtils.h" />
     <ClInclude Include="ModelZoo\LLMs\llama.h" />
     <ClInclude Include="ModelZoo\LLMs\LLamaSafeTensorLoader.h" />
     <ClInclude Include="ModelZoo\ResNet\ResNetModel.h" />
