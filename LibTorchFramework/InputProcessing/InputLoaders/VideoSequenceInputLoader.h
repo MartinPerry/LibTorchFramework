@@ -45,7 +45,14 @@ protected:
         }
 
         SequenceInfo(const SequenceInfo& si) :
-            dirPath(si.dirPath)            
+            dirPath(si.dirPath),
+            sequenceFiles(si.sequenceFiles)
+        {
+        }
+
+        SequenceInfo(SequenceInfo&& si) :
+            dirPath(std::exchange(si.dirPath, {})),
+            sequenceFiles(std::exchange(si.sequenceFiles, {}))
         {
         }
 
@@ -54,6 +61,7 @@ protected:
             if (this != &si)
             {                
                 dirPath = si.dirPath;
+                sequenceFiles = si.sequenceFiles;
             }
             return *this;
         }

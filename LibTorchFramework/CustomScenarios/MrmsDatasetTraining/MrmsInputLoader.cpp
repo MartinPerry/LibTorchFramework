@@ -22,7 +22,7 @@ MrmsInputLoader::MrmsInputLoader(
 
 void MrmsInputLoader::LoadSequenceFiles()
 {
-    for (auto& d : data)
+    for (auto& d : this->data)
     {
         //tile_0.lz4
         for (int i = 0; i < sets.prevSeqLen + sets.futureSeqLen; i++)

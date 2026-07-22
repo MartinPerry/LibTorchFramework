@@ -115,6 +115,7 @@
     <ClCompile Include="core\Modules\Embedding.cpp" />
     <ClCompile Include="core\Modules\Linear.cpp" />
     <ClCompile Include="core\Modules\LoRALinear.cpp" />
+    <ClCompile Include="core\Modules\LossFunctions\FACL.cpp" />
     <ClCompile Include="core\Modules\LossFunctions\FocalFrequencyLoss.cpp" />
     <ClCompile Include="core\Modules\LossFunctions\SSIMLoss.cpp" />
     <ClCompile Include="core\Modules\MLP.cpp" />
@@ -132,6 +133,7 @@
     <ClCompile Include="core\Tokenizers\TokenizerBPE.cpp" />
     <ClCompile Include="core\Tokenizers\TokenizerJsonLoader.cpp" />
     <ClCompile Include="core\Trainer.cpp" />
+    <ClCompile Include="CustomScenarios\exPreCastTraining\MeteonetInputLoader.cpp" />
     <ClCompile Include="CustomScenarios\exPreCastTraining\setup_exprecast.cpp" />
     <ClCompile Include="CustomScenarios\LLMs\setup_llama.cpp" />
     <ClCompile Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.cpp" />
@@ -153,6 +155,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModelZoo\exPreCast\BasicLayerSkip.cpp" />
     <ClCompile Include="ModelZoo\exPreCast\CubicDualUpsample.cpp" />
+    <ClCompile Include="ModelZoo\exPreCast\exPreCastModel.cpp" />
     <ClCompile Include="ModelZoo\exPreCast\PatchEmbed3D.cpp" />
     <ClCompile Include="ModelZoo\exPreCast\PatchExpanding3D.cpp" />
     <ClCompile Include="ModelZoo\exPreCast\PatchMerging.cpp" />
@@ -197,6 +200,7 @@
     <ClInclude Include="core\Modules\Linear.h" />
     <ClInclude Include="core\Modules\LoRALinear.h" />
     <ClInclude Include="core\Modules\LossFunctions\DiceLoss.h" />
+    <ClInclude Include="core\Modules\LossFunctions\FACL.h" />
     <ClInclude Include="core\Modules\LossFunctions\FocalFrequencyLoss.h" />
     <ClInclude Include="core\Modules\LossFunctions\MultiBceLoss.h" />
     <ClInclude Include="core\Modules\LossFunctions\SSIMLoss.h" />
@@ -222,6 +226,7 @@
     <ClInclude Include="core\Tokenizers\TokenizerJsonLoader.h" />
     <ClInclude Include="core\Tokenizers\Tokenizers.h" />
     <ClInclude Include="core\Trainer.h" />
+    <ClInclude Include="CustomScenarios\exPreCastTraining\MeteonetInputLoader.h" />
     <ClInclude Include="CustomScenarios\exPreCastTraining\setup_exprecast.h" />
     <ClInclude Include="CustomScenarios\LLMs\setup_llama.h" />
     <ClInclude Include="CustomScenarios\MrmsDatasetTraining\MrmsInputLoader.h" />
