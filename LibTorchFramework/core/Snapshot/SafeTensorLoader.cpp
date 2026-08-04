@@ -39,7 +39,7 @@ TensorMap SafeTensorLoader::LoadSafetensors(const std::filesystem::path& dataPat
 	}
 	else
 	{
-		auto parts = this->LoadShardsFileNames(dataPath);
+		parts = this->LoadShardsFileNames(dataPath);
 	}
 
 	if (parts.size() == 0)
@@ -78,7 +78,7 @@ LoadStateDictReport SafeTensorLoader::LoadModel(const std::filesystem::path& dat
 	}
 	else
 	{
-		auto parts = this->LoadShardsFileNames(dataPath);
+		parts = this->LoadShardsFileNames(dataPath);
 	}
 	
 	if (parts.size() == 0)
@@ -87,9 +87,15 @@ LoadStateDictReport SafeTensorLoader::LoadModel(const std::filesystem::path& dat
 	}
 
 	std::unordered_map<std::string, torch::Tensor*> modelStateDict;
-
+	
 	auto params = model.named_parameters(true);
 	for (auto& item : params)
+	{
+		modelStateDict.try_emplace(item.key(), &item.value());
+	}
+	
+	auto buffers = model.named_buffers(true);
+	for (auto& item : buffers)
 	{
 		modelStateDict.try_emplace(item.key(), &item.value());
 	}

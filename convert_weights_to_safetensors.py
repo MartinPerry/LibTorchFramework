@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 import torch
-from safetensors.torch import save_file
+from safetensors.torch import load_file, save_file
 
 
 def extract_state_dict(checkpoint: Any) -> dict[str, torch.Tensor]:
@@ -36,12 +36,40 @@ def extract_state_dict(checkpoint: Any) -> dict[str, torch.Tensor]:
     return state_dict
 
 
+def verify(original: dict[str, torch.Tensor], loaded: dict[str, torch.Tensor]) -> None:
+    if original.keys() != loaded.keys():
+        missing = original.keys() - loaded.keys()
+        extra = loaded.keys() - original.keys()
+        raise RuntimeError(
+            f"Tensor name mismatch.\nMissing: {missing}\nExtra: {extra}"
+        )
+
+    for name in original:
+        a = original[name]
+        b = loaded[name]
+
+        if a.dtype != b.dtype:
+            raise RuntimeError(f"{name}: dtype mismatch ({a.dtype} != {b.dtype})")
+
+        if a.shape != b.shape:
+            raise RuntimeError(f"{name}: shape mismatch ({a.shape} != {b.shape})")
+
+        if not torch.equal(a, b):
+            diff = (a != b).sum().item() if a.dtype != torch.float16 else "?"
+            raise RuntimeError(f"{name}: tensor data mismatch ({diff} differing elements)")
+
+    print(f"Verification successful ({len(original)} tensors).")
+
+
 def convert(input_path: Path, output_path: Path, unsafe_load: bool) -> None:
     checkpoint = torch.load(input_path, map_location="cpu", weights_only=not unsafe_load)
     state_dict = extract_state_dict(checkpoint)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     save_file(state_dict, output_path, metadata={"format": "pt"})
+
+    loaded = load_file(str(output_path), device="cpu")
+    verify(state_dict, loaded)
 
     print(f"Converted {len(state_dict)} tensors")
     print(f"Input:  {input_path}")

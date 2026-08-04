@@ -87,7 +87,7 @@ namespace CustomScenarios::exPreCastTraining
 			auto metr = std::make_shared<MetricsVideo>();
 			//metr->SetColorMappingFileName("D://turbo.png");
 			return metr;
-			};
+		};
 		sets.lossFn = [&](const auto& output, const auto& targets) {
 			auto loss = facl(output[0], targets);
 			return loss;
@@ -111,6 +111,10 @@ namespace CustomScenarios::exPreCastTraining
 			//"d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE", 
 			"e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet/SE",
 			prevCount, futureCount);
+		//ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TEST, loaderSets } },
+		//	//"d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE", 
+		//	"e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet/SE",
+		//	prevCount, futureCount);
 
 		//-------
 		// test
