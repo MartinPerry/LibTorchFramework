@@ -14,7 +14,7 @@ MetricsVideo::MetricsVideo() :
 {
 }
 
-void MetricsImage::Save(const std::string& filePath) const
+void MetricsVideo::Save(const std::string& filePath) const
 {
     MetricsImage::Save(filePath);
 
