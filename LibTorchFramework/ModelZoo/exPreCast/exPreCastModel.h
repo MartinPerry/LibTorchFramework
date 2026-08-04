@@ -19,8 +19,8 @@ namespace ModelZoo {
         {
         public:
             exPreCastModel(
-                int64_t inputFrames = 7,
-                int64_t outputFrames = 6,
+                int64_t inputFrames = 12,
+                int64_t outputFrames = 12,
                 int64_t inChans = 1,
                 int64_t outChans = 1,
                 std::array<int64_t, 3> patchEmbedSize = { 2, 4, 4 },

@@ -2,6 +2,9 @@
 
 #include <cmath>
 
+#include "PatchMerging.h"
+#include "CubicDualUpsample.h"
+
 using namespace torch::indexing;
 
 
@@ -15,14 +18,15 @@ BasicLayerSkipImpl::BasicLayerSkipImpl(
     std::optional<double> qkScale,
     double drop,
     double attnDrop,
-    double dropPath,
-    bool useSubsample
+    std::vector<double> dropPaths,
+    SubsampleType subsampleType,
+    const std::array<int64_t, 3>& subsampleScale
 ) : 
     windowSize(windowSize),
-    depth(depth),
-    useCheckpoint(useCheckpoint),
-    blocks(register_module("blocks", torch::nn::ModuleList()))
+    depth(depth)        
 {
+    blocks = register_module("blocks", torch::nn::ModuleList());
+
     shiftSize = 
     {
         windowSize[0] / 2,
@@ -32,13 +36,15 @@ BasicLayerSkipImpl::BasicLayerSkipImpl(
 
     for (int64_t i = 0; i < depth; ++i)
     {
+        double dropPath = (i < dropPaths.size()) ? dropPaths[i] : dropPaths.back();
+        
         auto block = SwinTransformerBlock3D(
             dim,
             numHeads,
             windowSize,
             (i % 2 == 0) ?
-            std::array<int64_t, 3>{ 0, 0, 0 } :
-            shiftSize,
+                std::array<int64_t, 3>{ 0, 0, 0 } :
+                shiftSize,
             mlpRatio,
             qkvBias,
             qkScale,
@@ -50,9 +56,13 @@ BasicLayerSkipImpl::BasicLayerSkipImpl(
         blocks->push_back(block);
     }
 
-    if (useSubsample)
+    if (subsampleType == SubsampleType::PatchMergingType)
     {
         subsample = register_module("subsample", PatchMerging(dim));
+    }
+    else if (subsampleType == SubsampleType::CubicDualUpsampleType)
+    {
+        subsample = register_module("subsample", CubicDualUpsample(dim, subsampleScale));        
     }
 }
 
@@ -159,7 +169,7 @@ BasicLayerSkipImpl::forward(
 
     if (subsample.is_empty() == false)
     {
-        x = subsample->forward(x);
+        x = subsample.forward(x);
     }
 
     x = x.permute({ 0, 4, 1, 2, 3 }).contiguous();

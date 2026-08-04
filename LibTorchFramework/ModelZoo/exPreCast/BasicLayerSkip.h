@@ -7,12 +7,18 @@
 #include <torch/torch.h>
 
 #include "SwinTransformerBlock3D.h"
-#include "PatchMerging.h"
 #include "WindowUtils.h"
 
 class BasicLayerSkipImpl : public torch::nn::Module
 {
 public:
+    enum SubsampleType
+    {
+        PatchMergingType,
+        CubicDualUpsampleType,
+        None
+    };
+
     BasicLayerSkipImpl(
         int64_t dim,
         int64_t depth,
@@ -23,8 +29,10 @@ public:
         std::optional<double> qkScale = std::nullopt,
         double drop = 0.0,
         double attnDrop = 0.0,
-        double dropPath = 0.0,
-        bool useSubsample = false);
+        std::vector<double> dropPaths = {0.0},
+        SubsampleType subsampleType = SubsampleType::None,
+        const std::array<int64_t, 3>& subsampleScale = {1, 2, 2}
+    );
 
     std::tuple<torch::Tensor, torch::Tensor> forward(torch::Tensor x);
 
@@ -41,11 +49,11 @@ private:
     std::array<int64_t, 3> windowSize;
     std::array<int64_t, 3> shiftSize;
     int64_t depth;
-    bool useCheckpoint;
 
     torch::nn::ModuleList blocks;
 
-    PatchMerging subsample{ nullptr };
+    //PatchMerging subsample{ nullptr };
+    torch::nn::AnyModule subsample;
 };
 
 TORCH_MODULE(BasicLayerSkip);

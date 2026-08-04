@@ -56,7 +56,7 @@ torch::Tensor FACLImpl::FCL(const torch::Tensor& fftPred, const torch::Tensor& f
 {
     torch::Tensor conjPred = torch::conj(fftPred);
 
-    torch::Tensor numerator = (conjPred * fftGt).sum(); // .real();
+    torch::Tensor numerator = torch::real((conjPred * fftGt).sum());
 
     torch::Tensor denominator = torch::sqrt((fftGt.abs().pow(2)).sum() * (fftPred.abs().pow(2)).sum());
 
@@ -84,9 +84,10 @@ torch::Tensor FACLImpl::forward(const torch::Tensor& predIn, const torch::Tensor
 
     double weight = std::sqrt(static_cast<double>(h * w));
 
-    torch::Tensor loss =
-        prob * FAL(fftPred, fftGt) +
-        (1.0 - prob) * FCL(fftPred, fftGt);
+    torch::Tensor falLoss = FAL(fftPred, fftGt);
+    torch::Tensor fclLoss = FCL(fftPred, fftGt);
+
+    torch::Tensor loss = prob * falLoss + (1.0 - prob) * fclLoss;
 
     return loss * weight;
 }

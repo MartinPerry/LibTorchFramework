@@ -61,16 +61,30 @@ void MetricsVideo::Save(const std::string& filePath) const
         std::string imgPath = this->BuildPath(filePath, static_cast<int>(i), "gif", false);
 
         auto w = imgs[0].GetWidth();
-        auto h = imgs[0].GetHeight();
+        auto h = imgs[0].GetHeight() * rows.size();
+
+        std::vector<Image2d<uint8_t>> newImgs;
 
         int delay = 20;
         GifWriter g;
         GifBegin(&g, imgPath.c_str(), w, h, delay);
-        for (auto& gimg : imgs)
-        {
-            gimg = ColorSpace::ConvertRgbToRgba(gimg, 255);
+        
+        int seqLen = rows[0].size();
 
-            GifWriteFrame(&g, gimg.GetData().data(), w, h, delay);            
+        for (size_t i = 0; i < seqLen; i++)
+        {
+            int index = i;
+            auto tmp = ColorSpace::ConvertRgbToRgba(imgs[i], 255);
+
+            for (size_t r = 1; r < rows.size(); r++)
+            {                                
+                index += seqLen;
+                tmp.AppendBottom(ColorSpace::ConvertRgbToRgba(imgs[index], 255));                
+            }
+
+            newImgs.push_back(std::move(tmp));
+
+            GifWriteFrame(&g, newImgs.back().GetData().data(), w, h, delay);
         }
         GifEnd(&g);
 

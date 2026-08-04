@@ -3,6 +3,7 @@
 #include <cmath>
 #include <algorithm>
 #include <iostream>
+#include <optional>
 
 #include "../../InputProcessing/DataLoaderData.h"
 
@@ -94,18 +95,22 @@ exPreCastModel::exPreCastModel(
     posDrop = register_module("pos_drop", torch::nn::Dropout(dropRate));
 
 
-    std::vector<double> dpr;
-
-    const int64_t totalDepth = std::accumulate(depths.begin(), depths.end(), 0LL);
-
-    for (int64_t i = 0; i < totalDepth; ++i)
-    {
-        dpr.push_back( dropPathRate * static_cast<double>(i) / static_cast<double>(totalDepth - 1));
-    }
+    std::vector<float> dpr;
+    auto t = torch::linspace(0.0, dropPathRate, std::accumulate(depths.begin(), depths.end(), 0));
+    dpr.assign(t.data_ptr<float>(), t.data_ptr<float>() + t.numel());
+    
 
 
     for (int64_t i = 0; i < numLayers; ++i)
     {
+        int begin = std::accumulate(depths.begin(), depths.begin() + i, 0);
+        int end = begin + depths[i];
+
+        std::vector<double> layerDpr(
+            dpr.begin() + begin,
+            dpr.begin() + end
+        );
+
         auto layer = BasicLayerSkip(
                 embedDim * (1LL << i),
                 depths[i],
@@ -116,8 +121,12 @@ exPreCastModel::exPreCastModel(
                 std::nullopt,
                 dropRate,
                 attnDropRate,
-                dropPathRate,
-                i < numLayers - 1);
+                layerDpr,
+                (i < numLayers - 1) ? 
+                    BasicLayerSkipImpl::SubsampleType::PatchMergingType : 
+                    BasicLayerSkipImpl::SubsampleType::None,
+                downsamplingScale
+        );
 
         encoder->push_back(layer);
     }
@@ -132,6 +141,14 @@ exPreCastModel::exPreCastModel(
 
     for (int64_t i = numLayers - 2; i >= 0; --i)
     {
+        int begin = std::accumulate(depths.begin(), depths.begin() + i, 0);
+        int end = begin + depths[i];
+
+        std::vector<double> layerDpr(
+            dpr.begin() + begin,
+            dpr.begin() + end
+        );
+
         auto layer = BasicLayerSkip(
                 embedDim * (1LL << i),
                 depths[i],
@@ -142,8 +159,12 @@ exPreCastModel::exPreCastModel(
                 std::nullopt,
                 dropRate,
                 attnDropRate,
-                dropPathRate,
-                i > 0);
+                layerDpr,
+                (i > 0) ?
+                    BasicLayerSkipImpl::SubsampleType::CubicDualUpsampleType : 
+                    BasicLayerSkipImpl::SubsampleType::None,
+                upsamplingScale
+            );
 
         decoder->push_back(layer);
     }
@@ -182,6 +203,11 @@ const char* exPreCastModel::GetName() const
 
 torch::Tensor exPreCastModel::forward(torch::Tensor x)
 {
+    //update loaded shape to match exPrecast input [B, 1, SeqLen, W, H]
+    x = x.squeeze(2);
+    x = x.unsqueeze(1);
+
+    //[4, 1, 12, 256, 256] => [4, 96, 6, 64, 64]
     x = patchEmbed->forward(x);
 
     x = posDrop->forward(x);
@@ -208,15 +234,10 @@ torch::Tensor exPreCastModel::forward(torch::Tensor x)
 
 
     x = x.permute({ 0, 2, 3, 4, 1 }).contiguous();
-
-
     x = bottleneckUpscale->forward(x);
-
-
     x = x.permute({ 0, 4, 1, 2, 3}).contiguous();
 
-
-
+   
     for (size_t i = 0; i < decoder->size(); ++i)
     {        
         if (skipConnection == "add")
@@ -242,8 +263,14 @@ torch::Tensor exPreCastModel::forward(torch::Tensor x)
 
     if (lastTimeDim != outputFrames)
     {
+        x = x.permute({ 0, 2, 3, 4, 1 }); // B C T H W -> B T H W C
         x = timeExtractor->forward(x);
+        x = x.permute({ 0, 4, 1, 2, 3 }); // B T H W C -> B C T H W        
     }
+
+    //update result shape back to match input shape
+    x = x.squeeze(1);
+    x = x.unsqueeze(2);
 
     return x;
 }
