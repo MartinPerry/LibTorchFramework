@@ -112,7 +112,13 @@ public:
 	static Image2d<uint8_t> TensorsToImage(at::Tensor t, 
 		const TensorsToImageSettings& sets = {});
 
+	static std::vector<Image2d<uint8_t>> TensorsToImages(at::Tensor t,
+		const TensorsToImageSettings& sets = {});
+
 	static Image2d<uint8_t> TensorsToImage(const std::vector<std::vector<torch::Tensor>>& t,
+		const TensorsToImageSettings& sets = {});
+
+	static std::vector<Image2d<uint8_t>> TensorsToImages(const std::vector<std::vector<torch::Tensor>>& t,
 		const TensorsToImageSettings& sets = {});
 
 	static std::vector<std::vector<torch::Tensor>> MergeTensorsToRows(

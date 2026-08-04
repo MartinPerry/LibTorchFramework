@@ -139,12 +139,63 @@ private:
     torch::nn::AnyModule linearAny;
 };
 
+#include <c10/core/CPUAllocator.h>
+#include <c10/cuda/CUDACachingAllocator.h>
+
+
+#include <Windows.h>
+#include <Psapi.h>
+#include <memory>
+
+void PrintMemory(const char* label)
+{
+    PROCESS_MEMORY_COUNTERS_EX info{};
+    GetProcessMemoryInfo(GetCurrentProcess(),
+        reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&info), sizeof(info));
+
+    //Private Bytes 
+    // refer to the amount of memory that the process executable has asked for - 
+    // not necessarily the amount it is actually using. 
+
+    printf("[%s]\n", label);
+    //printf("  WorkingSetSize     (current RSS) : %.3f GB\n",
+    //    (float)info.WorkingSetSize / 1024 / 1024 / 1024);
+    //printf("  PeakWorkingSetSize (high watermark, never drops): %.3f GB\n",
+    //    (float)info.PeakWorkingSetSize / 1024 / 1024 / 1024);
+    printf("  PrivateUsage       (committed pages): %.3f GB\n",
+        (float)info.PrivateUsage / 1024 / 1024 / 1024);
+}
+
+
 int main()
 {
     auto log = MyUtils::Logger::GetInstance();
     log->Enable(MyUtils::Logger::LogType::Error, MyUtils::Logger::LogOutput::StdOut);
     log->Enable(MyUtils::Logger::LogType::Warning, MyUtils::Logger::LogOutput::StdOut);
     log->Enable(MyUtils::Logger::LogType::Info, MyUtils::Logger::LogOutput::StdOut);
+
+
+    /*
+    PrintMemory("Before");
+
+    auto tensor = torch::zeros({ 16384, 16384, 4 });  // also  4GB float32
+
+    PrintMemory("After Init");
+
+    //auto* tmp0 = tensor.unsafeGetTensorImpl();
+
+    tensor = tensor.to(torch::kCUDA);
+    //tensor.reset();
+
+    //auto* tmp = tensor.unsafeGetTensorImpl();
+
+    PrintMemory("After Cuda");
+
+
+    c10::cuda::CUDACachingAllocator::emptyCache();
+
+    PrintMemory("After emptyCache");
+    */
 
     CustomScenarios::exPreCastTraining::setup();
 

@@ -467,6 +467,60 @@ Image2d<uint8_t> TorchImageUtils::TensorsToImage(at::Tensor t,
 	return TorchImageUtils::TensorsToImage(tmpBatch, sets);		
 }
 
+std::vector<Image2d<uint8_t>> TorchImageUtils::TensorsToImages(at::Tensor t,
+	const TensorsToImageSettings& sets)
+{
+	if (t.dim() == 3)
+	{
+		if (sets.colorMappingFileName.has_value())
+		{
+			MY_LOG_ERROR("Color pallete mapping can be used only for single channel images");
+		}
+
+		auto img = TorchImageUtils::TensorToImage(t, sets.chanCount, sets.w, sets.h, sets.intervalMapping);
+
+		return { img };
+	}
+
+	std::vector<std::vector<torch::Tensor>> tmpBatch;
+
+	if (t.dim() == 4)
+	{
+		//input is tensor (batch, c, h, w)
+
+		tmpBatch.push_back({});
+		for (int i = 0; i < t.size(0); i++)
+		{
+			tmpBatch[0].push_back(t[i]);
+		}
+	}
+
+	else if (t.dim() == 5)
+	{
+		//input is tensor (batch, seq, c, h, w)
+
+		if (sets.seqFormat == SequenceFormat::S_B)
+		{
+			t = t.permute({ 1, 0, 2, 3, 4 });  // (B, S, C, H, W)
+		}
+
+		for (int i = 0; i < t.size(0); i++)
+		{
+			torch::Tensor batch = t[i];
+			std::vector<torch::Tensor> tmpSeq;
+
+			for (int j = 0; j < batch.size(0); ++j)
+			{
+				tmpSeq.push_back(batch[j]);  // (C, H, W)				
+			}
+
+			tmpBatch.push_back(tmpSeq);
+		}
+	}
+
+	return TorchImageUtils::TensorsToImages(tmpBatch, sets);
+}
+
 Image2d<uint8_t> TorchImageUtils::TensorsToImage(const std::vector<std::vector<torch::Tensor>>& t,
 	const TensorsToImageSettings& sets)
 {		
@@ -535,6 +589,63 @@ Image2d<uint8_t> TorchImageUtils::TensorsToImage(const std::vector<std::vector<t
 
 	return newImage;
 }
+
+std::vector<Image2d<uint8_t>> TorchImageUtils::TensorsToImages(const std::vector<std::vector<torch::Tensor>>& t,
+	const TensorsToImageSettings& sets)
+{
+	const int chanCount = std::max<int>(t[0][0].size(0), sets.chanCount);
+	const int w = std::max<int>(t[0][0].size(1), sets.w);
+	const int h = std::max<int>(t[0][0].size(2), sets.h);
+
+	
+	Image2d<uint8_t> pallete;
+	if (sets.colorMappingFileName.has_value())
+	{
+		if (chanCount > 1)
+		{
+			MY_LOG_ERROR("Color pallete mapping can be used only for single channel images");
+		}
+		else
+		{
+			pallete = Image2d<uint8_t>(sets.colorMappingFileName->c_str());			
+		}
+	}
+
+		
+	std::vector<Image2d<uint8_t>> imgs;
+
+		
+	for (size_t b = 0; b < t.size(); b++)
+	{		
+		for (size_t s = 0; s < t[b].size(); s++)
+		{
+			Image2d<uint8_t> seqImg = TorchImageUtils::TensorToImage(t[b][s], chanCount, w, h, sets.intervalMapping);
+
+			if (sets.colorMappingFileName.has_value())
+			{
+				seqImg = ImageDrawing::ColorMapping(seqImg, pallete);
+			}
+
+			if (sets.borderSize > 0)
+			{
+				auto wb = seqImg.GetWidth() + sets.borderSize * 2;
+				auto hb = seqImg.GetHeight() + sets.borderSize * 2;
+				
+				Image2d<uint8_t> tmp(wb, hb, seqImg.GetPixelFormat());
+				tmp.Clear(sets.backgroundValue);
+
+				tmp.SetSubImage(sets.borderSize, sets.borderSize, seqImg);
+				
+				seqImg = std::move(tmp);
+			}
+
+			imgs.emplace_back(std::move(seqImg));
+		}		
+	}
+
+	return imgs;
+}
+
 
 /// <summary>
 /// takes list of torch.Tensor of size (b, seq, X)

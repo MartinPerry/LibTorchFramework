@@ -435,6 +435,9 @@
     <ClCompile Include="ModelZoo\exPreCast\exPreCastModel.cpp">
       <Filter>Source Files\ModelZoo\exPreCast</Filter>
     </ClCompile>
+    <ClCompile Include="core\Metrics\MetricsVideo.cpp">
+      <Filter>Source Files\core\Metrics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InputProcessing\DefaultDataset.h">
@@ -704,9 +707,6 @@
     <ClInclude Include="ModelZoo\exPreCast\CubicDualUpsample.h">
       <Filter>Header Files\ModelZoo\exPreCast</Filter>
     </ClInclude>
-    <ClInclude Include="ModelZoo\exPreCast\exPreCastModel.h">
-      <Filter>Header Files\ModelZoo\exPreCast</Filter>
-    </ClInclude>
     <ClInclude Include="CustomScenarios\exPreCastTraining\setup_exprecast.h">
       <Filter>Header Files\CustomScenarios\exPrecastTraining</Filter>
     </ClInclude>
@@ -715,6 +715,9 @@
     </ClInclude>
     <ClInclude Include="CustomScenarios\exPreCastTraining\MeteonetInputLoader.h">
       <Filter>Header Files\CustomScenarios\exPrecastTraining</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Metrics\MetricsVideo.h">
+      <Filter>Header Files\core\Metrics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

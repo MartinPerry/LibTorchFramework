@@ -1,0 +1,78 @@
+#include "./MetricsVideo.h"
+
+#include <filesystem>
+
+#include <Compression/3rdParty/gif_write.h>
+#include <RasterData/Image2d.h>
+
+#include "./PredictionEvaluators.h"
+
+#include "../../Utils/TorchImageUtils.h"
+
+MetricsVideo::MetricsVideo() :
+    MetricsImage(MetricsType::UNKNOWN)
+{
+}
+
+void MetricsImage::Save(const std::string& filePath) const
+{
+    MetricsImage::Save(filePath);
+
+
+    // make a local copy of images (because we will modify shapes)
+    std::vector<std::tuple<torch::Tensor, torch::Tensor>> imgList;
+    imgList.reserve(images.size());
+    for (auto& p : images)
+    {
+        imgList.emplace_back(p);
+    }
+
+    // ensure each tensor has sequence dim (unsqueeze dim=1 if needed)
+    for (auto& pp : imgList)
+    {
+        auto& t = std::get<0>(pp);
+        auto& p = std::get<1>(pp);
+
+        if (t.dim() == 4)
+        {
+            // (b, c, h, w) -> add seq dim
+            t = t.unsqueeze(1);
+        }
+
+        if (p.dim() == 4)
+        {
+            p = p.unsqueeze(1);
+        }
+    }
+
+
+    for (size_t i = 0; i < imgList.size(); ++i)
+    {
+        // TorchImageUtils::MergeTensorsToRows expects vector<torch::Tensor> shaped [b, seqLen, ...]
+        std::vector<torch::Tensor> toMerge = { std::get<0>(imgList[i]), std::get<1>(imgList[i]) };
+        auto rows = TorchImageUtils::MergeTensorsToRows(toMerge);
+
+
+        TorchImageUtils::TensorsToImageSettings sets;
+        sets.borderSize = 5;
+        sets.colorMappingFileName = colorMapping;
+
+        auto imgs = TorchImageUtils::TensorsToImages(rows, sets);
+        std::string imgPath = this->BuildPath(filePath, static_cast<int>(i), "gif", false);
+
+        auto w = imgs[0].GetWidth();
+        auto h = imgs[0].GetHeight();
+
+        int delay = 20;
+        GifWriter g;
+        GifBegin(&g, imgPath.c_str(), w, h, delay);
+        for (auto& gimg : imgs)
+        {
+            gimg = ColorSpace::ConvertRgbToRgba(gimg, 255);
+
+            GifWriteFrame(&g, gimg.GetData().data(), w, h, delay);            
+        }
+        GifEnd(&g);
+
+    }
+}

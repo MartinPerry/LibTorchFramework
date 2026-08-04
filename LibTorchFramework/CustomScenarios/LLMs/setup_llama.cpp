@@ -102,24 +102,6 @@ torch::Tensor LinearTestModule::forward(const torch::Tensor& x)
     return output;
 }
 
-void PrintMemory(const char* label)
-{
-    PROCESS_MEMORY_COUNTERS_EX info{};
-    GetProcessMemoryInfo(GetCurrentProcess(),
-        reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&info), sizeof(info));
-
-    //Private Bytes 
-    // refer to the amount of memory that the process executable has asked for - 
-    // not necessarily the amount it is actually using. 
-
-    printf("[%s]\n", label);
-    //printf("  WorkingSetSize     (current RSS) : %.3f GB\n",
-    //    (float)info.WorkingSetSize / 1024 / 1024 / 1024);
-    //printf("  PeakWorkingSetSize (high watermark, never drops): %.3f GB\n",
-    //    (float)info.PeakWorkingSetSize / 1024 / 1024 / 1024);
-    printf("  PrivateUsage       (committed pages): %.3f GB\n",
-        (float)info.PrivateUsage / 1024 / 1024 / 1024);
-}
 
 
 void ReleaseCPUCache()
@@ -165,25 +147,7 @@ namespace CustomScenarios::LLMs::Llama
 	{
         //https://huggingface.co/spaces/Xenova/the-tokenizer-playground
 
-        PrintMemory("Before");
-
-        auto tensor = torch::zeros({ 16384, 16384, 4 });  // also  4GB float32
         
-        PrintMemory("After Init");        
-        
-        //auto* tmp0 = tensor.unsafeGetTensorImpl();
-
-        tensor = tensor.to(torch::kCUDA);
-        //tensor.reset();
-
-        //auto* tmp = tensor.unsafeGetTensorImpl();
-
-        PrintMemory("After Cuda");
-
-        
-        c10::cuda::CUDACachingAllocator::emptyCache();
-
-        PrintMemory("After emptyCache");
 
         auto t = std::make_shared<LinearTestModule>(10, 30);
         
@@ -231,7 +195,7 @@ namespace CustomScenarios::LLMs::Llama
 		LlamaConfig cfg = LlamaConfig::FromJsonFile(modelDir + "config.json");
         cfg.randomInitWeights = false;
 
-        PrintMemory("Fresh start");
+        //PrintMemory("Fresh start");
 
         //torch::NoGradGuard();
 
@@ -256,7 +220,7 @@ namespace CustomScenarios::LLMs::Llama
 
         ModelInfo mi(*llama.get());
 
-        PrintMemory("After Model Init");
+        //PrintMemory("After Model Init");
        
         auto memInfo = mi.GetMemorySize();
 
@@ -268,7 +232,7 @@ namespace CustomScenarios::LLMs::Llama
 
         ReleaseCPUCache();
         SetProcessWorkingSetSize(GetCurrentProcess(), (SIZE_T)-1, (SIZE_T)-1);
-        PrintMemory("After to CUDA");
+        //PrintMemory("After to CUDA");
 
         
 

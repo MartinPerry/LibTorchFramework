@@ -18,6 +18,7 @@
 #include "../../core/Metrics/PredictionEvaluators.h"
 #include "../../core/Metrics/MetricsDefault.h"
 #include "../../core/Metrics/MetricsImage.h"
+#include "../../core/Metrics/MetricsVideo.h"
 
 #include "../../core/Modules/LossFunctions/DiceLoss.h"
 #include "../../core/Modules/LossFunctions/MultiBceLoss.h"
@@ -80,7 +81,7 @@ namespace CustomScenarios::exPreCastTraining
 		sets.epochCount = epochCount;
 		sets.batchSize = 2;
 		sets.metricsInitFn = []() -> auto {
-			auto metr = std::make_shared<MetricsImage>(MetricsImage::MetricsType::UNKNOWN);
+			auto metr = std::make_shared<MetricsVideo>();
 			//metr->SetColorMappingFileName("D://turbo.png");
 			return metr;
 			};
@@ -104,7 +105,8 @@ namespace CustomScenarios::exPreCastTraining
 
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
 		ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } }, 
-			"d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE", 
+			//"d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE", 
+			"e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet/SE",
 			prevCount, futureCount);
 
 		//-------

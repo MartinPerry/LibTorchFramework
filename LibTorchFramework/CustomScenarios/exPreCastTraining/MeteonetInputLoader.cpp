@@ -2,8 +2,10 @@
 
 #include <filesystem>
 
+#include <Compression/3rdParty/gif_write.h>
 #include <FileUtils/Reading/RawFileReader.h>
 #include <RasterData/Image2d.h>
+#include <Utils/Strings/StringUtils.h>
 
 #include "../../Utils/TorchImageUtils.h"
 
@@ -25,6 +27,8 @@ void MeteonetInputLoader::Load()
     int yearFrom = 2016;
     int yearTo = 2016;
        
+    int maxMonth = 5;// 12;
+
     const std::vector<int> days = {
         31, 28, 31, 30, 31, 30,
         31, 31, 30, 31, 30, 31
@@ -48,7 +52,7 @@ void MeteonetInputLoader::Load()
 
     for (int year = yearFrom; year <= yearTo; ++year)
     {
-        for (int month = 1; month <= 12; ++month)
+        for (int month = 1; month <= maxMonth; ++month)
         {
             for (int day = 1; day <= days[month - 1]; ++day)
             {
@@ -109,9 +113,9 @@ std::vector<float> MeteonetInputLoader::LoadImage(const std::string& p) const
     std::vector<uint8_t> buf;
     f.ReadAll(buf);
 
-    Image2d<uint8_t> img(256, 256, std::move(buf), ColorSpace::PixelFormat::GRAY);
+    Image2d<float> img = Image2d<float>::CreateFromRawMemory(buf.data(), buf.size());
 
-
+    
     auto v = TorchImageUtils::LoadImageAs<std::vector<float>>(img,
         sets.imgChannelsCount, sets.imgW, sets.imgH);
 
@@ -131,7 +135,24 @@ void MeteonetInputLoader::SaveSequence(size_t index, const std::string& outputNa
     sets.borderSize = 2;
     sets.colorMappingFileName = colorMappingFileName;
 
-    auto img = TorchImageUtils::TensorsToImage(seq, sets);
-
+    auto img = TorchImageUtils::TensorsToImage(seq, sets);    
     img.Save(outputName.c_str());
+
+    auto imgs = TorchImageUtils::TensorsToImages(seq, sets);
+
+    auto w = imgs[0].GetWidth();
+    auto h = imgs[0].GetHeight();
+
+    auto gifFileName = outputName + ".gif";
+    int delay = 20;
+    GifWriter g;
+    GifBegin(&g, gifFileName.c_str(), w, h, delay);
+    for (auto& gimg : imgs)
+    {   
+        gimg = ColorSpace::ConvertRgbToRgba(gimg, 255);
+
+        GifWriteFrame(&g, gimg.GetData().data(), w, h, delay);        
+    }
+    GifEnd(&g);    
+
 }
