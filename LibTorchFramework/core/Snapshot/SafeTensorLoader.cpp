@@ -13,31 +13,42 @@
 /// <summary>
 /// Load safetensor to map and return loaded data
 /// </summary>
-/// <param name="modelDir"></param>
+/// <param name="dataPath"></param>
 /// <returns></returns>
-TensorMap SafeTensorLoader::LoadSafetensors(const std::filesystem::path& modelDir)
+TensorMap SafeTensorLoader::LoadSafetensors(const std::filesystem::path& dataPath)
 {
-	return this->LoadSafetensors(modelDir, nullptr);
+	return this->LoadSafetensors(dataPath, nullptr);
 }
 
 /// <summary>
 /// Load safetensor to map and return loaded data
 /// name of tensors are remaped based on remapName callback
 /// </summary>
-/// <param name="modelDir"></param>
+/// <param name="dataPath"></param>
 /// <param name="remapName"></param>
 /// <returns></returns>
-TensorMap SafeTensorLoader::LoadSafetensors(const std::filesystem::path& modelDir,
+TensorMap SafeTensorLoader::LoadSafetensors(const std::filesystem::path& dataPath,
 	std::function<std::string(const std::string&)> remapName)
 {
-	auto shards = this->LoadShardsFileNames(modelDir);
-	if (shards.size() == 0)
+
+	std::vector<std::filesystem::path> parts;
+	
+	if (std::filesystem::is_directory(dataPath) == false)
+	{
+		parts.push_back(dataPath);
+	}
+	else
+	{
+		auto parts = this->LoadShardsFileNames(dataPath);
+	}
+
+	if (parts.size() == 0)
 	{
 		return {};
 	}
-
+	
 	TensorMap stateDict;
-	for (const auto& shard : shards)
+	for (const auto& shard : parts)
 	{
 		safetensors::SafeTensorManager sm;
 		auto shardData = sm.Load(shard.string(), remapName);
@@ -53,13 +64,24 @@ TensorMap SafeTensorLoader::LoadSafetensors(const std::filesystem::path& modelDi
 /// </summary>
 /// <param name="modelDir"></param>
 /// <param name="fill"></param>
-LoadStateDictReport SafeTensorLoader::LoadSafetensors(const std::filesystem::path& modelDir,
+LoadStateDictReport SafeTensorLoader::LoadModel(const std::filesystem::path& dataPath,
 	AbstractModel& model,
 	bool strict,
 	std::function<std::string(const std::string&)> remapName)
-{
-	auto shards = this->LoadShardsFileNames(modelDir);
-	if (shards.size() == 0)
+{	
+
+	std::vector<std::filesystem::path> parts;
+
+	if (std::filesystem::is_directory(dataPath) == false)
+	{
+		parts.push_back(dataPath);
+	}
+	else
+	{
+		auto parts = this->LoadShardsFileNames(dataPath);
+	}
+	
+	if (parts.size() == 0)
 	{
 		return {};
 	}
@@ -74,11 +96,12 @@ LoadStateDictReport SafeTensorLoader::LoadSafetensors(const std::filesystem::pat
 	
 	std::unordered_set<uint64_t> loadedKeys;
 	std::vector<std::string> unexpected;
+	std::vector<std::string> loaded;
 
 	torch::NoGradGuard noGrad;
 
 	TensorMap stateDict;
-	for (const auto& shard : shards)
+	for (const auto& shard : parts)
 	{
 		safetensors::SafeTensorManager sm;
 		sm.Load(shard.string(), [&](const std::string& name, const torch::Tensor& t) {
@@ -99,6 +122,8 @@ LoadStateDictReport SafeTensorLoader::LoadSafetensors(const std::filesystem::pat
 			}
 
 			dstTensor.copy_(t, /*non_blocking=*/true);
+
+			loaded.push_back(key);
 
 			/*
 			torch::Tensor converted = t.to(
@@ -141,7 +166,7 @@ LoadStateDictReport SafeTensorLoader::LoadSafetensors(const std::filesystem::pat
 		return {};
 	}
 
-	return { missing, unexpected };
+	return { missing, unexpected, loaded };
 }
 
 //======================

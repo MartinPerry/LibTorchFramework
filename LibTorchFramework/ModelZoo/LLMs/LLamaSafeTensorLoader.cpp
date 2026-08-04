@@ -13,7 +13,7 @@ LoadStateDictReport LLamaSafeTensorLoader::LoadFromHfSafetensors(
 {
 	this->CreateMapping(model.GetConfig());
 
-	return this->LoadSafetensors(modelDir, model, strict, [&](const std::string& hfName) -> std::string {
+	return this->LoadModel(modelDir, model, strict, [&](const std::string& hfName) -> std::string {
 		return this->MappingHfKeysToOurs(hfName);
 	});
 	

@@ -27,6 +27,7 @@
 #include "../../core/Snapshot/PretrainedManager.h"
 #include "../../core/Snapshot/SnapshotSaver.h"
 #include "../../core/Snapshot/SnapshotLoader.h"
+#include "../../core/Snapshot/SafeTensorLoader.h"
 
 //=========================================================
 // Inputs
@@ -52,6 +53,8 @@
 #include "../../Utils/TorchUtils.h"
 #include "../../Utils/TorchImageUtils.h"
 #include "../../Utils/TrainingHelper.h"
+
+#include <Utils/Strings/StringUtils.h>
 
 //=========================================================
 
@@ -118,6 +121,15 @@ namespace CustomScenarios::exPreCastTraining
 
 		auto m = std::make_shared<ModelZoo::exPreCast::exPreCastModel>();
 
+
+		SafeTensorLoader tl;
+		auto loadRes = tl.LoadModel("e:\\Programming\\Cpp\\LibTorchFramework\\pretrained_meteonet.safetensors", 
+			*m.get(), false, [](const std::string& name) -> std::string {
+				std::string newName = name;
+				StringUtils::ReplaceSubStr(newName, "module.", "");
+
+				return newName;
+		});
 
 		//expected input shape: [4, 1, 12, 256, 256]
 		//expected output/gt shape: [4, 12, 256, 256]

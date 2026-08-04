@@ -17,6 +17,7 @@ struct LoadStateDictReport
 {
     std::vector<std::string> Missing;
     std::vector<std::string> Unexpected;
+    std::vector<std::string> Loaded;
 };
 
 class SafeTensorLoader
@@ -24,13 +25,13 @@ class SafeTensorLoader
 public:
     SafeTensorLoader() = default;
     virtual ~SafeTensorLoader() = default;
+    
+    TensorMap LoadSafetensors(const std::filesystem::path& dataPath);
 
-    TensorMap LoadSafetensors(const std::filesystem::path& modelDir);
-
-    TensorMap LoadSafetensors(const std::filesystem::path& modelDir,
+    TensorMap LoadSafetensors(const std::filesystem::path& dataPath,
         std::function<std::string(const std::string&)> remapName);
 
-    LoadStateDictReport LoadSafetensors(const std::filesystem::path& modelDir,
+    LoadStateDictReport LoadModel(const std::filesystem::path& dataPath,
         AbstractModel& model,
         bool strict = false,
         std::function<std::string(const std::string&)> remapName = nullptr);
