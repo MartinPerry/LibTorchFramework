@@ -207,6 +207,7 @@ torch::Tensor exPreCastModel::forward(torch::Tensor x)
     x = x.squeeze(2);
     x = x.unsqueeze(1);
 
+    
     //[4, 1, 12, 256, 256] => [4, 96, 6, 64, 64]
     x = patchEmbed->forward(x);
 
@@ -220,10 +221,10 @@ torch::Tensor exPreCastModel::forward(torch::Tensor x)
     //for (auto& module : *encoder)
     {
         auto result = encoder[i]->as<BasicLayerSkipImpl>()->forward(x);
-        
+                
         //auto layer = std::dynamic_pointer_cast<BasicLayerSkipImpl>(module.ptr());
         //auto result = layer->forward(x);
-
+                
         x = std::get<0>(result);
 
         if (i < encoder->size() - 1)
@@ -237,7 +238,6 @@ torch::Tensor exPreCastModel::forward(torch::Tensor x)
     x = bottleneckUpscale->forward(x);
     x = x.permute({ 0, 4, 1, 2, 3}).contiguous();
 
-   
     for (size_t i = 0; i < decoder->size(); ++i)
     {        
         if (skipConnection == "add")
@@ -272,11 +272,17 @@ torch::Tensor exPreCastModel::forward(torch::Tensor x)
     x = x.squeeze(1);
     x = x.unsqueeze(2);
 
+    //if (x.isnan().any().item<bool>())
+    //{
+    //    printf("nan");
+    //}
+   
     return x;
 }
 
 std::vector<torch::Tensor> exPreCastModel::RunForward(DataLoaderData& batch)
 {
+    //this->eval();
     auto x = this->forward(batch.input);
 
     return { x };

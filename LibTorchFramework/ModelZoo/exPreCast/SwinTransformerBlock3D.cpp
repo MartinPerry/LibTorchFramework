@@ -48,12 +48,8 @@ SwinTransformerBlock3DImpl::SwinTransformerBlock3DImpl(
 
     if (dropPath > 0.0)
     {
-        dropPathLayer = register_module("drop_path", DropPath(dropPath));     // TODO
-    }
-    else
-    {
-        identity = register_module("drop_path", torch::nn::Identity());
-    }
+        dropPathLayer = register_module("drop_path", DropPath(dropPath));
+    }    
 
     norm2 = register_module("norm2", torch::nn::LayerNorm(torch::nn::LayerNormOptions({ dim })));
 
@@ -78,7 +74,7 @@ torch::Tensor SwinTransformerBlock3DImpl::forwardPart1(
     auto shift = sizes.second;
 
     x = norm1->forward(x);
-
+   
     const int64_t padD1 = (win[0] - D % win[0]) % win[0];
     const int64_t padB = (win[1] - H % win[1]) % win[1];
     const int64_t padR = (win[2] - W % win[2]) % win[2];
@@ -143,13 +139,13 @@ torch::Tensor SwinTransformerBlock3DImpl::forwardPart2(
 {
     x = norm2->forward(x);
     x = mlp->forward(x);
-
+    
     if (dropPathLayer.is_empty() == false)
     {
-        return dropPathLayer->forward(x);
+        x = dropPathLayer->forward(x);
     }
-
-    return identity->forward(x);
+   
+    return x;
 }
 
 torch::Tensor SwinTransformerBlock3DImpl::forward(
@@ -166,7 +162,7 @@ torch::Tensor SwinTransformerBlock3DImpl::forward(
     }
     else
     {
-        x = shortcut + identity->forward(x);
+        x = shortcut + x;
     }
 
     x = x + forwardPart2(x);

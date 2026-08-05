@@ -75,7 +75,7 @@ namespace CustomScenarios::exPreCastTraining
 		//model debug
 		sets.numWorkers = 4;
 		sets.device = torch::kCUDA;
-		sets.perf.enableAutoCast = true;
+		sets.perf.enableAutoCast = false;
 		//-----
 
 		//sets.numWorkers = 4;
@@ -152,6 +152,8 @@ namespace CustomScenarios::exPreCastTraining
 		//SnapshotLoader loader(m.get());
 		//loader.Load(sets.pretrainedManager);
 		
+		m->to(sets.device);
+
 		TrainingHelper th(sets, m);
 		th.Run(ilw);
 	}

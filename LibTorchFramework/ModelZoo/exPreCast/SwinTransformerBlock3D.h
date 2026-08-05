@@ -41,8 +41,7 @@ private:
 
     torch::nn::LayerNorm norm1{ nullptr };
     WindowAttention3D attn{ nullptr };
-    DropPath dropPathLayer{ nullptr };
-    torch::nn::Identity identity;
+    DropPath dropPathLayer{ nullptr };    
     torch::nn::LayerNorm norm2{ nullptr };
     Mlp mlp{ nullptr };
 };

@@ -30,9 +30,9 @@ torch::Tensor PatchMergingImpl::forward(torch::Tensor x)
     auto x3 = x.index({ Slice(), Slice(), Slice(1, None, 2), Slice(1, None, 2), Slice()});
 
     x = torch::cat({ x0, x1, x2, x3 }, -1);
-
+    
     x = norm->forward(x);
     x = reduction->forward(x);
-
+    
     return x;
 }

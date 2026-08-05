@@ -48,8 +48,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)..\libtorch\Debug\libtorch_2.13.0\include;$(ProjectDir)..\libtorch\Debug\libtorch_2.13.0\include\torch\csrc\api\include;$(PLAYGROUND_PATH)\Playground;$(PLAYGROUND_PATH)\include;$(VCPKG_INSTALL_DIR)\x64-windows\include;D:\opencv\build\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\libtorch\Debug\libtorch_2.13.0\lib;$(PLAYGROUND_PATH)\libs_x64;D:\opencv\build\x64\vc15\lib;$(VCPKG_INSTALL_DIR)\x64-windows\debug\lib;$(ProjectDir)..\x64\Debug_lib_md;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\libtorch\Debug\libtorch_2.10.0\include;$(ProjectDir)..\libtorch\Debug\libtorch_2.10.0\include\torch\csrc\api\include;$(PLAYGROUND_PATH)\Playground;$(PLAYGROUND_PATH)\include;$(VCPKG_INSTALL_DIR)\x64-windows\include;D:\opencv\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\libtorch\Debug\libtorch_2.10.0\lib;$(PLAYGROUND_PATH)\libs_x64;D:\opencv\build\x64\vc15\lib;$(VCPKG_INSTALL_DIR)\x64-windows\debug\lib;$(ProjectDir)..\x64\Debug_lib_md;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)..\libtorch\Release\libtorch_2.10.0\include;$(ProjectDir)..\libtorch\Release\libtorch_2.10.0\include\torch\csrc\api\include;$(PLAYGROUND_PATH)\Playground;$(PLAYGROUND_PATH)\include;$(VCPKG_INSTALL_DIR)\x64-windows\include;D:\opencv\build\include;$(IncludePath)</IncludePath>

@@ -157,10 +157,10 @@ BasicLayerSkipImpl::forward(
     auto attnMask = computeMask( Dp, Hp, Wp, win, shift, x.device());
 
     for (auto& module : *blocks)
-    {
+    {        
         auto blk = module->as<SwinTransformerBlock3DImpl>();
 
-        x = blk->forward(x, attnMask);
+        x = blk->forward(x, attnMask);        
     }
 
     x = x.view({ B, D, H, W, -1 });

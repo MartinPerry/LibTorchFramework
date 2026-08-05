@@ -25,9 +25,7 @@ torch::Tensor DropPathImpl::forward(torch::Tensor x)
         shape.push_back(1);
     }
 
-    auto randomTensor = torch::empty(shape, x.options());
-
-    randomTensor.bernoulli_(keepProb);
+    auto randomTensor = torch::empty(shape, x.options()).bernoulli_(keepProb);
 
     if ((keepProb > 0.0) && (scaleByKeep))
     {
