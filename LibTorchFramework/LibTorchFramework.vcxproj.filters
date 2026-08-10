@@ -961,4 +961,9 @@
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
     </CudaCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\readme.md">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

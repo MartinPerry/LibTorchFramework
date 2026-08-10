@@ -344,6 +344,9 @@
     <CudaCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv3d_common_kernels.cu" />
     <CudaCompile Include="core\Optimizers\FusedAdamW8bit_cuda.cu" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\readme.md" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 13.0.targets" />

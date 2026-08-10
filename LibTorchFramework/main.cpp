@@ -199,9 +199,9 @@ int main()
     PrintMemory("After emptyCache");
     */
 
-    CustomScenarios::exPreCastTraining::setup();
+    //CustomScenarios::exPreCastTraining::setup();
 
-
+    /*
     Test rr;
 
     torch::nn::AnyModule conv2 = torch::nn::AnyModule(torch::nn::Conv2d(torch::nn::Conv2dOptions(5, 6, 3)));
@@ -209,7 +209,7 @@ int main()
     rr.ReplaceModule("linearAny", conv2);
 
     printf("x");
-
+    */
     
     //std::cout << "Hello World!\n";
     //at::Tensor tensor = at::ones({ 3, 7, 2 }, at::kInt);
@@ -269,11 +269,19 @@ int main()
         stride_h, stride_w,
         pad_h, pad_w,
         dilation_h, dilation_w,
-        groups, offset_groups,
+        groups, 
+        offset_groups,
         use_mask
     );
 
-
+    auto out2tv = tvdcn::ops::deform_conv2d(
+        input, weight, offset, mask, bias,
+        { stride_h, stride_w },
+        { pad_h, pad_w },
+        { dilation_h, dilation_w },
+        groups
+    );
+        
     auto df = DeformConv2d(C_in, C_out);
     auto out2 = df->forward(input);
     
