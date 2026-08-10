@@ -120,6 +120,8 @@
 #include "./core/Modules/Convolutions/DeformConv.h"
 #include "./core/Modules/Convolutions/DeformConvImpl/torchvision/vision_deform_conv2d.h"
 
+#include "./core/Modules/Convolutions/DeformConvImpl/tvdcn/ops/deform_conv2d.h"
+
 #include "./core/Modules/ChangableModule.h"
 
 

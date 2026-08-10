@@ -3,7 +3,7 @@
 
 CustomProjectSettings.props
 libtorch
-torchvision
+
 
 # User-specific files
 *.suo
