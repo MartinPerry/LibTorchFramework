@@ -27,7 +27,7 @@ void MeteonetInputLoader::Load()
     int yearFrom = 2016;
     int yearTo = 2016;
        
-    int maxMonth = 5;// 12;
+    int maxMonth = 2;// 12;
 
     const std::vector<int> days = {
         31, 28, 31, 30, 31, 30,

@@ -1,6 +1,6 @@
 #include "./DeformConv.h"
 
-#include "./DeformConvImpl/deform_conv2d.h"
+#include "./DeformConvImpl/torchvision/vision_deform_conv2d.h"
 
 DeformConv2dImpl::DeformConv2dImpl(
     int64_t in_channels,
@@ -139,10 +139,7 @@ torch::Tensor DeformConv2dImpl::forward(
         }
     }
 
-    // DeformConv placeholder
-    // TODO: Replace with actual deformable convolution
-    //torch::Tensor out = x; // Identity until implemented
-
+    
     torch::Tensor out = vision::ops::deform_conv2d(
         x, weight, offset, *mask, bias,
         stride.first, stride.second,

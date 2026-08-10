@@ -106,14 +106,14 @@ namespace CustomScenarios::exPreCastTraining
 		InputLoaderSettings loaderSets;
 		loaderSets.subsetSize = 2;
 
+		std::string datasetDir = "d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE";
+		//std::string datasetDir = "e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet/SE";
+
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
 		ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } }, 
-			//"d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE", 
-			"e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet/SE",
-			prevCount, futureCount);
+			datasetDir, prevCount, futureCount);
 		//ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TEST, loaderSets } },
-		//	//"d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE", 
-		//	"e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet/SE",
+		//	datasetDir, 		
 		//	prevCount, futureCount);
 
 		//-------
@@ -125,15 +125,22 @@ namespace CustomScenarios::exPreCastTraining
 
 		auto m = std::make_shared<ModelZoo::exPreCast::exPreCastModel>();
 
+		//try 3d deformanble convolution
+		//https://github.com/inspiros/tvdcn ?
 
-		SafeTensorLoader tl;
-		auto loadRes = tl.LoadModel("e:\\Programming\\Cpp\\LibTorchFramework\\pretrained_meteonet.safetensors", 
+		/*
+		//std::string modelPath = "e:\\Programming\\Cpp\\LibTorchFramework\\pretrained_meteonet.safetensors";
+		std::string modelPath = "d:\\python\\exPreCast-main\\exPreCast-main\\checkpoints\\pretrained_meteonet.safetensors";
+
+		SafeTensorLoader tl;		
+		auto loadRes = tl.LoadModel(modelPath,
 			*m.get(), false, [](const std::string& name) -> std::string {
 				std::string newName = name;
 				StringUtils::ReplaceSubStr(newName, "module.", "");
 
 				return newName;
 		});
+		*/
 
 		//expected input shape: [4, 1, 12, 256, 256]
 		//expected output/gt shape: [4, 12, 256, 256]

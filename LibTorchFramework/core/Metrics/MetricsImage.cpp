@@ -73,36 +73,35 @@ std::unordered_map<std::string, float> MetricsImage::GetResultExtended() const
         mae = runningMae / pixelsCount;
         psnr = 20.0 * std::log10(1.0 / (rmse + SMOOTH));
     }
-
-    bool hasJaccardData = !(iPosAll == 0.0 && uPosAll == 0.0 && iInvAll == 0.0 && uInvAll == 0.0);
-
-    if (!hasJaccardData) 
-    {
-        res.try_emplace("mse", mse);
-        res.try_emplace("rmse", rmse);
-        res.try_emplace("mae", mae);
-        res.try_emplace("psnr", psnr);
-        return res;
-    }
-
-    float iouPos = (iPosAll + SMOOTH) / (uPosAll + SMOOTH);
-    float iouInv = (iInvAll + SMOOTH) / (uInvAll + SMOOTH);
-    float macroRes = (iouPos + iouInv) / 2.0;
-    float iouMicro = ((iPosAll + iInvAll) + SMOOTH) / ((uPosAll + uInvAll) + SMOOTH);
-
-    float mcr = (uPosAll - iPosAll) / pixelsCount;
-    float acc = (pixelsCount - (uPosAll - iPosAll)) / pixelsCount;
-
-    res.try_emplace("jaccard_inverted", iouInv);
-    res.try_emplace("jaccard_positive", iouPos);
-    res.try_emplace("jaccard_macro", macroRes);
-    res.try_emplace("jaccard_micro", iouMicro);
-    res.try_emplace("mcr", mcr);
+    
     res.try_emplace("mse", mse);
     res.try_emplace("rmse", rmse);
     res.try_emplace("mae", mae);
     res.try_emplace("psnr", psnr);
-    res.try_emplace("acc", acc);
+
+
+    bool hasJaccardData = !(iPosAll == 0.0 && uPosAll == 0.0 && iInvAll == 0.0 && uInvAll == 0.0);
+    if (hasJaccardData)
+    {
+
+        float iouPos = (iPosAll + SMOOTH) / (uPosAll + SMOOTH);
+        float iouInv = (iInvAll + SMOOTH) / (uInvAll + SMOOTH);
+        float macroRes = (iouPos + iouInv) / 2.0;
+        float iouMicro = ((iPosAll + iInvAll) + SMOOTH) / ((uPosAll + uInvAll) + SMOOTH);
+
+        float csi = iouPos;  // CSI = positive IoU/Jaccard
+
+        float mcr = (uPosAll - iPosAll) / pixelsCount;
+        float acc = (pixelsCount - (uPosAll - iPosAll)) / pixelsCount;
+
+        res.try_emplace("jaccard_inverted", iouInv);
+        res.try_emplace("jaccard_positive", iouPos);
+        res.try_emplace("jaccard_macro", macroRes);
+        res.try_emplace("jaccard_micro", iouMicro);
+        res.try_emplace("csi", csi);
+        res.try_emplace("mcr", mcr);
+        res.try_emplace("acc", acc);
+    }
 
     return res;
 }
@@ -224,11 +223,8 @@ void MetricsImage::Evaluate()
 
     this->RunningRmseMae(pred, target);
 
-    if (mType == MetricsType::SEGMENTATION)
-    {
-        //will rewrite pred and target values by threshold
-        this->JaccardIndexBinary(pred, target);
-    }
+    //will rewrite pred and target values by threshold
+    this->JaccardIndexBinary(pred, target);    
 }
 
 //==================================================================================

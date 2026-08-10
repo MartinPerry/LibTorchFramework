@@ -3,6 +3,16 @@
 
 #include <torch/torch.h>
 
+// ======================================================================================
+// Fourier Amplitude Correlation Loss (FACL)
+// 
+// Fourier Amplitude and Correlation Loss: Beyond 
+// Using L2 Loss for Skillful Precipitation Nowcasting
+// <https://arxiv.org/pdf/2410.23159>
+// 
+// ======================================================================================
+
+
 class FACLImpl : public torch::nn::Module
 {
 public:

@@ -193,6 +193,54 @@
     <Filter Include="Header Files\CustomScenarios\exPrecastTraining">
       <UniqueIdentifier>{b7992458-2636-4ea2-a4c2-89ede8703228}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\core\Modules\Convolutions\DeformConvImpl\torchvision">
+      <UniqueIdentifier>{4012967e-5de4-4f6e-840b-911493136493}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules\Convolutions\DeformConvImpl\torchvision">
+      <UniqueIdentifier>{18e1135e-6833-44ab-9035-15dc94cf78d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn">
+      <UniqueIdentifier>{2c798a4c-7681-448a-9b4c-93fb4133c8ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops">
+      <UniqueIdentifier>{0eb7880d-c8d7-46e9-b91a-0e5a05239f8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast">
+      <UniqueIdentifier>{5f4a8c74-eac7-42d6-94e7-7e379906fa8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd">
+      <UniqueIdentifier>{852efe99-e9b7-4f6c-8a7f-311d3ad3ad13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu">
+      <UniqueIdentifier>{4635bfa8-d74b-4478-9dd4-b4f5ae1ba4a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda">
+      <UniqueIdentifier>{0f970d01-72b3-4716-b2e3-97b115109d77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils">
+      <UniqueIdentifier>{5f17569a-7209-4459-8305-87c3f65470d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn">
+      <UniqueIdentifier>{abf6838b-79f8-4225-8a10-972ca8dba54c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops">
+      <UniqueIdentifier>{77f05fcd-20ed-4523-bff7-ec7c804f87a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd">
+      <UniqueIdentifier>{55f1c5b4-4cc1-470f-9a7e-d88384b4e475}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast">
+      <UniqueIdentifier>{4f619749-f67a-47a7-9728-b7702bf655f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu">
+      <UniqueIdentifier>{f80ced16-6c68-472d-8f20-f651a57bca5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda">
+      <UniqueIdentifier>{f2660f73-c86c-4204-8759-0eb4f886509a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils">
+      <UniqueIdentifier>{e4a55bfb-8a19-4873-9ee2-fd89b4178ab4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -312,18 +360,6 @@
     <ClCompile Include="InputProcessing\InputLoaders\EncoderDecoderInputLoader.cpp">
       <Filter>Source Files\InputProcessing\InputLoaders</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d.cpp">
-      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl</Filter>
-    </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel.cpp">
-      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl</Filter>
-    </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel_autocast.cpp">
-      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl</Filter>
-    </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel_autograd.cpp">
-      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl</Filter>
-    </ClCompile>
     <ClCompile Include="core\Modules\Convolutions\DeformConv.cpp">
       <Filter>Source Files\core\Modules\Convolutions</Filter>
     </ClCompile>
@@ -437,6 +473,123 @@
     </ClCompile>
     <ClCompile Include="core\Metrics\MetricsVideo.cpp">
       <Filter>Source Files\core\Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\torchvision\vision_deform_conv2d.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\torchvision</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\torchvision\vision_deform_conv2d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\torchvision</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\torchvision\vision_deform_conv2d_kernel_autocast.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\torchvision</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\torchvision\vision_deform_conv2d_kernel_autograd.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\torchvision</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\deform_conv_transpose1d.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\deform_conv_transpose2d.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\deform_conv_transpose3d.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\deform_conv1d.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\deform_conv2d.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\deform_conv3d.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\tvdcn.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_conv_transpose1d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_conv_transpose2d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_conv_transpose3d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_conv1d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_conv2d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_conv3d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_conv_transpose1d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_conv_transpose2d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_conv_transpose3d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_conv1d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_conv2d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_conv3d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv_transpose1d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv_transpose2d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv_transpose3d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv1d_common_kernels.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv1d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv2d_common_kernels.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv2d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv3d_common_kernels.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv3d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv_transpose1d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv_transpose2d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv_transpose3d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv1d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv2d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv3d_kernel.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils\tensor_utils.cpp">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -593,12 +746,6 @@
     <ClInclude Include="InputProcessing\InputLoaders\EncoderDecoderInputLoader.h">
       <Filter>Header Files\InputProcessing\InputLoaders</Filter>
     </ClInclude>
-    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\cuda_helpers.h">
-      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl</Filter>
-    </ClInclude>
-    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d.h">
-      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl</Filter>
-    </ClInclude>
     <ClInclude Include="core\Modules\Convolutions\DeformConv.h">
       <Filter>Header Files\core\Modules\Convolutions</Filter>
     </ClInclude>
@@ -719,6 +866,78 @@
     <ClInclude Include="core\Metrics\MetricsVideo.h">
       <Filter>Header Files\core\Metrics</Filter>
     </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\torchvision\cuda_helpers.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\torchvision</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\torchvision\vision_deform_conv2d.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\torchvision</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\macros.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\tvdcn.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\deform_conv_transpose1d.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\deform_conv_transpose2d.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\deform_conv_transpose3d.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\deform_conv1d.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\deform_conv2d.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\deform_conv3d.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\ops.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\atomic.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\cpu_helpers.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv1d_common_kernels.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv2d_common_kernels.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv3d_common_kernels.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils\dispatch.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils\ntuple.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils\parallel_helpers.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils\tensor_utils.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_helpers.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv1d_common_kernels.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv2d_common_kernels.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv3d_common_kernels.h">
+      <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Libtorch.natvis">
@@ -726,11 +945,20 @@
     </Natvis>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="core\Modules\Convolutions\DeformConvImpl\deform_conv2d_kernel.cu">
-      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl</Filter>
-    </CudaCompile>
     <CudaCompile Include="core\Optimizers\FusedAdamW8bit_cuda.cu">
       <Filter>Source Files\core\Optimizers</Filter>
+    </CudaCompile>
+    <CudaCompile Include="core\Modules\Convolutions\DeformConvImpl\torchvision\vision_deform_conv2d_kernel.cu">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\torchvision</Filter>
+    </CudaCompile>
+    <CudaCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv1d_common_kernels.cu">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
+    </CudaCompile>
+    <CudaCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv2d_common_kernels.cu">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
+    </CudaCompile>
+    <CudaCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv3d_common_kernels.cu">
+      <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>
