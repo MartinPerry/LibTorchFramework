@@ -200,8 +200,8 @@ int main()
     PrintMemory("After emptyCache");
     */
 
-    //CustomScenarios::exPreCastTraining::setup();
-
+    CustomScenarios::exPreCastTraining::setup();
+    return 0;
     /*
     Test rr;
 

@@ -159,6 +159,11 @@ torch::Tensor DeformConv2dImpl::forward(
     return out;
 }
 
+torch::Tensor DeformConv2dImpl::forward(torch::Tensor x)
+{
+    return this->forward(x, std::nullopt, std::nullopt);
+}
+
 //==================================================================================================
 // DeformConv3d
 //==================================================================================================
@@ -268,6 +273,7 @@ void DeformConv3dImpl::reset_parameters()
     }
 }
 
+
 torch::Tensor DeformConv3dImpl::forward(
     torch::Tensor x,
     std::optional<torch::Tensor> baseOffset,
@@ -303,4 +309,9 @@ torch::Tensor DeformConv3dImpl::forward(
 
 
     return out;
+}
+
+torch::Tensor DeformConv3dImpl::forward(torch::Tensor x)
+{
+    return this->forward(x, std::nullopt, std::nullopt);
 }

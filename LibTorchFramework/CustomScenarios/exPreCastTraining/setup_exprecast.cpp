@@ -106,8 +106,8 @@ namespace CustomScenarios::exPreCastTraining
 		InputLoaderSettings loaderSets;
 		loaderSets.subsetSize = 2;
 
-		std::string datasetDir = "d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE";
-		//std::string datasetDir = "e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet/SE";
+		//std::string datasetDir = "d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE";
+		std::string datasetDir = "e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet/SE";
 
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
 		ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } }, 

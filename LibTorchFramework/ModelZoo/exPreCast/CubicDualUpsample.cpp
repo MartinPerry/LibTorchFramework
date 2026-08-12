@@ -1,82 +1,67 @@
 #include "CubicDualUpsample.h"
 
+
 CubicDualUpsampleImpl::CubicDualUpsampleImpl(
     int64_t dim,
     const std::array<int64_t, 3>& scale,
     int64_t kernelSize,
     int64_t strideSize,
     int64_t padding
-) : 
-    dim(dim),
+) :    
     scale(scale)
 {
-    scaleFactor = scale[0] * scale[1] * scale[2];
-
-    convP1 = register_module("conv_p1",
-        torch::nn::Conv3d(
-            torch::nn::Conv3dOptions(
-                dim,
-                (scaleFactor / 2) * dim,
-                kernelSize)
-            .stride(strideSize)
-            .padding(padding)
-            .bias(false)));
+    int64_t scaleFactor = scale[0] * scale[1] * scale[2];
 
     act = register_module("act", torch::nn::PReLU());
 
     pixelShuffle = register_module("pixel_shuffle", PixelShuffle3D(scale));
 
+    convP1 = register_module("conv_p1",
+        CreateDeformConv3d(dim, (scaleFactor / 2) * dim, kernelSize, strideSize, padding, false));
+            
     convP2 = register_module("conv_p2",
-        torch::nn::Conv3d(
-            torch::nn::Conv3dOptions(
-                dim / 2,
-                dim / 2,
-                kernelSize)
-            .stride(strideSize)
-            .padding(padding)
-            .bias(false)));
+        CreateDeformConv3d(dim / 2, dim / 2, kernelSize, strideSize, padding, false));
 
     convB1 = register_module("conv_b1",
-        torch::nn::Conv3d(
-            torch::nn::Conv3dOptions(
-                dim,
-                dim,
-                kernelSize)
-            .stride(strideSize)
-            .padding(padding)));
-
-    /*
-    upSample = register_module("up_sample",
-        torch::nn::Upsample(
-            torch::nn::UpsampleOptions()
-            .scale_factor({ static_cast<double>(scale[0]), static_cast<double>(scale[1]), static_cast<double>(scale[2]) })
-            .mode(torch::kTrilinear)
-            .align_corners(false)));
-    */
-
-    convB2 = register_module(
-        "conv_b2",
-        torch::nn::Conv3d(
-            torch::nn::Conv3dOptions(
-                dim,
-                dim / 2,
-                kernelSize)
-            .stride(strideSize)
-            .padding(padding)
-            .bias(false)));
-
-    convMerge = register_module(
-        "conv_merge",
-        torch::nn::Conv3d(
-            torch::nn::Conv3dOptions(
-                dim,
-                dim / 2,
-                kernelSize)
-            .stride(strideSize)
-            .padding(padding)
-            .bias(false)));
+        CreateDeformConv3d(dim, dim, kernelSize, strideSize, padding, true));
+    
+    convB2 = register_module("conv_b2",
+        CreateDeformConv3d(dim, dim / 2, kernelSize, strideSize, padding, false));
+        
+    convMerge = register_module("conv_merge", 
+        CreateDefaultConv3d(dim, dim / 2, kernelSize, strideSize, padding, false));
 
     norm = register_module("norm", torch::nn::LayerNorm(torch::nn::LayerNormOptions({ dim / 2 })));
+}
+
+torch::nn::Conv3d CubicDualUpsampleImpl::CreateDefaultConv3d(int64_t inC, int64_t outC,
+    int64_t kernelSize,
+    int64_t strideSize,
+    int64_t padding,
+    bool bias)
+{
+    return torch::nn::Conv3d(
+        torch::nn::Conv3dOptions(inC, outC, kernelSize)
+        .stride(strideSize)
+        .padding(padding)
+        .bias(bias)
+    );
+}
+
+
+StackDeformConv3d CubicDualUpsampleImpl::CreateDeformConv3d(int64_t inC, int64_t outC,
+    int64_t kernelSize,
+    int64_t strideSize,
+    int64_t padding,
+    bool bias)
+{
+    return StackDeformConv3d(inC, outC,
+        std::array<int64_t, 3>{ kernelSize , kernelSize , kernelSize },
+        std::array<int64_t, 3>{ strideSize , strideSize , strideSize },
+        std::array<int64_t, 3>{ padding, padding, padding },
+        std::array<int64_t, 3>{ 1, 1, 1 },
+        bias
+    );
 }
 
 torch::Tensor CubicDualUpsampleImpl::forward(
@@ -101,16 +86,15 @@ torch::Tensor CubicDualUpsampleImpl::forward(
 
     x = x.permute({ 0, 4, 1, 2, 3}).contiguous();
 
-    auto xP = convP1->forward(x);
+    auto xP = convP1.forward(x);
     xP = act->forward(xP);
     xP = pixelShuffle->forward(xP);
-    xP = convP2->forward(xP);
+    xP = convP2.forward(xP);
 
-    auto xB = convB1->forward(x);
+    auto xB = convB1.forward(x);
     xB = act->forward(xB);
-    xB = interpolate(xB, opts);
-    //xB = upSample->forward(xB);
-    xB = convB2->forward(xB);
+    xB = torch::nn::functional::interpolate(xB, opts);    
+    xB = convB2.forward(xB);
 
     x = torch::cat({ xP, xB }, 1);
 

@@ -3,6 +3,8 @@
 #include <torch/torch.h>
 #include <array>
 
+#include "../../core/Modules/Convolutions/DeformConv.h"
+
 #include "PixelShuffle3D.h"
 
 class CubicDualUpsampleImpl : public torch::nn::Module
@@ -17,23 +19,32 @@ public:
 
     torch::Tensor forward(torch::Tensor x);
 
-private:
-    int64_t dim;
+private:    
     std::array<int64_t, 3> scale;
-
-    int64_t scaleFactor;
-
-    torch::nn::Conv3d convP1{ nullptr };
+    
+    //Conv3d
+    torch::nn::AnyModule convP1;
     torch::nn::PReLU act{ nullptr };
     PixelShuffle3D pixelShuffle{ nullptr };
-    torch::nn::Conv3d convP2{ nullptr };
+    torch::nn::AnyModule convP2;
 
-    torch::nn::Conv3d convB1{ nullptr };
-    //torch::nn::Upsample upSample{ nullptr };
-    torch::nn::Conv3d convB2{ nullptr };
+    torch::nn::AnyModule convB1;
+    torch::nn::AnyModule convB2;
 
     torch::nn::Conv3d convMerge{ nullptr };
     torch::nn::LayerNorm norm{ nullptr };
+
+    torch::nn::Conv3d CreateDefaultConv3d(int64_t inC, int64_t outC, 
+        int64_t kernelSize,
+        int64_t strideSize,
+        int64_t padding,
+        bool bias);
+
+    StackDeformConv3d CreateDeformConv3d(int64_t inC, int64_t outC,
+        int64_t kernelSize,
+        int64_t strideSize,
+        int64_t padding,
+        bool bias);
 };
 
 TORCH_MODULE(CubicDualUpsample);

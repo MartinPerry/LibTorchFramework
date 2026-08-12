@@ -29,12 +29,14 @@ public:
     );
 
     void reset_parameters();
-
+            
     torch::Tensor forward(
         torch::Tensor x,
-        std::optional<torch::Tensor> baseOffset = std::nullopt,
-        std::optional<torch::Tensor> mask = std::nullopt
+        std::optional<torch::Tensor> baseOffset,
+        std::optional<torch::Tensor> mask
     );
+
+    torch::Tensor forward(torch::Tensor x);
 
 private:
 
@@ -59,6 +61,19 @@ private:
 
 TORCH_MODULE(DeformConv2d);
 
+/// <summary>
+/// For use in AnyModule, that requires only single forward
+/// </summary>
+struct StackDeformConv2dImpl : DeformConv2dImpl {
+    using DeformConv2dImpl::DeformConv2dImpl;
+
+    torch::Tensor forward(torch::Tensor x) {
+        return DeformConv2dImpl::forward(x);
+    }
+};
+
+TORCH_MODULE(StackDeformConv2d);
+
 //==================================================================================================
 // DeformConv3d
 //==================================================================================================
@@ -80,12 +95,14 @@ public:
     );
 
     void reset_parameters();
-
+   
     torch::Tensor forward(
         torch::Tensor x,
-        std::optional<torch::Tensor> baseOffset = std::nullopt,
-        std::optional<torch::Tensor> mask = std::nullopt
+        std::optional<torch::Tensor> baseOffset,
+        std::optional<torch::Tensor> mask
     );
+
+    torch::Tensor forward(torch::Tensor x);
 
 private:
 
@@ -108,5 +125,18 @@ private:
 };
 
 TORCH_MODULE(DeformConv3d);
+
+/// <summary>
+/// For use in AnyModule, that requires only single forward
+/// </summary>
+struct StackDeformConv3dImpl : DeformConv3dImpl {
+    using DeformConv3dImpl::DeformConv3dImpl;
+
+    torch::Tensor forward(torch::Tensor x) {
+        return DeformConv3dImpl::forward(x);
+    }
+};
+
+TORCH_MODULE(StackDeformConv3d);
 
 #endif
