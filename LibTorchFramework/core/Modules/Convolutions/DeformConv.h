@@ -3,6 +3,8 @@
 
 #include <utility>
 #include <optional>
+#include <tuple>
+#include <array>
 
 #include <torch/torch.h>
 
@@ -17,10 +19,10 @@ public:
     DeformConv2dImpl(
         int64_t in_channels,
         int64_t out_channels,
-        std::pair<int64_t, int64_t> kernelSize = { 3, 3 },
-        std::pair<int64_t, int64_t> stride = { 1, 1 },
-        std::pair<int64_t, int64_t> padding = { 1, 1 },
-        std::pair<int64_t, int64_t> dilation = { 1, 1 },
+        std::array<int64_t, 2> kernelSizes = { 3, 3 },
+        std::array<int64_t, 2> strides = { 1, 1 },
+        std::array<int64_t, 2> paddings = { 1, 1 },
+        std::array<int64_t, 2> dilations = { 1, 1 },
         bool useBias = true,
         bool useMask = false,
         bool useAutoOffset = true
@@ -45,15 +47,14 @@ private:
     
     int64_t in_channels;
     int64_t out_channels;
-    std::pair<int64_t, int64_t> kernelSize;
-    std::pair<int64_t, int64_t> stride;
-    std::pair<int64_t, int64_t> padding;
-    std::pair<int64_t, int64_t> dilation;
+    std::array<int64_t, 2> kernelSize;
+    std::array<int64_t, 2> stride;
+    std::array<int64_t, 2> padding;
+    std::array<int64_t, 2> dilation;
     int64_t groups;
     int64_t groupsOffset;
 
     bool useMask;
-    bool useAutoOffset;
 };
 
 TORCH_MODULE(DeformConv2d);
@@ -62,5 +63,50 @@ TORCH_MODULE(DeformConv2d);
 // DeformConv3d
 //==================================================================================================
 
+class DeformConv3dImpl : public torch::nn::Module
+{
+public:
+
+    DeformConv3dImpl(
+        int64_t in_channels,
+        int64_t out_channels,
+        std::array<int64_t, 3> kernelSizes = { 3, 3, 3 },
+        std::array<int64_t, 3> strides = { 1, 1, 1 },
+        std::array<int64_t, 3> paddings = { 1, 1, 1 },
+        std::array<int64_t, 3> dilations = { 1, 1, 1 },
+        bool useBias = true,    
+        bool useMask = false,
+        bool useAutoOffset = true
+    );
+
+    void reset_parameters();
+
+    torch::Tensor forward(
+        torch::Tensor x,
+        std::optional<torch::Tensor> baseOffset = std::nullopt,
+        std::optional<torch::Tensor> mask = std::nullopt
+    );
+
+private:
+
+    torch::Tensor weight;
+    torch::Tensor bias;
+
+    torch::nn::Conv3d convDirs{ nullptr };
+    torch::nn::Conv3d convOffsetFromX{ nullptr };
+    torch::nn::Conv3d maskConv{ nullptr };
+
+    int64_t in_channels;
+    int64_t out_channels;
+    std::array<int64_t, 3> kernelSize;
+    std::array<int64_t, 3> stride;
+    std::array<int64_t, 3> padding;
+    std::array<int64_t, 3> dilation;
+    int64_t groups;
+    int64_t groupsOffset;
+    
+};
+
+TORCH_MODULE(DeformConv3d);
 
 #endif

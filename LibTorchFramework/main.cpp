@@ -121,6 +121,7 @@
 #include "./core/Modules/Convolutions/DeformConvImpl/torchvision/vision_deform_conv2d.h"
 
 #include "./core/Modules/Convolutions/DeformConvImpl/tvdcn/ops/deform_conv2d.h"
+#include "./core/Modules/Convolutions/DeformConvImpl/tvdcn/ops/deform_conv3d.h"
 
 #include "./core/Modules/ChangableModule.h"
 
@@ -245,18 +246,19 @@ int main()
     auto device = torch::kCPU;
 
     int N = 1, C_in = 3, C_out = 2;    
-    int H = 8, W = 8;
+    int H = 8, W = 8, D = 8;
     
-    int kH = 3, kW = 3;
-    int stride_h = 1, stride_w = 1;
-    int pad_h = 1, pad_w = 1;
-    int dilation_h = 1, dilation_w = 1;
+    int kH = 3, kW = 3, kD = 3;
+    int stride_h = 1, stride_w = 1, stride_d = 1;
+    int pad_h = 1, pad_w = 1, pad_d = 1;
+    int dilation_h = 1, dilation_w = 1, dilation_d = 1;
     int groups = 1, offset_groups = 1;
     bool use_mask = true;
 
     // Output size formula
     int out_h = (H + 2 * pad_h - dilation_h * (kH - 1) - 1) / stride_h + 1;
     int out_w = (W + 2 * pad_w - dilation_w * (kW - 1) - 1) / stride_w + 1;
+    int out_d = (D + 2 * pad_d - dilation_d * (kD - 1) - 1) / stride_d + 1;
 
     torch::Tensor input = torch::rand({ N, C_in, H, W }, device);
     torch::Tensor weight = torch::rand({ C_out, C_in, kH, kW }, device);
@@ -282,8 +284,26 @@ int main()
         groups
     );
         
+    torch::Tensor input3 = torch::rand({ N, C_in, D, H, W }, device);
+    torch::Tensor weight3 = torch::rand({ C_out, C_in, kD, kH, kW }, device);
+    torch::Tensor offset3 = torch::rand({ N, 3 * kH * kW * kD, out_d, out_h, out_w }, device);
+    torch::Tensor mask3 = torch::rand({ N, kH * kW * kD, out_d, out_h, out_w }, device);
+    torch::Tensor bias3 = torch::rand({ C_out }, device);
+
+    auto out3tv = tvdcn::ops::deform_conv3d(
+        input3, weight3, offset3, mask3, bias3,
+        { stride_h, stride_w, stride_d },
+        { pad_h, pad_w, pad_d },
+        { dilation_h, dilation_w, dilation_d },
+        groups
+    );
+
+    
     auto df = DeformConv2d(C_in, C_out);
     auto out2 = df->forward(input);
+
+    auto df3 = DeformConv3d(C_in, C_out);
+    auto out3 = df3->forward(input3);
     
 
     CustomScenarios::LLMs::Llama::setup();
