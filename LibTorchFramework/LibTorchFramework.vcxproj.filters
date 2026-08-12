@@ -507,40 +507,40 @@
     <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\tvdcn.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_conv_transpose1d_kernel.cpp">
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_autograd_conv_transpose1d_kernel.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_conv_transpose2d_kernel.cpp">
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_autograd_conv_transpose2d_kernel.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_conv_transpose3d_kernel.cpp">
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_autograd_conv_transpose3d_kernel.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_conv1d_kernel.cpp">
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_autograd_conv1d_kernel.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_conv2d_kernel.cpp">
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_autograd_conv2d_kernel.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_conv3d_kernel.cpp">
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd\deform_autograd_conv3d_kernel.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autograd</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_conv_transpose1d_kernel.cpp">
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_autocast_conv_transpose1d_kernel.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_conv_transpose2d_kernel.cpp">
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_autocast_conv_transpose2d_kernel.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_conv_transpose3d_kernel.cpp">
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_autocast_conv_transpose3d_kernel.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_conv1d_kernel.cpp">
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_autocast_conv1d_kernel.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_conv2d_kernel.cpp">
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_autocast_conv2d_kernel.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast</Filter>
     </ClCompile>
-    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_conv3d_kernel.cpp">
+    <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast\deform_autocast_conv3d_kernel.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\autocast</Filter>
     </ClCompile>
     <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cpu\deform_conv_transpose1d_kernel.cpp">

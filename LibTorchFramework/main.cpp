@@ -200,6 +200,13 @@ int main()
     PrintMemory("After emptyCache");
     */
 
+    /*
+    std::cout << c10::Dispatcher::singleton()
+        .findSchemaOrThrow("tvdcn::deform_conv3d", "")
+        .hasKernelForDispatchKey(c10::DispatchKey::Autograd)
+        << std::endl;
+    */
+
     CustomScenarios::exPreCastTraining::setup();
     return 0;
     /*
