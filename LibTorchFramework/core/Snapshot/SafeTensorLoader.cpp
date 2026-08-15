@@ -270,6 +270,7 @@ LoadStateDictReport SafeTensorLoader::FillModelStateDict(
 	
 	std::unordered_set<std::string> loadedKeys;
 	std::vector<std::string> unexpected;
+	std::vector<std::string> loaded;
 
 	{
 		torch::NoGradGuard noGrad;
@@ -301,6 +302,8 @@ LoadStateDictReport SafeTensorLoader::FillModelStateDict(
 
 			dstTensor.copy_(converted);
 			loadedKeys.insert(key);
+
+			loaded.push_back(key);
 		}
 	}
 
@@ -323,5 +326,5 @@ LoadStateDictReport SafeTensorLoader::FillModelStateDict(
 		return {};
 	}
 
-	return { missing, unexpected };
+	return { missing, unexpected, loaded };
 }

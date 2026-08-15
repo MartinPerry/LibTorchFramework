@@ -28,7 +28,7 @@ void TorchUtils::TensorPrintInfo(const char* desc, const at::Tensor& t)
 	auto tmp = t.sizes();
 
 	std::string res = "{";
-	for (int i = 0; i < tmp.size(); i++)
+	for (size_t i = 0; i < tmp.size(); i++)
 	{
 		res += std::to_string(tmp[i]);
 		res += ", ";

@@ -7,6 +7,7 @@
 //#pragma comment(lib, "fbjni.lib")
 //#pragma comment(lib, "pytorch_jni.lib")
 
+#ifdef _WIN32
 #pragma comment(lib, "c10.lib")
 #pragma comment(lib, "c10_cuda.lib")
 #pragma comment(lib, "caffe2_nvrtc.lib")
@@ -27,6 +28,7 @@
 #   pragma comment(lib, "libprotobuf.lib")
 #   pragma comment(lib, "libprotoc.lib")
 #   pragma comment(lib, "Playground.lib")
+#endif
 #endif
 
 //=========================================================
@@ -132,7 +134,7 @@ public:
 
     Test()
     {                              
-        AUTO_REGISTER_CHANGABLE_MODULE(linearAny, torch::nn::Linear(torch::nn::LinearOptions(10, 20).bias(false)));
+        AUTO_REGISTER_CHANGABLE_MODULE_WITH_ARGS(linearAny, torch::nn::Linear(torch::nn::LinearOptions(10, 20).bias(false)));
 
         
     }
@@ -143,13 +145,17 @@ private:
 };
 
 #include <c10/core/CPUAllocator.h>
-#include <c10/cuda/CUDACachingAllocator.h>
+#ifdef USE_CUDA
+#   include <c10/cuda/CUDACachingAllocator.h>
+#endif
 
-
-#include <Windows.h>
-#include <Psapi.h>
+#ifdef _WIN32
+#   include <Windows.h>
+#   include <Psapi.h>
+#endif
 #include <memory>
 
+#ifdef _WIN32
 void PrintMemory(const char* label)
 {
     PROCESS_MEMORY_COUNTERS_EX info{};
@@ -168,7 +174,7 @@ void PrintMemory(const char* label)
     printf("  PrivateUsage       (committed pages): %.3f GB\n",
         (float)info.PrivateUsage / 1024 / 1024 / 1024);
 }
-
+#endif
 
 int main()
 {
@@ -177,6 +183,8 @@ int main()
     log->Enable(MyUtils::Logger::LogType::Warning, MyUtils::Logger::LogOutput::StdOut);
     log->Enable(MyUtils::Logger::LogType::Info, MyUtils::Logger::LogOutput::StdOut);
 
+    //use nccl for multi-gpu train?
+    //https://github.com/SystemPanic/nccl-windows/tree/nccl-windows#building-from-source
 
     /*
     PrintMemory("Before");

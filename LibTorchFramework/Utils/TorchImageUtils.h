@@ -2,6 +2,7 @@
 #define TORCH_IMAGE_UTILS_H
 
 #include <optional>
+#include <vector>
 
 #include <torch/torch.h>
 
@@ -44,22 +45,10 @@ public:
 	};
 
 	template <typename T>
-	struct MappingRange;
-
-	template <>
-	struct MappingRange<float>
+	struct MappingRange
 	{
-		float dataMin = 0.0f;
-		float dataMax = 1.0f;
-		float minMapTo = 0.0f;
-		float maxMapTo = 1.0f;
-	};
-
-	template <>
-	struct MappingRange<uint8_t>
-	{
-		uint8_t dataMin = 0;
-		uint8_t dataMax = 255;
+		T dataMin = T{ 0 };
+		T dataMax = std::is_same_v<T, uint8_t> ? T{ 255 } : T{ 1 };
 		float minMapTo = 0.0f;
 		float maxMapTo = 1.0f;
 	};
@@ -75,6 +64,8 @@ public:
 		bool intervalMapping = true;
 		std::optional<std::string> colorMappingFileName = std::nullopt;
 	};
+
+	static const TensorsToImageSettings DEFAULT_TENSOR_TO_IMAGE;
 
 	template <typename T>
 	static TENSOR_VEC_RET_VAL(T) LoadImageAs(
@@ -110,20 +101,21 @@ public:
 		bool intervalMapping = true);
 
 	static Image2d<uint8_t> TensorsToImage(at::Tensor t, 
-		const TensorsToImageSettings& sets = {});
+		const TensorsToImageSettings& sets = DEFAULT_TENSOR_TO_IMAGE);
 
 	static std::vector<Image2d<uint8_t>> TensorsToImages(at::Tensor t,
-		const TensorsToImageSettings& sets = {});
+		const TensorsToImageSettings& sets = DEFAULT_TENSOR_TO_IMAGE);
 
 	static Image2d<uint8_t> TensorsToImage(const std::vector<std::vector<torch::Tensor>>& t,
-		const TensorsToImageSettings& sets = {});
+		const TensorsToImageSettings& sets = DEFAULT_TENSOR_TO_IMAGE);
 
 	static std::vector<Image2d<uint8_t>> TensorsToImages(const std::vector<std::vector<torch::Tensor>>& t,
-		const TensorsToImageSettings& sets = {});
+		const TensorsToImageSettings& sets = DEFAULT_TENSOR_TO_IMAGE);
 
 	static std::vector<std::vector<torch::Tensor>> MergeTensorsToRows(
 		const std::vector<torch::Tensor>& tensors,
 		int maxRowsCount = 4);
 };
+
 
 #endif

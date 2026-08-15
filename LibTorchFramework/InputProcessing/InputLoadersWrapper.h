@@ -1,16 +1,18 @@
 #ifndef INPUT_LOADERS_WRAPPER_H
 #define INPUT_LOADERS_WRAPPER_H
 
-class InputLoader;
-struct InputLoaderSettings;
+struct InputLoader;
 struct Settings;
 
 #include <memory>
 #include <optional>
 #include <unordered_set>
 #include <unordered_map>
+#include <vector>
 
 #include "../core/Structures.h"
+
+#include "./InputLoaderSettings.h"
 
 class InputLoadersWrapper : public std::enable_shared_from_this<InputLoadersWrapper>
 {

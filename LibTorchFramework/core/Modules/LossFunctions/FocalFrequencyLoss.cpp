@@ -6,7 +6,7 @@ FocalFrequencyLossImpl::FocalFrequencyLossImpl(float loss_weight, float alpha,
     alpha(alpha),
     patch_factor(patch_factor),
     ave_spectrum(ave_spectrum),
-    log_matrix(false),
+    log_matrix(log_matrix),
     batch_matrix(batch_matrix)
 {
 }

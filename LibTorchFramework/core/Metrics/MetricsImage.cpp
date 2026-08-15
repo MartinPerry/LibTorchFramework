@@ -202,7 +202,7 @@ void MetricsImage::AddImages(torch::Tensor p, torch::Tensor t)
     }
 
     images.push_back({ t.cpu(), p.cpu()});
-    if (images.size() > keepImages)
+    if (static_cast<int>(images.size()) > keepImages)
     {
         images.pop_front();
     }

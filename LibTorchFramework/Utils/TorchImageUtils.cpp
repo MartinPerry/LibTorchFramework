@@ -18,6 +18,8 @@
 
 #include "./TorchUtils.h"
 
+inline const TorchImageUtils::TensorsToImageSettings TorchImageUtils::DEFAULT_TENSOR_TO_IMAGE{};
+
 /// <summary>
 /// Load image from uin8_t format and convert it to 
 /// [0, 1] float tensor of format CHW
@@ -62,7 +64,7 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 		}
 	}
 
-	if (chanCount != img.GetChannelsCount())
+	if (chanCount != static_cast<int>(img.GetChannelsCount()))
 	{
 		if (chanCount == 3)
 		{
@@ -167,7 +169,7 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 		}
 	}
 
-	if (chanCount != img.GetChannelsCount())
+	if (chanCount != static_cast<int>(img.GetChannelsCount()))
 	{
 		if ((chanCount == 3) && (img.GetChannelsCount() == 1))
 		{
@@ -220,7 +222,7 @@ TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(
 
 
 template <typename T>
-static std::vector<float> TorchImageUtils::ImageToVector_CHW(
+std::vector<float> TorchImageUtils::ImageToVector_CHW(
 	const Image2d<T>& v,
 	const MappingRange<T>& range)
 {
@@ -530,7 +532,7 @@ Image2d<uint8_t> TorchImageUtils::TensorsToImage(const std::vector<std::vector<t
 
 	
 	int maxW = 0;
-	for (int s = 0; s < t[0].size(); s++)
+	for (size_t s = 0; s < t[0].size(); s++)
 	{
 		int seqImgW = (w + sets.borderSize) * t[0].size() + sets.borderSize;
 		if (seqImgW > maxW)

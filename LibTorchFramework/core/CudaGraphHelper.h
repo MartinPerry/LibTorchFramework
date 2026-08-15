@@ -3,6 +3,8 @@
 
 class Trainer;
 
+#ifdef USE_CUDA
+
 #include <memory>
 #include <optional>
 
@@ -56,4 +58,5 @@ protected:
 };
 
 
+#endif
 #endif

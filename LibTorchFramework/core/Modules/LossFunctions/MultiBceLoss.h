@@ -21,7 +21,7 @@ struct MultiBceLossImpl : public torch::nn::Module
     torch::Tensor forward(const std::vector<torch::Tensor>& pred, const torch::Tensor& target)
     {
         auto loss = bceLoss(pred[0], target);
-        for (int i = 1; i < pred.size(); i++)
+        for (size_t i = 1; i < pred.size(); i++)
         {
             loss += bceLoss(pred[i], target);
         }

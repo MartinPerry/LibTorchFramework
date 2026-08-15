@@ -13,15 +13,12 @@ struct DataLoaderData;
 
 #include "./DataLoaderData.h"
 #include "./InputLoadersWrapper.h"
+#include "./InputLoaderSettings.h"
 
 #include "../core/Structures.h"
 
 #include "../Settings.h"
 
-struct InputLoaderSettings
-{
-    std::optional<int> subsetSize = std::nullopt;
-};
 
 class InputLoader : public std::enable_shared_from_this<InputLoader>
 {
@@ -171,7 +168,7 @@ template <typename DatasetType>
 auto InputLoader::BuildDataLoader(const Settings& sets)
 {
     int bacthesCount;
-    return this->BuildDataLoader(sets, bacthesCount);
+    return this->BuildDataLoader<DatasetType>(sets, bacthesCount);
 }
 
 template <typename DatasetType>

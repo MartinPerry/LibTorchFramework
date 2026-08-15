@@ -136,14 +136,14 @@ void TokenizerBPE::Load()
 
 	const auto& merges = json->GetMerges();
 		
-	for (int i = 0; i < merges.size(); i++)
+	for (size_t i = 0; i < merges.size(); i++)
 	{
 		const auto& mi = merges[i];
 			
 		if (mi.hashes.size() == 2)
 		{			
 			auto it = this->bpeRanks.try_emplace(mi.hashes[0]);
-			it.first->second.try_emplace(mi.hashes[1], i);
+			it.first->second.try_emplace(mi.hashes[1], static_cast<int>(i));
 		}		
 	}	
 	

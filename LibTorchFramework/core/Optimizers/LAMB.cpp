@@ -78,7 +78,7 @@ void LambOptions::set_lr(const double lr)
 
 
 LAMB::LAMB(const std::vector<torch::Tensor>& params, LambOptions defaults) :
-    LAMB({ torch::optim::OptimizerParamGroup(std::move(params)) }, std::move(defaults))
+    LAMB({ torch::optim::OptimizerParamGroup(params) }, std::move(defaults))
 {
 
 }

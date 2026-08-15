@@ -43,8 +43,8 @@ public:
 
 	explicit GradScaler(GradScalerOptions const& options = {})
 		: _init_scale(options.init_scale())
-		, _growth_factor(options.growth_factor())
 		, _backoff_factor(options.backoff_factor())
+		, _growth_factor(options.growth_factor())		
 		, _growth_interval(options.growth_interval())
 		, _enabled(options.enabled())
 	{
@@ -282,7 +282,7 @@ public:
 		{
 			assert(_scale.defined());
 
-			std::visit([=](auto&& arg)
+			std::visit([=, this](auto&& arg)
 			{
 				using T = std::decay_t<decltype(arg)>;
 				if constexpr (std::is_same_v<T, double>)
@@ -467,7 +467,6 @@ private:
 	double _growth_factor;
 	int64_t _growth_interval;
 
-private:
 	at::Tensor _scale;
 	at::Tensor _growth_tracker;
 	int64_t _init_growth_tracker{ 0 };
@@ -535,7 +534,7 @@ private:
 	};
 
 	template <typename Type = double>
-	inline auto sum(PerDeviceTensors const& per_device)
+	inline Type sum(PerDeviceTensors const& per_device)
 	{
 		Type sum = Type(0);
 		for (auto&& [_, v] : per_device)

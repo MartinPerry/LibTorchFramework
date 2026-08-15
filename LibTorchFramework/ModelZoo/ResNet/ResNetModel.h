@@ -83,7 +83,8 @@ namespace ModelZoo
                 conv1 = torch::nn::Sequential(
                     torch::nn::Conv2d(torch::nn::Conv2dOptions(opts.inChannels(), opts.outChannels(), 3).stride(opts.stride()).padding(1).bias(false)),
                     Normalization(opts.outChannels()),
-                    Activation());
+                    Activation()
+                );
             }
             else
             {
@@ -92,7 +93,8 @@ namespace ModelZoo
                         ResampleOptions(opts.outChannels(), opts.outChannels(), opts.stride()).kernelSize(3).padding(1),
                         Normalization(opts.outChannels())
                     ),
-                    Activation());
+                    Activation()
+                );
             }
             register_module("conv1", conv1);
 
@@ -105,11 +107,13 @@ namespace ModelZoo
 
             if constexpr (std::is_same<ResampleType, void>::value)
             {
-                resample = register_module("resample", torch::nn::Identity());
+                resample = torch::nn::Sequential(
+                    torch::nn::Identity()
+                );
             }
             else
             {
-                resample = register_module("resample",
+                resample = torch::nn::Sequential(
                     ResampleType(
                         ResampleOptions(opts.inChannels(), finalOutChannels, opts.stride()),
                         Normalization(finalOutChannels)
@@ -117,6 +121,7 @@ namespace ModelZoo
                 );
             }
 
+            register_module("resample", resample);
 
             actFn = register_module("actFn", Activation());
         }
@@ -128,7 +133,7 @@ namespace ModelZoo
             out = conv2->forward(out);
             auto residual = resample->forward(x);
             out += residual;
-            out = actFn->forward(out);
+            out = actFn.forward(out);
             return out;
         }
 

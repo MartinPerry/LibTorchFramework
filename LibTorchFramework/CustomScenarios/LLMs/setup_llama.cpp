@@ -68,11 +68,14 @@
 using namespace ModelZoo::llama;
 
 #include <c10/core/CPUAllocator.h>
-#include <c10/cuda/CUDACachingAllocator.h>
+//#include <c10/cuda/CUDACachingAllocator.h>
 
+#include <cstdint>
 
-#include <Windows.h>
-#include <Psapi.h>
+#ifdef _WIN32
+#   include <Windows.h>
+#   include <Psapi.h>
+#endif
 #include <memory>
 
 class LinearTestModule : public torch::nn::Module
@@ -230,9 +233,11 @@ namespace CustomScenarios::LLMs::Llama
        
         llama->to(sets.device);
 
+#ifdef _WIN32
         ReleaseCPUCache();
         SetProcessWorkingSetSize(GetCurrentProcess(), (SIZE_T)-1, (SIZE_T)-1);
         //PrintMemory("After to CUDA");
+#endif
 
         
 

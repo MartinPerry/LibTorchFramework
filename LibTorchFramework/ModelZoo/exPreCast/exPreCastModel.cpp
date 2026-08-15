@@ -41,12 +41,12 @@ exPreCastModel::exPreCastModel(
     inChans(inChans),
     outChans(outChans),
     embedDim(embedDim),
+    numLayers(depths.size()),
     patchEmbedSize(patchEmbedSize),
     patchExpandSize(patchExpandSize),
     upsamplingScale(upsamplingScale),
     downsamplingScale(downsamplingScale),
-    skipConnection(skipConnection),
-    numLayers(depths.size()),
+    skipConnection(skipConnection),    
     encoder(register_module("encoder", torch::nn::ModuleList())),
     decoder(register_module("decoder", torch::nn::ModuleList()))
 {

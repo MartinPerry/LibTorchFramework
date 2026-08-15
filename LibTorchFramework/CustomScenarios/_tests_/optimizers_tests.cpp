@@ -176,7 +176,7 @@ namespace CustomScenarios::_tests_
         for (int i = 0; i < 100; ++i) 
         {            
             auto L = my.step(loss_fn); // uses closure with enable_grad internally
-            auto lv = L.item<double>();
+            auto lv = L.template item<double>();
             if (i == 0) loss0 = lv;
             loss_last = lv;
 

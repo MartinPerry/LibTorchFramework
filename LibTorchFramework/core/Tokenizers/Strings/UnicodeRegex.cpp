@@ -6,14 +6,16 @@
 #include <unicode/unistr.h>
 #include <unicode/utypes.h>
 
-#ifdef _DEBUG
-#   pragma comment(lib, "icudtd.lib")
-#   pragma comment(lib, "icuucd.lib")
-#   pragma comment(lib, "icuind.lib")
-#else
-#   pragma comment(lib, "icudt.lib")
-#   pragma comment(lib, "icuuc.lib")
-#   pragma comment(lib, "icuin.lib")
+#ifdef _WIN32
+#   ifdef _DEBUG
+#       pragma comment(lib, "icudtd.lib")
+#       pragma comment(lib, "icuucd.lib")
+#       pragma comment(lib, "icuind.lib")
+#   else
+#       pragma comment(lib, "icudt.lib")
+#       pragma comment(lib, "icuuc.lib")
+#       pragma comment(lib, "icuin.lib")
+#   endif
 #endif
 
 UnicodeRegex::UnicodeRegex(const std::u8string& pattern)

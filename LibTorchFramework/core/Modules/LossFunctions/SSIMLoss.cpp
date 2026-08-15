@@ -75,7 +75,7 @@ std::tuple<torch::Tensor, torch::Tensor> _ssim(const torch::Tensor& X, const tor
 // ======================================================================================
 
 
-MSSSIMLossImpl::MSSSIMLossImpl(float data_range, int win_size, float win_sigma, int channel, int spatial_dims,
+MSSSIMLossImpl::MSSSIMLossImpl(float data_range, int win_size, float win_sigma, int channel, 
     std::vector<float> weights, std::tuple<float, float> K) :
     win_size(win_size),
     data_range(data_range),
@@ -146,7 +146,7 @@ torch::Tensor MSSSIMLossImpl::forward(const torch::Tensor& X, const torch::Tenso
 // ======================================================================================
 
 
-SSIMLossImpl::SSIMLossImpl(float data_range, int win_size, float win_sigma, int channel, int spatial_dims,
+SSIMLossImpl::SSIMLossImpl(float data_range, int win_size, float win_sigma, int channel, 
     std::tuple<float, float> K, bool nonnegative_ssim) : 
     win_size(win_size),
     data_range(data_range),    

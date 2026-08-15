@@ -69,11 +69,11 @@ void MetricsVideo::Save(const std::string& filePath) const
         GifWriter g;
         GifBegin(&g, imgPath.c_str(), w, h, delay);
         
-        int seqLen = rows[0].size();
+        size_t seqLen = rows[0].size();
 
         for (size_t i = 0; i < seqLen; i++)
         {
-            int index = i;
+            size_t index = i;
             auto tmp = ColorSpace::ConvertRgbToRgba(imgs[i], 255);
 
             for (size_t r = 1; r < rows.size(); r++)

@@ -71,7 +71,7 @@ void AdamW8bitOptions::set_lr(const double lr)
 using torch::indexing::Slice;
 
 AdamW8bit::AdamW8bit(const std::vector<torch::Tensor>& params, AdamW8bitOptions defaults) :
-    AdamW8bit({ torch::optim::OptimizerParamGroup(std::move(params)) }, std::move(defaults))
+    AdamW8bit({ torch::optim::OptimizerParamGroup(params) }, std::move(defaults))
 {
 }
 

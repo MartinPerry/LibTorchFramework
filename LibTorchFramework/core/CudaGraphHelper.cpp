@@ -1,5 +1,7 @@
 #include "./CudaGraphHelper.h"
 
+#ifdef USE_CUDA
+
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -297,3 +299,4 @@ void CudaGraphHelper::RunReplay(std::shared_ptr<torch::optim::Optimizer> optimiz
     trainer->ProgressLoss(state.staticLoss.item().toFloat());    
 }
 
+#endif

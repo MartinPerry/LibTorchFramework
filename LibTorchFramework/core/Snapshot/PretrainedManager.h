@@ -41,8 +41,7 @@ public:
 
     friend class SnapshotLoader;
 
-private:
-    std::vector<std::string> saveHistory;
+private:    
     std::string snapshot;
     std::string prefix;
     bool trainingSnapshot = false;
@@ -50,9 +49,11 @@ private:
     bool loadModelEnabled = true;
     bool deleteOldTrainFiles = false;
     bool saveModelSummaryEnabled = true;
-
-    std::shared_ptr<FreezeInfo> freezeInfo;
+    
     std::filesystem::path modelsDir;
+    std::shared_ptr<FreezeInfo> freezeInfo;
+
+    std::vector<std::string> saveHistory;
 
     // Helpers    
     std::string GetModelFileName(const AbstractModel* model) const;

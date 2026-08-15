@@ -185,7 +185,9 @@ void Trainer::ProcessBatch(DataLoaderData& batch)
 
     if (cudaGraph)
     {
+#ifdef USE_CUDA
         cudaGraph->Run(batch, optimizer);
+#endif
     }
     else
     {

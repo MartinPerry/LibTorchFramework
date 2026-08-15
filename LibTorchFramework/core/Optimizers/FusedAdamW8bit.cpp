@@ -91,7 +91,7 @@ void FusedAdamW8bitOptions::set_lr(const double lr)
 }
 
 FusedAdamW8bit::FusedAdamW8bit(const std::vector<torch::Tensor>& params, FusedAdamW8bitOptions defaults) :
-    FusedAdamW8bit({torch::optim::OptimizerParamGroup(std::move(params))}, std::move(defaults)) 
+    FusedAdamW8bit({torch::optim::OptimizerParamGroup(params)}, std::move(defaults)) 
 {}
 
 FusedAdamW8bit::FusedAdamW8bit(std::vector<torch::optim::OptimizerParamGroup> param_groups, FusedAdamW8bitOptions defaults) :

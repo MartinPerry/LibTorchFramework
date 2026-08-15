@@ -5,7 +5,7 @@
 #define AUTO_REGISTER_CHANGABLE_MODULE(var) \
     this->RegisterModule(#var, var)
 
-#define AUTO_REGISTER_CHANGABLE_MODULE(var, arg) \
+#define AUTO_REGISTER_CHANGABLE_MODULE_WITH_ARGS(var, arg) \
     if constexpr (std::is_same<decltype(var), torch::nn::AnyModule>::value) { \
         var = torch::nn::AnyModule(arg); \
         this->RegisterModule(#var, var); \

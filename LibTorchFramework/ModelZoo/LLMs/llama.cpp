@@ -162,10 +162,10 @@ AttentionImpl::AttentionImpl(int64_t dim, int64_t n_heads,
 {
 	TORCH_CHECK(dim % n_heads == 0, "dim must be divisible by n_heads");
 	
-	AUTO_REGISTER_CHANGABLE_MODULE(q_proj, CustomLinear(CustomLinearOptions(dim, n_heads * head_dim).bias(false).init_params(initWeights)));
-	AUTO_REGISTER_CHANGABLE_MODULE(k_proj, CustomLinear(CustomLinearOptions(dim, n_kv_heads * head_dim).bias(false).init_params(initWeights)));
-	AUTO_REGISTER_CHANGABLE_MODULE(v_proj, CustomLinear(CustomLinearOptions(dim, n_kv_heads * head_dim).bias(false).init_params(initWeights)));
-	AUTO_REGISTER_CHANGABLE_MODULE(o_proj, CustomLinear(CustomLinearOptions(n_heads * head_dim, dim).bias(false).init_params(initWeights)));
+	AUTO_REGISTER_CHANGABLE_MODULE_WITH_ARGS(q_proj, CustomLinear(CustomLinearOptions(dim, n_heads * head_dim).bias(false).init_params(initWeights)));
+	AUTO_REGISTER_CHANGABLE_MODULE_WITH_ARGS(k_proj, CustomLinear(CustomLinearOptions(dim, n_kv_heads * head_dim).bias(false).init_params(initWeights)));
+	AUTO_REGISTER_CHANGABLE_MODULE_WITH_ARGS(v_proj, CustomLinear(CustomLinearOptions(dim, n_kv_heads * head_dim).bias(false).init_params(initWeights)));
+	AUTO_REGISTER_CHANGABLE_MODULE_WITH_ARGS(o_proj, CustomLinear(CustomLinearOptions(n_heads * head_dim, dim).bias(false).init_params(initWeights)));
 }
 
 torch::Tensor AttentionImpl::apply_rope(const torch::Tensor& x,

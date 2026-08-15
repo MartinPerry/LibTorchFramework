@@ -99,7 +99,7 @@ std::pair<torch::Tensor, torch::Tensor> VideoSequenceInputLoader::LoadSequence(c
     std::vector<float> prev = this->CreateEmptySequence(sets.prevSeqLen);
     std::vector<float> fut = this->CreateEmptySequence(sets.futureSeqLen);
 
-    for (int i = 0; i < si.sequenceFiles.size(); i++)
+    for (int i = 0; i < static_cast<int>(si.sequenceFiles.size()); i++)
     {
         std::string imgPath = si.dirPath;
         imgPath += "/";

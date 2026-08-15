@@ -36,8 +36,8 @@ std::time_t to_time_t(std::filesystem::file_time_type ft)
 
 PretrainedManager::PretrainedManager(const std::string& directory, 
     std::string snapshot, const std::string& prefix) : 
-    snapshot(snapshot), 
-    prefix(prefix), 
+    snapshot(snapshot),
+    prefix(prefix),      
     modelsDir(directory),
     freezeInfo(nullptr)
 {

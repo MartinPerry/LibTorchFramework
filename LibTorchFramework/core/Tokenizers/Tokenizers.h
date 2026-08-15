@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <memory>
 #include <vector>
+#include <utility>
 
 #include <Utils/3rdParty/xxhash.hpp>
 

@@ -26,9 +26,9 @@ struct UpSample2dImpl : public torch::nn::Module
 
     // Constructor
     UpSample2dImpl(const ResampleOptions& opts,
-        SampleType modeType = SampleType::NEAREST_NEIGHBOR) : 
-        scaleFactor(opts.scaleFactor()),
-        modeType(modeType)
+        SampleType modeType = SampleType::NEAREST_NEIGHBOR) :         
+        modeType(modeType),
+        scaleFactor(opts.scaleFactor())
     {
         using namespace torch::nn;
 

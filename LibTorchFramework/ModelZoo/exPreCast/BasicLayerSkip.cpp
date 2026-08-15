@@ -36,7 +36,7 @@ BasicLayerSkipImpl::BasicLayerSkipImpl(
 
     for (int64_t i = 0; i < depth; ++i)
     {
-        double dropPath = (i < dropPaths.size()) ? dropPaths[i] : dropPaths.back();
+        double dropPath = (i < static_cast<int64_t>(dropPaths.size())) ? dropPaths[i] : dropPaths.back();
         
         auto block = SwinTransformerBlock3D(
             dim,
@@ -138,7 +138,7 @@ BasicLayerSkipImpl::forward(
     torch::Tensor x)
 {
     const int64_t B = x.size(0);
-    const int64_t C = x.size(1);
+    //const int64_t C = x.size(1);
     const int64_t D = x.size(2);
     const int64_t H = x.size(3);
     const int64_t W = x.size(4);

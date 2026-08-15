@@ -20,7 +20,6 @@ struct MSSSIMLossImpl : public torch::nn::Module
         int win_size = 11, 
         float win_sigma = 1.5f, 
         int channel = 3, 
-        int spatial_dims = 2,
         std::vector<float> weights = { 0.0448f, 0.2856f, 0.3001f, 0.2363f, 0.1333f },
         std::tuple<float, float> K = { 0.01f, 0.03f }
     );
@@ -53,7 +52,6 @@ struct SSIMLossImpl : public torch::nn::Module
         int win_size = 11, 
         float win_sigma = 1.5f, 
         int channel = 3, 
-        int spatial_dims = 2,
         std::tuple<float, float> K = { 0.01f, 0.03f }, 
         bool nonnegative_ssim = false
      );
