@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef USE_CUDA
+
 #include <type_traits>
 
 #include <ATen/cuda/CUDAContext.h>
@@ -30,4 +32,6 @@ inline unsigned int GET_BLOCKS(
 #if (_MSC_VER >= 1928)
 #define floor floorf
 #define ceil ceilf
+#endif
+
 #endif

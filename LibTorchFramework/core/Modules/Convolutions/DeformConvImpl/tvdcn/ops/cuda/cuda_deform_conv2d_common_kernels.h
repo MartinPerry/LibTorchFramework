@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef USE_CUDA
+
 #include <ATen/ATen.h>
 
 namespace tvdcn {
@@ -104,3 +106,5 @@ namespace tvdcn {
         }
     }
 }
+
+#endif

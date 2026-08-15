@@ -69,6 +69,8 @@
 // modified from
 // https://github.com/pytorch/vision/blob/master/torchvision/csrc/cpu/deform_conv2d_kernel.cpp
 
+#ifdef USE_CUDA
+
 #include <ATen/ATen.h>
 #include <torch/library.h>
 
@@ -652,3 +654,5 @@ namespace tvdcn {
         }
     }
 }
+
+#endif
