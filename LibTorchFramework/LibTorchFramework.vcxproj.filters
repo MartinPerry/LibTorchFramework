@@ -938,6 +938,9 @@
     <ClInclude Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda\cuda_deform_conv3d_common_kernels.h">
       <Filter>Header Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\cuda</Filter>
     </ClInclude>
+    <ClInclude Include="InputProcessing\InputLoaderSettings.h">
+      <Filter>Header Files\InputProcessing</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Libtorch.natvis">

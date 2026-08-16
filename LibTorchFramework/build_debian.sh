@@ -13,19 +13,21 @@ sudo apt-get install -y \
 # needed, for example:
 #   LIBTORCH_VERSION=2.11.0 LIBTORCH_VARIANT=cu130 ./build_debian.sh
 LIBTORCH_VERSION="${LIBTORCH_VERSION:-2.10.0}"
-#LIBTORCH_VARIANT="${LIBTORCH_VARIANT:-cu130}"
-LIBTORCH_VARIANT="cpu"
+LIBTORCH_VARIANT="${LIBTORCH_VARIANT:-cu130}"
+#LIBTORCH_VARIANT="cpu"
 
-LIBTORCH_BASE="/mnt/e/Programming/Cpp/LibTorchFramework/libtorch_debian/Release"
+LIBTORCH_BASE="/mnt/e/Programming/Cpp/LibTorchFramework/libtorch_debian/Release_${LIBTORCH_VARIANT}"
 LIBTORCH_ROOT="${LIBTORCH_BASE}/libtorch_${LIBTORCH_VERSION}"
 #BUILD_DIR="${BUILD_DIR:-/tmp/libtorchframework-build-release}"
-BUILD_DIR="/mnt/e/Programming/Cpp/LibTorchFramework/LibTorchFramework/build_cmake_debian"
+BUILD_DIR="/mnt/e/Programming/Cpp/LibTorchFramework/LibTorchFramework/build_cmake_debian_${LIBTORCH_VARIANT}"
 LIBTORCH_VARIANT_FILE="${LIBTORCH_ROOT}/.libtorch-variant"
 
 # Current Linux CUDA distributions use this archive name. It can be overridden
 # for a PyTorch release that uses a different ABI/archive naming convention.
 LIBTORCH_ARCHIVE_NAME="${LIBTORCH_ARCHIVE_NAME:-libtorch-shared-with-deps-${LIBTORCH_VERSION}+${LIBTORCH_VARIANT}.zip}"
 LIBTORCH_URL="https://download.pytorch.org/libtorch/${LIBTORCH_VARIANT}/${LIBTORCH_ARCHIVE_NAME//+/%2B}"
+
+mkdir -p "${LIBTORCH_BASE}"
 
 installed_variant=""
 if [[ -f "${LIBTORCH_VARIANT_FILE}" ]]; then

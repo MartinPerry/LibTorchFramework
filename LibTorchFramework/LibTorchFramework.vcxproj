@@ -300,6 +300,7 @@
     <ClInclude Include="InputProcessing\DefaultDataset.h" />
     <ClInclude Include="InputProcessing\InputLoader.h" />
     <ClInclude Include="InputProcessing\DataLoaderData.h" />
+    <ClInclude Include="InputProcessing\InputLoaderSettings.h" />
     <ClInclude Include="InputProcessing\InputLoadersWrapper.h" />
     <ClInclude Include="InputProcessing\InputLoaders\EncoderDecoderInputLoader.h" />
     <ClInclude Include="InputProcessing\InputLoaders\SegmentationInputLoader.h" />

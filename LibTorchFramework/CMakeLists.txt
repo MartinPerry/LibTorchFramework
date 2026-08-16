@@ -18,12 +18,30 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(LIBTORCH_FRAMEWORK_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH
     "Directory containing LibTorchFramework sources and main.cpp")
-option(LIBTORCH_FRAMEWORK_USE_CUDA "Enable CUDA-backed LibTorch code" ON)
+
 set(LIBTORCH_VERSION "2.10.0" CACHE STRING "Version suffix of the local LibTorch directory")
 set(LIBTORCH_CONFIGURATION "Release" CACHE STRING "Local LibTorch directory: Debug or Release")
 set_property(CACHE LIBTORCH_CONFIGURATION PROPERTY STRINGS Debug Release)
 set(LIBTORCH_ROOT "${LIBTORCH_FRAMEWORK_SOURCE_DIR}/../libtorch/${LIBTORCH_CONFIGURATION}/libtorch_${LIBTORCH_VERSION}"
     CACHE PATH "Root of the LibTorch distribution containing share/cmake/Torch")
+
+option(LIBTORCH_FRAMEWORK_USE_CUDA "Enable CUDA-backed LibTorch code" OFF)
+
+if(LIBTORCH_FRAMEWORK_USE_CUDA)
+    include(CheckLanguage)
+    check_language(CUDA)
+
+    if(NOT CMAKE_CUDA_COMPILER)
+        message(FATAL_ERROR "CUDA requested but no CUDA compiler (nvcc) was found")
+    endif()
+
+    enable_language(CUDA)
+
+    set(CMAKE_CUDA_STANDARD 20)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
+    find_package(CUDAToolkit REQUIRED)
+endif()
 
 set(PLAYGROUND_ROOT "${LIBTORCH_FRAMEWORK_SOURCE_DIR}/../Playground" CACHE PATH
     "Root containing Playground source, include, and library directories")
@@ -193,6 +211,23 @@ set(LIBTORCH_FRAMEWORK_SOURCES
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/Utils/TrainingHelper.cpp
 )
 
+if(LIBTORCH_FRAMEWORK_USE_CUDA)
+    file(GLOB_RECURSE LIBTORCH_FRAMEWORK_CUDA_SOURCES CONFIGURE_DEPENDS
+        "${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/*.cu"
+        "${LIBTORCH_FRAMEWORK_SOURCE_DIR}/CustomScenarios/*.cu"
+        "${LIBTORCH_FRAMEWORK_SOURCE_DIR}/InputProcessing/*.cu"
+        "${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/*.cu"
+        "${LIBTORCH_FRAMEWORK_SOURCE_DIR}/Utils/*.cu"
+    )
+
+    list(APPEND LIBTORCH_FRAMEWORK_SOURCES ${LIBTORCH_FRAMEWORK_CUDA_SOURCES})
+
+    message(STATUS "CUDA sources:")
+    foreach(_cuda_source IN LISTS LIBTORCH_FRAMEWORK_CUDA_SOURCES)
+        message(STATUS "    ${_cuda_source}")
+    endforeach()
+endif()
+
 add_executable(LibTorchFramework ${LIBTORCH_FRAMEWORK_SOURCES})
 
 target_include_directories(LibTorchFramework PRIVATE
@@ -222,6 +257,19 @@ if(NOT EXISTS "${LIBTORCH_ROOT}")
 endif()
 list(PREPEND CMAKE_PREFIX_PATH "${LIBTORCH_ROOT}")
 find_package(Torch REQUIRED)
+
+if(LIBTORCH_FRAMEWORK_USE_CUDA)
+    set_target_properties(LibTorchFramework PROPERTIES
+        CUDA_STANDARD 20
+        CUDA_STANDARD_REQUIRED ON
+        CUDA_SEPARABLE_COMPILATION ON
+    )
+
+    target_compile_options(LibTorchFramework PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
+        $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>
+    )
+endif()
 
 # Torch::Torch supplies the normal transitive dependency graph. These explicit
 # entries also mirror the MSVC auto-link directives used by the source and make
@@ -257,11 +305,21 @@ target_link_libraries(LibTorchFramework PRIVATE
     torch_cpu
     XNNPACK	   
 )
-if(WIN32)
+
+if(LIBTORCH_FRAMEWORK_USE_CUDA)
     target_link_libraries(LibTorchFramework PRIVATE
-		$<$<BOOL:${LIBTORCH_FRAMEWORK_USE_CUDA}>:c10_cuda>
-		$<$<BOOL:${LIBTORCH_FRAMEWORK_USE_CUDA}>:caffe2_nvrtc>
-		$<$<BOOL:${LIBTORCH_FRAMEWORK_USE_CUDA}>:torch_cuda>    
+        c10_cuda
+        torch_cuda
+        CUDA::cudart
+    )
+
+    if(WIN32)
+        target_link_libraries(LibTorchFramework PRIVATE caffe2_nvrtc)
+    endif()
+endif()
+
+if(WIN32)
+    target_link_libraries(LibTorchFramework PRIVATE		
         $<$<CONFIG:Debug>:libprotobufd>
         $<$<CONFIG:Debug>:libprotocd>
         $<$<NOT:$<CONFIG:Debug>>:libprotobuf>
