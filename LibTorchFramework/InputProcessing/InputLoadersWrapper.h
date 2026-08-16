@@ -1,7 +1,7 @@
 #ifndef INPUT_LOADERS_WRAPPER_H
 #define INPUT_LOADERS_WRAPPER_H
 
-struct InputLoader;
+class InputLoader;
 struct Settings;
 
 #include <memory>

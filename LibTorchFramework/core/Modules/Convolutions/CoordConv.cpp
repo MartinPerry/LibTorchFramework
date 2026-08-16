@@ -25,7 +25,7 @@ torch::Tensor AddCoordsImpl::forwardRank1(torch::Tensor input_tensor)
 {
     auto sizes = input_tensor.sizes();
     int64_t batch_size = sizes[0];
-    int64_t channels = sizes[1];
+    //int64_t channels = sizes[1];
     int64_t dim_x = sizes[2];
 
     auto xx_range = torch::arange(dim_x, torch::dtype(torch::kInt32));
@@ -49,7 +49,7 @@ torch::Tensor AddCoordsImpl::forwardRank2(torch::Tensor input_tensor)
 {
     auto sizes = input_tensor.sizes();
     int64_t batch_size = sizes[0];
-    int64_t channels = sizes[1];
+    //int64_t channels = sizes[1];
     int64_t dim_y = sizes[2];
     int64_t dim_x = sizes[3];
 

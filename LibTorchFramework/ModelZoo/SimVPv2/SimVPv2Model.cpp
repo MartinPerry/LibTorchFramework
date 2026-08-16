@@ -254,7 +254,7 @@ Mid_GANetImpl::Mid_GANetImpl(int pastCount, int futureCount, int s, int channel_
 
 torch::Tensor Mid_GANetImpl::forward(const torch::Tensor& x)
 {
-    auto B = x.size(0), T = x.size(1), C = x.size(2), H = x.size(3), W = x.size(4);
+    auto B = x.size(0), C = x.size(2), H = x.size(3), W = x.size(4);
     torch::Tensor z = x.view({ B, -1, H, W });
 
     for (size_t i = 0; i < enc->size(); i++)
@@ -295,18 +295,18 @@ Mid_IncepNetImpl::Mid_IncepNetImpl(int pastCount, int futureCount, int s, int ch
 
 torch::Tensor Mid_IncepNetImpl::forward(const torch::Tensor& x)
 {
-    auto B = x.size(0), T = x.size(1), C = x.size(2), H = x.size(3), W = x.size(4);
+    auto B = x.size(0), C = x.size(2), H = x.size(3), W = x.size(4);
     torch::Tensor z = x.view({ B, -1, H, W });
 
     std::vector<torch::Tensor> skips;
-    for (size_t i = 0; i < N_T; i++)
+    for (int64_t i = 0; i < N_T; i++)
     {
         z = enc[i]->as<gInception_ST>()->forward(z);
         if (i < N_T - 1) { skips.push_back(z); }
     }
 
     z = dec[0]->as<gInception_ST>()->forward(z);
-    for (size_t i = 1; i < N_T; i++)
+    for (int64_t i = 1; i < N_T; i++)
     {
         z = dec[i]->as<gInception_ST>()->forward(torch::cat({ z, skips[N_T - 1 - i] }, 1));
     }
