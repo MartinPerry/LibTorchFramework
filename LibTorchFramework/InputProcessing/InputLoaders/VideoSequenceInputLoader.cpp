@@ -34,6 +34,11 @@ VideoSequenceInputLoader::VideoSequenceInputLoader(
     sets.imgH = ptr->GetShape()[2];
     sets.prevSeqLen = prevSeqLen;
     sets.futureSeqLen = futureSeqLen;
+
+    if (std::filesystem::exists(sets.datasetPath) == false)
+    {
+        MY_LOG_WARNING("Dataset path %s does not exist", datasetPath.c_str());
+    }
 }
 
 size_t VideoSequenceInputLoader::GetSize() const

@@ -146,7 +146,7 @@ namespace CustomScenarios::LLMs::Llama
         loss.backward(); // should succeed and give grads on A/B
     }
 
-	void setup()
+	void setup(int argc, char** argv)
 	{
         //https://huggingface.co/spaces/Xenova/the-tokenizer-playground
 

@@ -5,7 +5,7 @@ namespace CustomScenarios
 {
 	namespace U2NetTraining
 	{
-		void setup();
+		void setup(int argc, char** argv);
 	}
 }
 

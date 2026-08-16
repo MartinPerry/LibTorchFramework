@@ -32,6 +32,11 @@ SegmentationInputLoader::SegmentationInputLoader(
     sets.imgChannelsCount = ptr->GetShape()[0];
     sets.imgW = ptr->GetShape()[1];
     sets.imgH = ptr->GetShape()[2];
+
+    if (std::filesystem::exists(sets.datasetPath) == false)
+    {
+        MY_LOG_WARNING("Dataset path %s does not exist", datasetPath.c_str());
+    }
 }
 
 size_t SegmentationInputLoader::GetSize() const

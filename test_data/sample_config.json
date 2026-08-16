@@ -1,0 +1,24 @@
+{
+  "model_id": "exprecast",
+  "training": {
+    "epoch_count": 100,
+    "num_workers": 4,
+    "autocast": false,
+    "batch_size": 2
+  }
+  "dataset": {
+    "path": "",
+    "subset_size": 2,
+    "channels_count": 1,
+    "width": 256,
+    "height": 256,
+    "prev_count": 12,
+    "future_count": 12
+  },
+  "snapshot": {
+    "path": "",
+    "enable_save": true,
+    "enable_load": false
+  }
+  
+}

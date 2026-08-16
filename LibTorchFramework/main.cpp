@@ -176,7 +176,7 @@ void PrintMemory(const char* label)
 }
 #endif
 
-int main()
+int main(int argc, char** argv)
 {
     auto log = MyUtils::Logger::GetInstance();
     log->Enable(MyUtils::Logger::LogType::Error, MyUtils::Logger::LogOutput::StdOut);
@@ -215,7 +215,7 @@ int main()
         << std::endl;
     */
 
-    CustomScenarios::exPreCastTraining::setup();
+    CustomScenarios::exPreCastTraining::setup(argc, argv);
     return 0;
     /*
     Test rr;
@@ -321,11 +321,11 @@ int main()
     auto out3 = df3->forward(input3);
     
 
-    CustomScenarios::LLMs::Llama::setup();
+    CustomScenarios::LLMs::Llama::setup(argc, argv);
 
-    //CustomScenarios::SDVAETraining::setup();
-    //CustomScenarios::MrmsTraining::setup();
-    //CustomScenarios::UNetTraining::setup();
+    //CustomScenarios::SDVAETraining::setup(argc, argv);
+    //CustomScenarios::MrmsTraining::setup(argc, argv);
+    //CustomScenarios::UNetTraining::setup(argc, argv);
     return 0;
 
     //torch::nn::MSELoss loss;

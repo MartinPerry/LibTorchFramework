@@ -5,7 +5,7 @@ namespace CustomScenarios
 {
 	namespace MrmsTraining
 	{
-		void setup();		
+		void setup(int argc, char** argv);
 	}
 }
 

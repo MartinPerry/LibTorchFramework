@@ -211,6 +211,7 @@
     <ClCompile Include="ModelZoo\U2Net\U2NetModel.cpp" />
     <ClCompile Include="ModelZoo\UNet\UNetModel.cpp" />
     <ClCompile Include="PerformanceSettings.cpp" />
+    <ClCompile Include="SettingsLoader.cpp" />
     <ClCompile Include="Utils\ModelInfo.cpp" />
     <ClCompile Include="Utils\ProgressBar.cpp" />
     <ClCompile Include="Utils\TorchImageUtils.cpp" />
@@ -328,6 +329,7 @@
     <ClInclude Include="ModelZoo\UNet\UNetModel.h" />
     <ClInclude Include="PerformanceSettings.h" />
     <ClInclude Include="Settings.h" />
+    <ClInclude Include="SettingsLoader.h" />
     <ClInclude Include="Utils\HelperMacros.h" />
     <ClInclude Include="Utils\ModelInfo.h" />
     <ClInclude Include="Utils\ProgressBar.h" />
@@ -347,6 +349,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\readme.md" />
+    <None Include="..\test_data\sample_config.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

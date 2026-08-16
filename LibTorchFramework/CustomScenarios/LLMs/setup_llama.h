@@ -7,7 +7,7 @@ namespace CustomScenarios
 	{
 		namespace Llama
 		{
-			void setup();
+			void setup(int argc, char** argv);
 		}
 	}
 }

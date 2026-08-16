@@ -5,7 +5,7 @@ namespace CustomScenarios
 {
 	namespace exPreCastTraining
 	{
-		void setup();
+		void setup(int argc, char** argv);
 	}
 }
 

@@ -5,7 +5,7 @@ namespace CustomScenarios
 {
 	namespace SDVAETraining
 	{
-		void setup();
+		void setup(int argc, char** argv);
 	}
 }
 

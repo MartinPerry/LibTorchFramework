@@ -88,7 +88,7 @@ namespace CustomScenarios::SDVAETraining
 		img.Save("D://decoded.png");
 	}
 
-	void setup()
+	void setup(int argc, char** argv)
 	{
 				
 		MultiBceLoss multiLoss;

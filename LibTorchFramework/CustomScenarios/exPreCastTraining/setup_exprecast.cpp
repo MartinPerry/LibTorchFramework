@@ -8,6 +8,7 @@
 // Core
 //=========================================================
 
+#include "../../SettingsLoader.h"
 #include "../../Settings.h"
 
 #include "../../core/Structures.h"
@@ -55,6 +56,7 @@
 #include "../../Utils/TrainingHelper.h"
 
 #include <Utils/Strings/StringUtils.h>
+#include <Utils/CmdParser.h>
 
 //=========================================================
 
@@ -63,8 +65,15 @@
 namespace CustomScenarios::exPreCastTraining
 {
 	
-	void setup()
+	void setup(int argc, char** argv)
 	{
+
+		CmdParser cmd(argc, argv);
+
+		//./app --config config.json
+		//ModelSettings settings = SettingsLoader::Load(cmd, "config");
+
+		ModelSettings settings = SettingsLoader::LoadFromFile(cmd, "e:/Programming/Cpp/LibTorchFramework/test_data/sample_config.json");
 
 		int epochCount = 100;
 

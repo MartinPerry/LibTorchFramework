@@ -591,6 +591,9 @@
     <ClCompile Include="core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils\tensor_utils.cpp">
       <Filter>Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils</Filter>
     </ClCompile>
+    <ClCompile Include="SettingsLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InputProcessing\DefaultDataset.h">
@@ -941,6 +944,9 @@
     <ClInclude Include="InputProcessing\InputLoaderSettings.h">
       <Filter>Header Files\InputProcessing</Filter>
     </ClInclude>
+    <ClInclude Include="SettingsLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Libtorch.natvis">
@@ -968,5 +974,13 @@
     <None Include="..\readme.md">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\test_data\sample_config.json">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

@@ -50,7 +50,7 @@
 
 namespace CustomScenarios::U2NetTraining
 {
-	void setup()
+	void setup(int argc, char** argv)
 	{
 		static std::shared_ptr<PredictionEvaluator> predEval = std::make_shared<PredictionEvaluatorSigmoid>();
 		
