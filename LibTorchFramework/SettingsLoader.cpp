@@ -1,6 +1,7 @@
 #include "./SettingsLoader.h"
 
 #include <Utils/CmdParser.h>
+#include <Utils/Logger.h>
 
 #include <stdexcept>
 
@@ -27,7 +28,7 @@ ModelSettings SettingsLoader::LoadFromFile(CmdParser& cmd, const char* filePath)
 
     if (!json.LoadDefaultsFromJsonFile(filePath))
     {
-        throw std::runtime_error("Unable to load JSON configuration");
+        return SettingsLoader::Load(cmd, "config");
     }
 
     if (!cmd.Parse())
@@ -43,6 +44,7 @@ ModelSettings SettingsLoader::Load(JsonCmdDefaults& json)
     ModelSettings settings;
 
     settings.modelId = json.GetValue<std::string>("model_id");
+    settings.device = json.GetValue<std::string>("device", "gpu");
 
     LoadTraining(json, settings.training);
     LoadDataset(json, settings.dataset);
@@ -64,7 +66,7 @@ void SettingsLoader::LoadDataset(const JsonCmdDefaults& json, DatasetSettings& s
     settings.path = json.GetValue<std::string>("dataset.path", settings.path);
 
     int subsetSize = json.GetValue<int>("dataset.subset_size", -1);
-    settings.subsetSize = subsetSize >= 0 ? std::optional<int>(subsetSize) : std::nullopt;
+    settings.subsetSize = subsetSize >= 0 ? std::optional<size_t>(subsetSize) : std::nullopt;
 
     settings.channelsCount = json.GetValue<int>("dataset.channels_count", settings.channelsCount);
     settings.width = json.GetValue<int>("dataset.width", settings.width);
@@ -75,6 +77,7 @@ void SettingsLoader::LoadDataset(const JsonCmdDefaults& json, DatasetSettings& s
 
 void SettingsLoader::LoadSnapshot(const JsonCmdDefaults& json, SnapshotSettings& settings)
 {
+    settings.weights = json.GetValue<std::string>("snapshot.weights", settings.weights);
     settings.path = json.GetValue<std::string>("snapshot.path", settings.path);
     settings.enableSave = json.GetValue<bool>("snapshot.enable_save", settings.enableSave);
     settings.enableLoad = json.GetValue<bool>("snapshot.enable_load", settings.enableLoad);

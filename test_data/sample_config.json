@@ -1,13 +1,16 @@
 {
   "model_id": "exprecast",
+  "device": "gpu",
   "training": {
     "epoch_count": 100,
     "num_workers": 4,
     "autocast": false,
     "batch_size": 2
-  }
+  },
   "dataset": {
-    "path": "",
+    "path_win": "d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE",
+    "path_linux": "/data/perry/gp/datasets/meteonet/SE",
+    "path": "e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet/SE",
     "subset_size": 2,
     "channels_count": 1,
     "width": 256,
@@ -16,7 +19,11 @@
     "future_count": 12
   },
   "snapshot": {
-    "path": "",
+    "weights_win": "e:\\Programming\\Cpp\\LibTorchFramework\\pretrained_meteonet.safetensors",
+    "wights_linux": "/data/perry/gp/pretrained_meteonet.safetensors",
+    "weights": "d:\\python\\exPreCast-main\\exPreCast-main\\checkpoints\\pretrained_meteonet.safetensors",
+
+    "path": "D://CppTorchModels",
     "enable_save": true,
     "enable_load": false
   }

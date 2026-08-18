@@ -130,6 +130,7 @@ cmake -S . -B "${BUILD_DIR}" \
     -DLIBTORCH_FRAMEWORK_USE_CUDA="${USE_CUDA}" \
     "${CMAKE_CUDA_ARGS[@]}" \
     -DPLAYGROUND_ROOT=/mnt/d/Martin/Programming/test/Playground \
+	-DPLAYGROUND_INCLUDE_DIR=/mnt/d/Martin/Programming/test/Playground/include_debian \
     -DPLAYGROUND_LIBRARY_RELEASE=/mnt/d/Martin/Programming/test/Playground/Playground/build_cmake_debian/libPlayground.a
 
 #cmake --build "${BUILD_DIR}" --parallel 1

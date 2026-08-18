@@ -17,7 +17,7 @@ struct TrainingSettings
 struct DatasetSettings
 {
     std::string path;
-    std::optional<int> subsetSize;
+    std::optional<size_t> subsetSize;
     int channelsCount = 1;
     int width = 256;
     int height = 256;
@@ -27,6 +27,7 @@ struct DatasetSettings
 
 struct SnapshotSettings
 {
+    std::string weights;
     std::string path;
     bool enableSave = true;
     bool enableLoad = false;
@@ -35,6 +36,7 @@ struct SnapshotSettings
 struct ModelSettings
 {
     std::string modelId;
+    std::string device;
     TrainingSettings training;
     DatasetSettings dataset;
     SnapshotSettings snapshot;

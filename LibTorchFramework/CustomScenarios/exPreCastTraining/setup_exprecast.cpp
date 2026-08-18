@@ -70,28 +70,18 @@ namespace CustomScenarios::exPreCastTraining
 
 		CmdParser cmd(argc, argv);
 
-		//./app --config config.json
-		//ModelSettings settings = SettingsLoader::Load(cmd, "config");
+		//./app --config config.json		
+		ModelSettings settings = SettingsLoader::LoadFromFile(cmd, "config.json");
 
-		ModelSettings settings = SettingsLoader::LoadFromFile(cmd, "e:/Programming/Cpp/LibTorchFramework/test_data/sample_config.json");
-
-		int epochCount = 100;
-
-		FACL facl(epochCount);
+		
+		FACL facl(settings.training.epochCount);
 		
 		Settings sets;
-		//-----
-		//model debug
-		sets.numWorkers = 4;
-		sets.device = torch::kCUDA;
-		sets.perf.enableAutoCast = false;
-		//-----
-
-		//sets.numWorkers = 4;
-		//sets.device = torch::kCUDA; //torch::kCUDA;    
-		//sets.perf.enableAutoCast = true;
-		sets.epochCount = epochCount;
-		sets.batchSize = 2;
+		sets.device = (settings.device == "cpu") ? torch::kCPU : torch::kCUDA;
+		sets.numWorkers = settings.training.numWorkers;		
+		sets.perf.enableAutoCast = settings.training.autocast;				
+		sets.epochCount = settings.training.epochCount;
+		sets.batchSize = settings.training.batchSize;
 		sets.metricsInitFn = []() -> auto {
 			auto metr = std::make_shared<MetricsVideo>();
 			//metr->SetColorMappingFileName("D://turbo.png");
@@ -106,60 +96,56 @@ namespace CustomScenarios::exPreCastTraining
 		// Assertion failed: nthr_ == nthr, file C:\actions-runner\_work\pytorch\pytorch\pytorch\third_party\ideep\mkl-dnn\src\common/dnnl_thread.hpp, line 293    
 		//at::globalContext().setUserEnabledMkldnn(false);
 
-		ImageSize imSize(1, 256, 256);
+		ImageSize imSize(settings.dataset.channelsCount, settings.dataset.width, settings.dataset.height);
 
 
-		int prevCount = 12;
-		int futureCount = 12;
+		int prevCount = settings.dataset.prevCount;
+		int futureCount = settings.dataset.futureCount;
 
 		InputLoaderSettings loaderSets;
-		loaderSets.subsetSize = 2;
-
-		//std::string datasetDir = "d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE";
-		std::string datasetDir = "e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet/SE";
-
+		loaderSets.subsetSize = settings.dataset.subsetSize;
+				
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
 		ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } }, 
-			datasetDir, prevCount, futureCount);
+			settings.dataset.path, prevCount, futureCount);
 		//ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TEST, loaderSets } },
-		//	datasetDir, 		
+		//	settings.dataset.path, 		
 		//	prevCount, futureCount);
 
 		//-------
 		// test
 		auto loader = ilw->GetLoader<MeteonetInputLoader>(RunMode::TRAIN);
 		loader->Load();
+#ifdef _WIN32
 		loader->SaveSequence(0, "D://seq.png", "D://turbo.png");
+#else
+		loader->SaveSequence(0, "seq.png", "turbo.png");
+#endif
 		//-------
 
 		auto m = std::make_shared<ModelZoo::exPreCast::exPreCastModel>();
+	
+		if (settings.snapshot.weights != "")
+		{			
+			SafeTensorLoader tl;
+			auto loadRes = tl.LoadModel(settings.snapshot.weights,
+				*m.get(), false, [](const std::string& name) -> std::string {
+					std::string newName = name;
+					StringUtils::ReplaceSubStr(newName, "module.", "");
 
-		//try 3d deformanble convolution
-		//https://github.com/inspiros/tvdcn ?
-
-		/*
-		//std::string modelPath = "e:\\Programming\\Cpp\\LibTorchFramework\\pretrained_meteonet.safetensors";
-		std::string modelPath = "d:\\python\\exPreCast-main\\exPreCast-main\\checkpoints\\pretrained_meteonet.safetensors";
-
-		SafeTensorLoader tl;		
-		auto loadRes = tl.LoadModel(modelPath,
-			*m.get(), false, [](const std::string& name) -> std::string {
-				std::string newName = name;
-				StringUtils::ReplaceSubStr(newName, "module.", "");
-
-				return newName;
-		});
-		*/
+					return newName;
+			});
+		}
 
 		//expected input shape: [4, 1, 12, 256, 256]
 		//expected output/gt shape: [4, 12, 256, 256]
 		
 		m->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(0.0));
 
-		sets.pretrainedManager = std::make_shared<PretrainedManager>("D://CppTorchModels");
+		sets.pretrainedManager = std::make_shared<PretrainedManager>(settings.snapshot.path);
 		sets.pretrainedManager->EnableTrainingSnapshot(true);
-		sets.pretrainedManager->EnableSaving(true);
-		sets.pretrainedManager->EnableLoading(false);
+		sets.pretrainedManager->EnableSaving(settings.snapshot.enableSave);
+		sets.pretrainedManager->EnableLoading(settings.snapshot.enableLoad);
 
 		// 
 		//SnapshotSaver saver(m.get());
