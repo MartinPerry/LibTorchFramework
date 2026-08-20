@@ -977,6 +977,12 @@
     <None Include="..\test_data\sample_config.json">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="build_debian.sh">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="build_win.bat">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt">

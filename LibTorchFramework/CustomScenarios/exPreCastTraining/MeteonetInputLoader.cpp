@@ -18,7 +18,7 @@ MeteonetInputLoader::MeteonetInputLoader(
     int prevSeqLen,
     int futureSeqLen) :
     VideoSequenceInputLoader(type, parent, datasetPath, prevSeqLen, futureSeqLen)
-{
+{    
 }
 
 
@@ -78,7 +78,21 @@ void MeteonetInputLoader::Load()
 
                     std::string radarFilename = ymdhm.str() + ".tiff";
 
-                    allFiles.emplace_back((std::filesystem::path(ymd.str()) / radarFilename).string());
+                    auto path = (std::filesystem::path(ymd.str()) / radarFilename);
+
+                    if (std::filesystem::exists(std::filesystem::path(sets.datasetPath) / path) == false)
+                    {
+                        MY_LOG_ERROR("File %s not found", path.string().c_str());
+
+                        if (allFiles.size() > 0)
+                        {
+                            allFiles.emplace_back(allFiles.back());
+                        }
+                    }
+                    else
+                    {
+                        allFiles.emplace_back(path.string());
+                    }
                 }
             }
         }

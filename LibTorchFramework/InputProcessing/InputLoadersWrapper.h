@@ -32,6 +32,9 @@ public:
 
 	const std::vector<uint16_t>& GetShape() const;
 
+	void SetTrainValTestSplit(float trainRatio, float valRatio, 
+		std::optional<float> testRatio = std::nullopt);
+
 	template <typename InitedLoaderType>
 	void InitLoaders(std::unordered_set<RunMode> types);
 

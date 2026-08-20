@@ -351,6 +351,8 @@
   <ItemGroup>
     <None Include="..\readme.md" />
     <None Include="..\test_data\sample_config.json" />
+    <None Include="build_debian.sh" />
+    <None Include="build_win.bat" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />

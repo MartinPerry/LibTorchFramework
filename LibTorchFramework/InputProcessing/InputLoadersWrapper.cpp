@@ -52,6 +52,22 @@ const std::vector<uint16_t>& InputLoadersWrapper::GetShape() const
 	return this->shape;
 }
 
+/// <summary>
+/// Set ratios for train/valid/test split
+/// 
+/// if test is nullopt, test ratio is auto calculated from train and valid as the remain to 1.0
+/// (eg.: 1 - trainRatio - valRatio)
+/// </summary>
+/// <param name="trainRatio"></param>
+/// <param name="valRatio"></param>
+/// <param name="testRatio"></param>
+void InputLoadersWrapper::SetTrainValTestSplit(float trainRatio, float valRatio, std::optional<float> testRatio)
+{
+	this->trainRatio = trainRatio;
+	this->valRatio = valRatio;
+	this->testRatio = testRatio;
+}
+
 std::shared_ptr<InputLoader> InputLoadersWrapper::GetLoader(RunMode type) const
 {
 	if (type == RunMode::TRAIN)

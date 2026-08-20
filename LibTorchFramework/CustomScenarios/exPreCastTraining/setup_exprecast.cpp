@@ -105,12 +105,13 @@ namespace CustomScenarios::exPreCastTraining
 		InputLoaderSettings loaderSets;
 		loaderSets.subsetSize = settings.dataset.subsetSize;
 				
-		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);
-		ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } }, 
+		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);	
+		ilw->SetTrainValTestSplit(0.8, 0.0);
+		ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } },
 			settings.dataset.path, prevCount, futureCount);
-		//ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TEST, loaderSets } },
-		//	settings.dataset.path, 		
-		//	prevCount, futureCount);
+		ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TEST, loaderSets } },
+			settings.dataset.path, 		
+			prevCount, futureCount);
 
 		//-------
 		// test
