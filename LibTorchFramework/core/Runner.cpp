@@ -96,18 +96,13 @@ void Runner::OnEpochStart()
 
 void Runner::ProcessBatch(DataLoaderData& batch)
 {
+    auto loss = this->ForwardAndLoss(batch);
+
+    float fLoss = loss.item().toFloat();
+
+    this->pBar->SetParam("loss", std::to_string(fLoss));
     this->pBar->NextStep();
-
-    /*
-    auto bData = batch.input;
-    auto bTarget = batch.target;
-
-    std::cout << "Runner" << std::endl;
-    std::cout << "input: " << bData << std::endl;
-    std::cout << "target: " << bTarget << std::endl;
-
-    printf("xx");
-    */
+   
 }
 
 void Runner::OnEpochEnd()

@@ -26,7 +26,7 @@ ModelInfo::ModelParams ModelInfo::CountParams() const
 
 ModelInfo::MemoryInfo ModelInfo::GetMemorySize() const
 {
-    MemoryInfo total = { 0 };
+    MemoryInfo total = { 0, 0 };
 
     for (const auto& p : model.parameters())
     {

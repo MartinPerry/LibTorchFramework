@@ -114,6 +114,7 @@ namespace CustomScenarios::exPreCastTraining
 			prevCount, futureCount);
 
 		//-------
+		
 		// test
 		auto loader = ilw->GetLoader<MeteonetInputLoader>(RunMode::TRAIN);
 		loader->Load();
@@ -122,6 +123,7 @@ namespace CustomScenarios::exPreCastTraining
 #else
 		loader->SaveSequence(0, "seq.png", "turbo.png");
 #endif
+		
 		//-------
 
 		auto m = std::make_shared<ModelZoo::exPreCast::exPreCastModel>();
