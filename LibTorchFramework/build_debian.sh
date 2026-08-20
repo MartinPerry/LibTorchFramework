@@ -7,7 +7,11 @@ sudo apt-get install -y \
     pkg-config \
 	libicu-dev \
 	libprotobuf-dev \
-	protobuf-compiler
+	protobuf-compiler \
+	cudnn9-cuda-13
+
+LIBTORCH_FRAMEWORK_DIR="/mnt/e/Programming/Cpp/LibTorchFramework"
+PLAYGROUND_DIR="/mnt/d/Martin/Programming/test/Playground"
 
 # Override these on the command line when another release or CUDA build is
 # needed, for example:
@@ -16,10 +20,12 @@ LIBTORCH_VERSION="${LIBTORCH_VERSION:-2.10.0}"
 LIBTORCH_VARIANT="${LIBTORCH_VARIANT:-cu130}"
 #LIBTORCH_VARIANT="cpu"
 
-LIBTORCH_BASE="/mnt/e/Programming/Cpp/LibTorchFramework/libtorch_debian/Release_${LIBTORCH_VARIANT}"
+BIN_DIR="${LIBTORCH_FRAMEWORK_DIR}/bin/${LIBTORCH_VARIANT}"
+
+LIBTORCH_BASE="${LIBTORCH_FRAMEWORK_DIR}/libtorch_debian/Release_${LIBTORCH_VARIANT}"
 LIBTORCH_ROOT="${LIBTORCH_BASE}/libtorch_${LIBTORCH_VERSION}"
 #BUILD_DIR="${BUILD_DIR:-/tmp/libtorchframework-build-release}"
-BUILD_DIR="/mnt/e/Programming/Cpp/LibTorchFramework/LibTorchFramework/build_cmake_debian_${LIBTORCH_VARIANT}"
+BUILD_DIR="${LIBTORCH_FRAMEWORK_DIR}/LibTorchFramework/build_cmake_debian_${LIBTORCH_VARIANT}"
 LIBTORCH_VARIANT_FILE="${LIBTORCH_ROOT}/.libtorch-variant"
 
 # Current Linux CUDA distributions use this archive name. It can be overridden
@@ -124,16 +130,20 @@ fi
 
 cmake -S . -B "${BUILD_DIR}" \
     -DCMAKE_BUILD_TYPE=Release \
-    -DLIBTORCH_FRAMEWORK_SOURCE_DIR=/mnt/e/Programming/Cpp/LibTorchFramework/LibTorchFramework \
+    -DLIBTORCH_FRAMEWORK_SOURCE_DIR="${LIBTORCH_FRAMEWORK_DIR}/LibTorchFramework" \
     -DLIBTORCH_CONFIGURATION=Release \
     -DLIBTORCH_ROOT="${LIBTORCH_ROOT}" \
     -DLIBTORCH_FRAMEWORK_USE_CUDA="${USE_CUDA}" \
     "${CMAKE_CUDA_ARGS[@]}" \
-    -DPLAYGROUND_ROOT=/mnt/d/Martin/Programming/test/Playground \
-	-DPLAYGROUND_INCLUDE_DIR=/mnt/d/Martin/Programming/test/Playground/include_debian \
-    -DPLAYGROUND_LIBRARY_RELEASE=/mnt/d/Martin/Programming/test/Playground/Playground/build_cmake_debian/libPlayground.a
+    -DPLAYGROUND_ROOT=${PLAYGROUND_DIR} \
+	-DPLAYGROUND_INCLUDE_DIR=${PLAYGROUND_DIR}/include_debian \
+    -DPLAYGROUND_LIBRARY_RELEASE=${PLAYGROUND_DIR}/Playground/build_cmake_debian/libPlayground.a
 
 #cmake --build "${BUILD_DIR}" --parallel 1
 cmake --build "${BUILD_DIR}" --parallel 8
 
+mkdir -p "${BIN_DIR}"
+cp -f "${BUILD_DIR}/LibTorchFramework" "${BIN_DIR}/LibTorchFramework"
+
 echo "Build output: ${BUILD_DIR}/LibTorchFramework"
+echo "Binary copied to: ${BIN_DIR}/LibTorchFramework"
