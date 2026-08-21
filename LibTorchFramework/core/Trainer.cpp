@@ -77,16 +77,28 @@ void Trainer::RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::O
 
 void Trainer::RunOptimizerFull(std::shared_ptr<torch::optim::Optimizer> optimizer)
 {
+    if (optimizer == nullptr)
+    {
+        return;
+    }
+
     if (sets.clippingFn)
     {
         sets.clippingFn(model->parameters());
     }
 
-    if (optimizer)
-    {
-        optimizer->step();
-        optimizer->zero_grad();
-    }
+#ifdef _DEBUG
+    auto p = model->parameters().front();
+    auto before = p.detach().clone();
+#endif
+
+    optimizer->step();
+    optimizer->zero_grad();    
+
+#ifdef _DEBUG
+    MY_LOG_INFO("grad norm: %f", p.grad().norm().item<float>());
+    MY_LOG_INFO("update norm: %f", (p.detach() - before).norm().item<float>());
+#endif
 }
 
 //============================================================================================
@@ -107,22 +119,32 @@ void Trainer::RunTrainStepsAutocast(at::Tensor loss, std::shared_ptr<torch::opti
 
 void Trainer::RunOptimizerAutoCast(std::shared_ptr<torch::optim::Optimizer> optimizer)
 {
+    if (optimizer == nullptr)
+    {
+        return;
+    }
+
     if (sets.clippingFn)
     {
-        if (optimizer)
-        {
-            scaler->unscale_(*optimizer);
-        }
+        scaler->unscale_(*optimizer);
+        
         sets.clippingFn(model->parameters());
     }
 
-    if (optimizer)
-    {
-        scaler->step(*optimizer);
-        scaler->update();
+#ifdef _DEBUG
+    auto p = model->parameters().front();
+    auto before = p.detach().clone();
+#endif
 
-        optimizer->zero_grad();
-    }
+    scaler->step(*optimizer);
+    scaler->update();
+
+    optimizer->zero_grad();    
+
+#ifdef _DEBUG
+    MY_LOG_INFO("grad norm: %f", p.grad().norm().item<float>());
+    MY_LOG_INFO("update norm: %f", (p.detach() - before).norm().item<float>());
+#endif
 }
 
 //============================================================

@@ -143,7 +143,7 @@ namespace CustomScenarios::exPreCastTraining
 		//expected input shape: [4, 1, 12, 256, 256]
 		//expected output/gt shape: [4, 12, 256, 256]
 		
-		m->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(0.0));
+		m->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(1e-3).weight_decay(0.0));
 
 		sets.pretrainedManager = std::make_shared<PretrainedManager>(settings.snapshot.path);
 		sets.pretrainedManager->EnableTrainingSnapshot(true);
