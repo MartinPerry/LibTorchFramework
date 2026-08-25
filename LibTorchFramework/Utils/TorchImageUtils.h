@@ -67,7 +67,7 @@ public:
 		int h = -1;
 		int borderSize = 0;
 		uint8_t backgroundValue = 255;
-		IntervalMapping intervalMapping = IntervalMapping();
+		IntervalMapping intervalMapping = IntervalMapping{};
 		std::optional<std::string> colorMappingFileName = std::nullopt;
 	};
 
