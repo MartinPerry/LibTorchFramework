@@ -404,9 +404,9 @@ void MetricsImage::CsiThresholds(torch::Tensor p, torch::Tensor t)
     {
         auto& c = confMap[threshold];
 
-        auto t0 = ComputeHitsMissesFas(this->pred, this->target, threshold);
-        auto t1 = ComputePooledConfusion(this->pred, this->target, threshold, 4, PoolType::MAX);
-        auto t2 = ComputePooledConfusion(this->pred, this->target, threshold, 16, PoolType::MAX);
+        auto t0 = ComputeHitsMissesFas(p, t, threshold);
+        auto t1 = ComputePooledConfusion(p, t, threshold, 4, PoolType::MAX);
+        auto t2 = ComputePooledConfusion(p, t, threshold, 16, PoolType::MAX);
 
         c[0][0] += std::get<0>(t0);
         c[0][1] += std::get<1>(t0);
