@@ -76,11 +76,12 @@ protected:
 	void AddImages(torch::Tensor p, torch::Tensor t);
 	void RunningRmseMae(torch::Tensor p, torch::Tensor t);
 	void JaccardIndexBinary(torch::Tensor p, torch::Tensor t, bool mergeBatches = true);
+	virtual void CsiThresholds(torch::Tensor p, torch::Tensor t);
 
 	std::tuple<float, float, float, float> CalcIntersectUnions(torch::Tensor p, torch::Tensor t, bool mergeBatches) const;
 	std::pair<torch::Tensor, torch::Tensor> IouInverse(const torch::Tensor& p, const torch::Tensor& t) const;
 	std::pair<torch::Tensor, torch::Tensor> Iou(const torch::Tensor& p, const torch::Tensor& t) const;
-	
+		
 	std::tuple<float, float, float> ComputeHitsMissesFas(const torch::Tensor& p, const torch::Tensor& t, double threshold) const;
 	std::tuple<float, float, float> ComputePooledConfusion(const torch::Tensor& p, const torch::Tensor& t,
 		double threshold, int64_t poolSize, PoolType mode) const;

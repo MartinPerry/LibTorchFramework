@@ -293,27 +293,7 @@ void MetricsImage::Evaluate()
     //will rewrite pred and target values by threshold
     this->JaccardIndexBinary(pred, target);    
 
-
-    for (const float threshold : this->csiThresholds)
-    {
-        auto& c = confMap[threshold];
-
-        auto t0 = ComputeHitsMissesFas(this->pred, this->target, threshold);
-        auto t1 = ComputePooledConfusion(this->pred, this->target, threshold, 4, PoolType::MAX);
-        auto t2 = ComputePooledConfusion(this->pred, this->target, threshold, 16, PoolType::MAX);
-
-        c[0][0] += std::get<0>(t0);
-        c[0][1] += std::get<1>(t0);
-        c[0][2] += std::get<2>(t0);
-
-        c[1][0] += std::get<0>(t1);
-        c[1][1] += std::get<1>(t1);
-        c[1][2] += std::get<2>(t1);
-
-        c[2][0] += std::get<0>(t2);
-        c[2][1] += std::get<1>(t2);
-        c[2][2] += std::get<2>(t2);
-    }
+    this->CsiThresholds(pred, target);
     
 }
 
@@ -417,6 +397,30 @@ std::pair<torch::Tensor, torch::Tensor> MetricsImage::Iou(const torch::Tensor& p
 }
 
 //==================================================================================
+
+void MetricsImage::CsiThresholds(torch::Tensor p, torch::Tensor t)
+{
+    for (const float threshold : this->csiThresholds)
+    {
+        auto& c = confMap[threshold];
+
+        auto t0 = ComputeHitsMissesFas(this->pred, this->target, threshold);
+        auto t1 = ComputePooledConfusion(this->pred, this->target, threshold, 4, PoolType::MAX);
+        auto t2 = ComputePooledConfusion(this->pred, this->target, threshold, 16, PoolType::MAX);
+
+        c[0][0] += std::get<0>(t0);
+        c[0][1] += std::get<1>(t0);
+        c[0][2] += std::get<2>(t0);
+
+        c[1][0] += std::get<0>(t1);
+        c[1][1] += std::get<1>(t1);
+        c[1][2] += std::get<2>(t1);
+
+        c[2][0] += std::get<0>(t2);
+        c[2][1] += std::get<1>(t2);
+        c[2][2] += std::get<2>(t2);
+    }
+}
 
 std::tuple<float, float, float> MetricsImage::ComputeHitsMissesFas(const torch::Tensor& p, const torch::Tensor& t, double threshold) const
 {

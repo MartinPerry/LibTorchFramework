@@ -23,7 +23,7 @@ public:
 
 
 protected:
-	
+	void CsiThresholds(torch::Tensor p, torch::Tensor t) override;
 };
 
 #endif

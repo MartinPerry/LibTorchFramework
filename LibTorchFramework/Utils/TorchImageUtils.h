@@ -57,6 +57,9 @@ public:
 	{
 		bool enabled = true;
 		std::optional<MappingRange<float>> mapRange = std::nullopt; //if nullopt, auto-calculated		
+
+		IntervalMapping() 
+		{}
 	};
 
 	struct TensorsToImageSettings
@@ -67,7 +70,7 @@ public:
 		int h = -1;
 		int borderSize = 0;
 		uint8_t backgroundValue = 255;
-		IntervalMapping intervalMapping = IntervalMapping{};
+		IntervalMapping intervalMapping = IntervalMapping();
 		std::optional<std::string> colorMappingFileName = std::nullopt;
 	};
 
@@ -104,7 +107,7 @@ public:
 		int chanCount = -1,
 		int w = -1,
 		int h = -1,
-		IntervalMapping intervalMapping = {});
+		IntervalMapping intervalMapping = IntervalMapping());
 
 	static Image2d<uint8_t> TensorsToImage(at::Tensor t, 
 		const TensorsToImageSettings& sets = DEFAULT_TENSOR_TO_IMAGE);

@@ -91,3 +91,17 @@ void MetricsVideo::Save(const std::string& filePath) const
 
     }
 }
+
+void MetricsVideo::CsiThresholds(torch::Tensor p, torch::Tensor t)
+{
+    //convert (B, T, C, H, W) to (B*T, C, H, W)
+    //p = p.flatten(0, 1);
+    //t = t.flatten(0, 1);
+
+    //convert (B, T, C, H, W) to (B, T * C, H, W)
+    p = p.reshape({ p.size(0), p.size(1) * p.size(2), p.size(3), p.size(4) });
+    t = t.reshape({ t.size(0), t.size(1) * t.size(2), t.size(3), t.size(4) });
+
+    MetricsImage::CsiThresholds(p, t);
+
+}
