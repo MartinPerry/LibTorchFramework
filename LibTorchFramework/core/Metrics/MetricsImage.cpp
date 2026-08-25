@@ -61,6 +61,20 @@ void MetricsImage::SetSavedImageCount(int c)
     this->keepImages = c;
 }
 
+void MetricsImage::SetCsiThresholds(const std::vector<float>& csiThresholds)
+{
+    this->csiThresholds = csiThresholds;
+
+    for (const float threshold : this->csiThresholds)
+    {
+        confMap[threshold] = { 
+            std::array<float, 3>{0.0f, 0.0f, 0.0f},
+            std::array<float, 3>{0.0f, 0.0f, 0.0f},
+            std::array<float, 3>{0.0f, 0.0f, 0.0f}
+        };            
+    }
+}
+
 std::unordered_map<std::string, float> MetricsImage::GetResultExtended() const 
 {
     const float SMOOTH = 1e-6;
@@ -111,6 +125,48 @@ std::unordered_map<std::string, float> MetricsImage::GetResultExtended() const
         res.try_emplace("csi", csi);
         res.try_emplace("mcr", mcr);
         res.try_emplace("acc", acc);
+    }
+
+
+    float csiMeanPool1 = 0.0f;
+    float csiMeanPool4 = 0.0f;
+    float csiMeanPool16 = 0.0f;
+
+    int thresholdCount = 0;
+
+
+    for (const float threshold : this->csiThresholds)
+    {
+        auto it = confMap.find(threshold);
+        if (it == confMap.end())
+        {
+            continue;
+        }
+
+        auto& c = it->second;
+
+        const float csiPool1 = this->ComputeCsi({ c[0][0], c[0][1], c[0][2] });
+        const float csiPool4 = this->ComputeCsi({ c[1][0], c[1][1], c[1][2] });
+        const float csiPool16 = this->ComputeCsi({ c[2][0], c[2][1], c[2][2] });
+
+        csiMeanPool1 += csiPool1;
+        csiMeanPool4 += csiPool4;
+        csiMeanPool16 += csiPool16;
+
+        ++thresholdCount;
+
+        const std::string thresholdStr = std::to_string(static_cast<int>(threshold));
+
+        res.try_emplace("csi_" + thresholdStr + "_pool1", csiPool1);
+        res.try_emplace("csi_" + thresholdStr + "_pool4", csiPool4);
+        res.try_emplace("csi_" + thresholdStr + "_pool16", csiPool16);
+    }
+
+    if (thresholdCount > 0)
+    {
+        res.try_emplace("csi_mean_pool1", csiMeanPool1 / static_cast<float>(thresholdCount));
+        res.try_emplace("csi_mean_pool4", csiMeanPool4 / static_cast<float>(thresholdCount));
+        res.try_emplace("csi_mean_pool16", csiMeanPool16 / static_cast<float>(thresholdCount));
     }
 
     return res;
@@ -236,6 +292,29 @@ void MetricsImage::Evaluate()
 
     //will rewrite pred and target values by threshold
     this->JaccardIndexBinary(pred, target);    
+
+
+    for (const float threshold : this->csiThresholds)
+    {
+        auto& c = confMap[threshold];
+
+        auto t0 = ComputeHitsMissesFas(this->pred, this->target, threshold);
+        auto t1 = ComputePooledConfusion(this->pred, this->target, threshold, 4, PoolType::MAX);
+        auto t2 = ComputePooledConfusion(this->pred, this->target, threshold, 16, PoolType::MAX);
+
+        c[0][0] += std::get<0>(t0);
+        c[0][1] += std::get<1>(t0);
+        c[0][2] += std::get<2>(t0);
+
+        c[1][0] += std::get<0>(t1);
+        c[1][1] += std::get<1>(t1);
+        c[1][2] += std::get<2>(t1);
+
+        c[2][0] += std::get<0>(t2);
+        c[2][1] += std::get<1>(t2);
+        c[2][2] += std::get<2>(t2);
+    }
+    
 }
 
 //==================================================================================
@@ -250,6 +329,8 @@ void MetricsImage::RunningRmseMae(torch::Tensor p, torch::Tensor t)
     runningMae += torch::abs(error).sum().item().toFloat();
     runningMse += error2.sum().item().toFloat();
 }
+
+//==================================================================================
 
 void MetricsImage::JaccardIndexBinary(torch::Tensor p, torch::Tensor t, bool mergeBatches)
 {
@@ -333,4 +414,70 @@ std::pair<torch::Tensor, torch::Tensor> MetricsImage::Iou(const torch::Tensor& p
     auto union_sum = uni.sum(1);
 
     return { intersection_sum, union_sum };
+}
+
+//==================================================================================
+
+std::tuple<float, float, float> MetricsImage::ComputeHitsMissesFas(const torch::Tensor& p, const torch::Tensor& t, double threshold) const
+{
+    torch::Tensor gtsBin = (t >= threshold).to(torch::kFloat32);
+    torch::Tensor predsBin = (p >= threshold).to(torch::kFloat32);
+
+    torch::Tensor hits = torch::sum(gtsBin * predsBin);
+    torch::Tensor misses = torch::sum(gtsBin * (1.0 - predsBin));
+    torch::Tensor fas = torch::sum((1.0 - gtsBin) * predsBin);
+
+    return { hits.item<float>(), misses.item<float>(), fas.item<float>() };
+}
+
+std::tuple<float, float, float> MetricsImage::ComputePooledConfusion(const torch::Tensor& p, const torch::Tensor& t,
+    double threshold, int64_t poolSize, PoolType mode) const
+{   
+    // Python:
+    // stride = math.ceil(pool_size / 4)
+    //
+    // Integer ceiling division:
+    // ceil(poolSize / 4) = (poolSize + 3) / 4
+    const int64_t stride = (poolSize + 3) / 4;
+
+    torch::Tensor pooledGts;
+    torch::Tensor pooledPreds;
+
+    if (mode == PoolType::MAX)
+    {
+        pooledGts = torch::max_pool2d(
+            t,
+            { poolSize, poolSize },
+            { stride, stride });
+
+        pooledPreds = torch::max_pool2d(
+            p,
+            { poolSize, poolSize },
+            { stride, stride });
+    }
+    else
+    {
+        pooledGts = torch::avg_pool2d(
+            t,
+            { poolSize, poolSize },
+            { stride, stride });
+
+        pooledPreds = torch::avg_pool2d(
+            p,
+            { poolSize, poolSize },
+            { stride, stride });
+    }
+
+    return this->ComputeHitsMissesFas(
+        pooledGts,
+        pooledPreds,
+        threshold);
+}
+
+float MetricsImage::ComputeCsi(std::tuple<float, float, float> hitMissFas) const
+{
+    auto [hits, misses, false_alarms] = hitMissFas;
+
+    auto csi = hits / (hits + misses + false_alarms + 1e-6);
+    return csi;
 }

@@ -29,14 +29,22 @@ public:
 
 	void SetSavedImageCount(int c);
 
+	void SetCsiThresholds(const std::vector<float>& csiThresholds);
+
 	std::unordered_map<std::string, float> GetResultExtended() const override;
 	void Save(const std::string& filePath) const override;
 
 	void Reset() override;
 
 protected:
-	MetricsType mType;
+	enum class PoolType 
+	{
+		MAX,
+		AVG
+	};
 
+	MetricsType mType;
+	
 	int keepImages;
 	std::list<std::tuple<torch::Tensor, torch::Tensor>> images;
 
@@ -55,6 +63,11 @@ protected:
 
 	float threshold;
 
+	using ConfusionMap = std::unordered_map<float, std::array<std::array<float, 3>, 3>>;
+
+	std::vector<float> csiThresholds;
+	ConfusionMap confMap;
+	
 	std::string BuildPath(const std::string& path,
 		int fileIndex,
 		const std::string& extension,
@@ -67,6 +80,11 @@ protected:
 	std::tuple<float, float, float, float> CalcIntersectUnions(torch::Tensor p, torch::Tensor t, bool mergeBatches) const;
 	std::pair<torch::Tensor, torch::Tensor> IouInverse(const torch::Tensor& p, const torch::Tensor& t) const;
 	std::pair<torch::Tensor, torch::Tensor> Iou(const torch::Tensor& p, const torch::Tensor& t) const;
+	
+	std::tuple<float, float, float> ComputeHitsMissesFas(const torch::Tensor& p, const torch::Tensor& t, double threshold) const;
+	std::tuple<float, float, float> ComputePooledConfusion(const torch::Tensor& p, const torch::Tensor& t,
+		double threshold, int64_t poolSize, PoolType mode) const;
+	float ComputeCsi(std::tuple<float, float, float> hitMissFas) const;
 
 	virtual void Evaluate() override;
 };

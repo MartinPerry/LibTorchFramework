@@ -64,8 +64,7 @@ torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch)
         if (this->metrics->CanProcess())
         {
             this->metrics->AddLoss(loss);
-            //metric.addAdditionalLoss(f"loss{i}", losses[i])
-
+            
             this->metrics->AddDataIndices(batch.GetDataIndices());
             this->metrics->AddPredictionTarget(result[0], batch.target);
         }

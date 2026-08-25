@@ -27,7 +27,7 @@ void MeteonetInputLoader::Load()
     int yearFrom = 2016;
     int yearTo = 2016;
        
-    int maxMonth = 1;// 12;
+    int maxMonth = 12;// 12;
 
     const std::vector<int> days = {
         31, 28, 31, 30, 31, 30,
@@ -129,7 +129,7 @@ std::vector<float> MeteonetInputLoader::LoadImage(const std::string& p) const
         MY_LOG_ERROR("File %s not found", p.c_str());
         return std::vector<float>(sets.imgChannelsCount * sets.imgW * sets.imgH, 0.0f);
     }
-    std::vector<uint8_t> buf;
+    std::vector<uint8_t> buf;    
     f.ReadAll(buf);
    
     Image2d<float> img = Image2d<float>::CreateFromRawMemory(buf.data(), buf.size());

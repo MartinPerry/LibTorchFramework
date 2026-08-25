@@ -85,6 +85,8 @@ namespace CustomScenarios::exPreCastTraining
 		sets.metricsInitFn = []() -> auto {
 			auto metr = std::make_shared<MetricsVideo>();
 
+			metr->SetCsiThresholds({ 19 / 255.0f, 28 / 255.0f, 35 / 255.0f, 40 / 255.0f, 47 / 255.0f });
+
 			TorchImageUtils::IntervalMapping intervalMapping;
 			intervalMapping.enabled = false;
 			//sets.intervalMapping.mapRange = TorchImageUtils::MappingRange<float>();
