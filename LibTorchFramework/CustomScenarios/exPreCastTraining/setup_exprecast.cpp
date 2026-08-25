@@ -107,8 +107,8 @@ namespace CustomScenarios::exPreCastTraining
 				
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);	
 		ilw->SetTrainValTestSplit(0.8, 0.0);
-		ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } },
-			settings.dataset.path, prevCount, futureCount);
+		//ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } },
+		//	settings.dataset.path, prevCount, futureCount);
 		ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TEST, loaderSets } },
 			settings.dataset.path, 		
 			prevCount, futureCount);
@@ -117,12 +117,15 @@ namespace CustomScenarios::exPreCastTraining
 		
 		// test
 		auto loader = ilw->GetLoader<MeteonetInputLoader>(RunMode::TRAIN);
-		loader->Load();
+		if (loader)
+		{
+			loader->Load();
 #ifdef _WIN32
-		loader->SaveSequence(0, "D://seq.png", "D://turbo.png");
+			loader->SaveSequence(0, "D://seq.png", "D://turbo.png");
 #else
-		loader->SaveSequence(0, "seq.png", "turbo.png");
+			loader->SaveSequence(0, "seq.png", "turbo.png");
 #endif
+		}
 		
 		//-------
 

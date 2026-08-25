@@ -185,6 +185,7 @@ void MetricsImage::Save(const std::string& filePath) const
         TorchImageUtils::TensorsToImageSettings sets;
         sets.borderSize = 5;
         sets.colorMappingFileName = colorMapping;
+        sets.intervalMapping.enabled = false;
 
         auto img = TorchImageUtils::TensorsToImage(rows, sets);
         std::string imgPath = this->BuildPath(filePath, static_cast<int>(i), "jpg", false);

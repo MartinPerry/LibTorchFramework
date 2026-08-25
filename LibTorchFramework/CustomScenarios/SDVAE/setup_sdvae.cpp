@@ -82,7 +82,7 @@ namespace CustomScenarios::SDVAETraining
 		auto decoded = m->decoder->forward(std::get<0>(encoded));
 		
 		TorchImageUtils::TensorsToImageSettings sets;
-		sets.intervalMapping = false;
+		sets.intervalMapping.enabled = false;
 
 		auto img = TorchImageUtils::TensorsToImage(decoded, sets);
 		img.Save("D://decoded.png");

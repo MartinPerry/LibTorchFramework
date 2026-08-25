@@ -269,7 +269,7 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 	int chanCount,
 	int w,
 	int h,
-	bool intervalMapping)
+	IntervalMapping intervalMapping)
 {
 			
 	if (chanCount == -1)
@@ -313,52 +313,68 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 	std::vector<float> flatCHW(rawData, rawData + t.numel());
 
 	// interval mapping / clamping
-	if (intervalMapping)
-	{
-		float minVal = std::numeric_limits<float>::infinity();
-		float maxVal = -std::numeric_limits<float>::infinity();
-		for (float v : flatCHW)
-		{
-			if (std::isnan(v))
-			{
-				continue;
-			}
-			if (v < minVal) minVal = v;
-			if (v > maxVal) maxVal = v;
-		}
+	if (intervalMapping.enabled)
+	{		
+		float minVal = std::numeric_limits<float>::max();
+		float maxVal = std::numeric_limits<float>::lowest();
 
-		if (minVal == std::numeric_limits<float>::infinity())
+		if (intervalMapping.mapRange.has_value() == false)
 		{
-			// all NaNs? set to zero
-			std::fill(flatCHW.begin(), flatCHW.end(), 0.0f);
-		}
-		else
-		{
-			float diff = maxVal - minVal;
-			if (diff == 0.0f)
+			for (float v : flatCHW)
 			{
-				// if both are inside [0,1] keep values, otherwise map to zero-based
-				if ((minVal < 0.0f) || (maxVal > 1.0f))
+				if (std::isnan(v))
 				{
-					for (auto& v : flatCHW)
+					continue;
+				}
+				if (v < minVal) minVal = v;
+				if (v > maxVal) maxVal = v;
+			}
+
+			if (minVal == std::numeric_limits<float>::max())
+			{
+				// all NaNs? set to zero
+				std::fill(flatCHW.begin(), flatCHW.end(), 0.0f);
+			}
+			else
+			{				
+				if (minVal == maxVal)
+				{
+					//minVal and maxVal are same
+					// if both are inside [0,1] keep values, otherwise map to zero-based
+
+					if (minVal < 0.0f)
 					{
-						v = v - minVal;
+						std::fill(flatCHW.begin(), flatCHW.end(), 0.0f);
 					}
-					// now all zero
+					if (maxVal > 1.0f)
+					{
+						std::fill(flatCHW.begin(), flatCHW.end(), 1.0f);
+					}
+					else
+					{
+						// values already in [0,1] -> keep
+					}
 				}
 				else
 				{
-					// values already in [0,1] -> keep
-				}
-			}
-			else if ((minVal != 0.0f) && (diff != 1.0f))
-			{
-				for (auto& v : flatCHW)
-				{
-					v = (v - minVal) / diff;
+					for (auto& v : flatCHW)
+					{
+						v = Image2d<float>::MapRange(minVal, maxVal, 0.0f, 1.0f, v);
+					}
 				}
 			}
 		}
+		else
+		{
+			for (auto& v : flatCHW)
+			{
+				v = Image2d<float>::MapRange(
+					intervalMapping.mapRange->dataMin, intervalMapping.mapRange->dataMax,
+					intervalMapping.mapRange->minMapTo, intervalMapping.mapRange->maxMapTo,
+					v
+				);
+			}
+		}		
 	}
 	else
 	{
