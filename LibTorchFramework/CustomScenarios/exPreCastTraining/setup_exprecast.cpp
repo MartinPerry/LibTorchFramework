@@ -84,7 +84,17 @@ namespace CustomScenarios::exPreCastTraining
 		sets.batchSize = settings.training.batchSize;
 		sets.metricsInitFn = []() -> auto {
 			auto metr = std::make_shared<MetricsVideo>();
-			//metr->SetColorMappingFileName("D://turbo.png");
+
+			TorchImageUtils::IntervalMapping intervalMapping;
+			intervalMapping.enabled = false;
+			//sets.intervalMapping.mapRange = TorchImageUtils::MappingRange<float>();
+			metr->SetDataMapping(intervalMapping);
+#ifdef _WIN32
+			metr->SetColorMappingFileName("D://turbo.png");
+#else
+			metr->SetColorMappingFileName("turbo.png");
+#endif
+
 			return metr;
 		};
 		sets.lossFn = [&](const auto& output, const auto& targets) {
@@ -106,6 +116,7 @@ namespace CustomScenarios::exPreCastTraining
 		loaderSets.subsetSize = settings.dataset.subsetSize;
 				
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);	
+		ilw->SetShuffleSeed(456);
 		ilw->SetTrainValTestSplit(0.8, 0.0);
 		//ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } },
 		//	settings.dataset.path, prevCount, futureCount);

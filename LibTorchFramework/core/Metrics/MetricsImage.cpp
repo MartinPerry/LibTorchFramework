@@ -46,9 +46,19 @@ void MetricsImage::Reset()
     pixelsCount = 0;
 }
 
+void MetricsImage::SetDataMapping(const TorchImageUtils::IntervalMapping& intervalMapping)
+{
+    this->intervalMapping = intervalMapping;
+}
+
 void MetricsImage::SetColorMappingFileName(std::optional<std::string> colorMappingFileName)
 {
     this->colorMapping = colorMappingFileName;
+}
+
+void MetricsImage::SetSavedImageCount(int c)
+{
+    this->keepImages = c;
 }
 
 std::unordered_map<std::string, float> MetricsImage::GetResultExtended() const 
@@ -184,8 +194,8 @@ void MetricsImage::Save(const std::string& filePath) const
         
         TorchImageUtils::TensorsToImageSettings sets;
         sets.borderSize = 5;
-        sets.colorMappingFileName = colorMapping;
-        sets.intervalMapping.enabled = false;
+        sets.colorMappingFileName = this->colorMapping;
+        sets.intervalMapping = this->intervalMapping;
 
         auto img = TorchImageUtils::TensorsToImage(rows, sets);
         std::string imgPath = this->BuildPath(filePath, static_cast<int>(i), "jpg", false);
@@ -202,7 +212,7 @@ void MetricsImage::AddImages(torch::Tensor p, torch::Tensor t)
         return;
     }
 
-    images.push_back({ t.cpu(), p.cpu()});
+    images.emplace_back(t.cpu(), p.cpu());
     if (static_cast<int>(images.size()) > keepImages)
     {
         images.pop_front();

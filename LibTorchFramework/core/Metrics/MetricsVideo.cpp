@@ -55,7 +55,8 @@ void MetricsVideo::Save(const std::string& filePath) const
 
         TorchImageUtils::TensorsToImageSettings sets;
         sets.borderSize = 5;
-        sets.colorMappingFileName = colorMapping;
+        sets.colorMappingFileName = this->colorMapping;
+        sets.intervalMapping = this->intervalMapping;
 
         auto imgs = TorchImageUtils::TensorsToImages(rows, sets);
         std::string imgPath = this->BuildPath(filePath, static_cast<int>(i), "gif", false);

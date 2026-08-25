@@ -32,6 +32,7 @@ public:
 
 	const std::vector<uint16_t>& GetShape() const;
 
+	void SetShuffleSeed(std::optional<int>);
 	void SetTrainValTestSplit(float trainRatio, float valRatio, 
 		std::optional<float> testRatio = std::nullopt);
 

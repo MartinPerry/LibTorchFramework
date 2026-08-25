@@ -52,6 +52,11 @@ const std::vector<uint16_t>& InputLoadersWrapper::GetShape() const
 	return this->shape;
 }
 
+void InputLoadersWrapper::SetShuffleSeed(std::optional<int> seed)
+{
+	this->shuffleSeed = seed;
+}
+
 /// <summary>
 /// Set ratios for train/valid/test split
 /// 

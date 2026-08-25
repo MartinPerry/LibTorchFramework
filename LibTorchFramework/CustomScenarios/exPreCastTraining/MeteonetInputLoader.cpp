@@ -27,7 +27,7 @@ void MeteonetInputLoader::Load()
     int yearFrom = 2016;
     int yearTo = 2016;
        
-    int maxMonth = 12;// 12;
+    int maxMonth = 1;// 12;
 
     const std::vector<int> days = {
         31, 28, 31, 30, 31, 30,
@@ -108,7 +108,7 @@ void MeteonetInputLoader::Load()
         for (size_t j = i; j < i + seqLen; j++)
         {           
             d.sequenceFiles.emplace_back(allFiles[j]);
-        }
+        }        
     }
 
     data = this->BuildSplits(data);
@@ -131,7 +131,7 @@ std::vector<float> MeteonetInputLoader::LoadImage(const std::string& p) const
     }
     std::vector<uint8_t> buf;
     f.ReadAll(buf);
-
+   
     Image2d<float> img = Image2d<float>::CreateFromRawMemory(buf.data(), buf.size());
 
     
@@ -153,6 +153,8 @@ void MeteonetInputLoader::SaveSequence(size_t index, const std::string& outputNa
     TorchImageUtils::TensorsToImageSettings sets;
     sets.borderSize = 2;
     sets.colorMappingFileName = colorMappingFileName;
+    sets.intervalMapping.enabled = false;
+    //sets.intervalMapping.mapRange = TorchImageUtils::MappingRange<float>();
 
     auto img = TorchImageUtils::TensorsToImage(seq, sets);    
     img.Save(outputName.c_str());

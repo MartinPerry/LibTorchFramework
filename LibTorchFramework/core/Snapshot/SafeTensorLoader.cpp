@@ -30,7 +30,7 @@ TensorMap SafeTensorLoader::LoadSafetensors(const std::filesystem::path& dataPat
 TensorMap SafeTensorLoader::LoadSafetensors(const std::filesystem::path& dataPath,
 	std::function<std::string(const std::string&)> remapName)
 {
-	MY_LOG_INFO("Load safetensors file: %s", dataPath.c_str());
+	MY_LOG_INFO("Load safetensors file: %s", dataPath.string().c_str());
 
 	std::vector<std::filesystem::path> parts;
 	
@@ -71,7 +71,7 @@ LoadStateDictReport SafeTensorLoader::LoadModel(const std::filesystem::path& dat
 	std::function<std::string(const std::string&)> remapName)
 {	
 
-	MY_LOG_INFO("Load model from safetensors: %s", dataPath.c_str());
+	MY_LOG_INFO("Load model from safetensors: %s", dataPath.string().c_str());
 
 	std::vector<std::filesystem::path> parts;
 

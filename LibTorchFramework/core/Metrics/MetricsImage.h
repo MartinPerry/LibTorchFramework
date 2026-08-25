@@ -8,6 +8,7 @@
 
 #include <torch/torch.h>
 
+#include "../../Utils/TorchImageUtils.h"
 #include "./MetricsDefault.h"
 
 class MetricsImage : public MetricsDefault
@@ -23,7 +24,10 @@ public:
 	MetricsImage(MetricsType mType);
 	~MetricsImage() = default;
 
+	void SetDataMapping(const TorchImageUtils::IntervalMapping& intervalMapping);
 	void SetColorMappingFileName(std::optional<std::string> colorMappingFileName);
+
+	void SetSavedImageCount(int c);
 
 	std::unordered_map<std::string, float> GetResultExtended() const override;
 	void Save(const std::string& filePath) const override;
@@ -36,6 +40,7 @@ protected:
 	int keepImages;
 	std::list<std::tuple<torch::Tensor, torch::Tensor>> images;
 
+	TorchImageUtils::IntervalMapping intervalMapping;
 	std::optional<std::string> colorMapping;
 
 	float iPosAll; //intersection all
