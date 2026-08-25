@@ -104,7 +104,7 @@ public:
 		int chanCount = -1,
 		int w = -1,
 		int h = -1,
-		IntervalMapping intervalMapping = IntervalMapping());
+		IntervalMapping intervalMapping = {});
 
 	static Image2d<uint8_t> TensorsToImage(at::Tensor t, 
 		const TensorsToImageSettings& sets = DEFAULT_TENSOR_TO_IMAGE);
