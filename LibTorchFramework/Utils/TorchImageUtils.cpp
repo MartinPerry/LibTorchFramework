@@ -274,7 +274,8 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 			
 	if (chanCount == -1)
 	{
-		chanCount = t.dim();
+		//chanCount = t.dim();
+		chanCount = static_cast<int>(t.size(0));
 	}
 
 	if (w == -1)

@@ -71,6 +71,8 @@ void MetricsDefault::Save(const std::string& filePath) const
 
 	free(json_str);
 	cJSON_Delete(root);
+
+	malloc_trim(0);
 }
 
 /// <summary>
@@ -107,20 +109,17 @@ void MetricsDefault::AddDataIndices(const std::vector<int64_t>& indices)
 }
 
 void MetricsDefault::AddPredictionTarget(torch::Tensor pred, torch::Tensor target, bool firstDimensionIsBatch)
-{
-	this->pred = pred.detach();
-	this->target = target.detach();
-
+{	
 	if (firstDimensionIsBatch)
 	{
-		batchesCount += this->pred.size(0);
+		batchesCount += pred.size(0);
 	}
 	else
 	{		
 		batchesCount += 1;
 	}
 
-	this->Evaluate();
+	this->Evaluate(pred.detach(), target.detach());
 }
 
 float MetricsDefault::GetMeanLoss() const
@@ -141,6 +140,6 @@ float MetricsDefault::GetMeanLoss() const
 /// However, we may require only loss values and nothing more
 /// In that case, this can be left empty
 /// </summary>
-void MetricsDefault::Evaluate()
+void MetricsDefault::Evaluate(torch::Tensor pred, torch::Tensor target)
 {
 }

@@ -87,7 +87,7 @@ protected:
 		double threshold, int64_t poolSize, PoolType mode) const;
 	float ComputeCsi(std::tuple<float, float, float> hitMissFas) const;
 
-	virtual void Evaluate() override;
+	virtual void Evaluate(torch::Tensor pred, torch::Tensor target) override;
 };
 
 #endif

@@ -270,19 +270,19 @@ void MetricsImage::AddImages(torch::Tensor p, torch::Tensor t)
 
     images.emplace_back(t.cpu(), p.cpu());
     if (static_cast<int>(images.size()) > keepImages)
-    {
+    {        
         images.pop_front();
     }
 }
 
-void MetricsImage::Evaluate()
+void MetricsImage::Evaluate(torch::Tensor pred, torch::Tensor target)
 {
     if (this->predEval)
     {
-        this->pred = this->predEval->Convert(this->pred);
+        pred = this->predEval->Convert(pred);
     }
 
-    this->AddImages(this->pred, this->target);
+    this->AddImages(pred, target);
 
     //todo: calculate psnr, ssim etc ?
 

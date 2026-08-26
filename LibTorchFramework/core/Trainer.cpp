@@ -132,8 +132,9 @@ void Trainer::RunOptimizerAutoCast(std::shared_ptr<torch::optim::Optimizer> opti
     }
 
 #ifdef _DEBUG
-    auto p = model->parameters().front();
-    auto before = p.detach().clone();
+    //to check if gradient is propagated and weights are changing
+    //auto p = model->parameters().front();
+    //auto before = p.detach().clone();
 #endif
 
     scaler->step(*optimizer);
@@ -142,8 +143,8 @@ void Trainer::RunOptimizerAutoCast(std::shared_ptr<torch::optim::Optimizer> opti
     optimizer->zero_grad();    
 
 #ifdef _DEBUG
-    MY_LOG_INFO("grad norm: %f", p.grad().norm().item<float>());
-    MY_LOG_INFO("update norm: %f", (p.detach() - before).norm().item<float>());
+    //MY_LOG_INFO("grad norm: %f", p.grad().norm().item<float>());
+    //MY_LOG_INFO("update norm: %f", (p.detach() - before).norm().item<float>());
 #endif
 }
 

@@ -44,11 +44,8 @@ protected:
 	std::vector<int64_t> dataIndices;
 
 	std::shared_ptr<PredictionEvaluator> predEval;
-	
-	torch::Tensor pred; 
-	torch::Tensor target;
-
-	virtual void Evaluate();
+		
+	virtual void Evaluate(torch::Tensor pred, torch::Tensor target);
 };
 
 #endif
