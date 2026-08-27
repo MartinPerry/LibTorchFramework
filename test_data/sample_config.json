@@ -23,7 +23,7 @@
     "wights_linux": "/data/perry/gp/pretrained_meteonet.safetensors",
     "weights_uni": "d:\\python\\exPreCast-main\\exPreCast-main\\checkpoints\\pretrained_meteonet.safetensors",
 
-    "path": "D://CppTorchModels",
+    "path": "D://CppTorchModels//[date]",
     "enable_save": true,
     "enable_load": false
   }

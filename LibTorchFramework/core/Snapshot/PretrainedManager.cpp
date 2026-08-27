@@ -1,12 +1,12 @@
 #include "./PretrainedManager.h"
 
-#include "PretrainedManager.h"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <ctime>
 #include <sstream>
 #include <algorithm>
+#include <format>
 
 #include <Utils/Logger.h>
 
@@ -30,10 +30,35 @@ std::time_t to_time_t(std::filesystem::file_time_type ft)
     return system_clock::to_time_t(sctp);
 }
 
+std::filesystem::path replaceDate(std::filesystem::path path)
+{
+    const auto now = std::chrono::floor<std::chrono::minutes>(std::chrono::system_clock::now());
+    const std::string date = std::format("{:%Y-%m-%dT%H:%M}", now); // UTC
+
+    std::string s = path.string();
+
+    if (const auto pos = s.find("[date]"); pos != std::string::npos)
+    {
+        s.replace(pos, 6, date);
+    }
+
+
+    return std::filesystem::path(s);
+}
+
 //==============================================================
 //  PretrainedManager Implementation
 //==============================================================
 
+/// <summary>
+/// Initialize model weights manager
+/// Directory can contains variable [date] that will be replaced with Y-m-dTH:M in UTC
+/// snasphot is name of snasphot that we want to load (default: "latest")
+/// prefix is added bafore model name if set (default: "")
+/// </summary>
+/// <param name="directory"></param>
+/// <param name="snapshot"></param>
+/// <param name="prefix"></param>
 PretrainedManager::PretrainedManager(const std::string& directory, 
     std::string snapshot, const std::string& prefix) : 
     snapshot(snapshot),
@@ -41,6 +66,8 @@ PretrainedManager::PretrainedManager(const std::string& directory,
     modelsDir(directory),
     freezeInfo(nullptr)
 {
+    modelsDir = replaceDate(modelsDir);
+
     std::filesystem::create_directories(modelsDir);
     if (snapshot != "latest")
     {
@@ -199,24 +226,21 @@ std::string PretrainedManager::GetModelFileName(const AbstractModel* model) cons
     return fileName;
 }
 
-std::string PretrainedManager::GetTimeStampFile(const std::string& filePath, const std::tm& date) const 
+std::string PretrainedManager::GetTimeStampFile(const std::string& filePath, const std::chrono::system_clock::time_point& date) const
 {
-    std::ostringstream oss;
-    oss << std::put_time(&date, "%Y_%m_%d_%H_%M");
-    auto pos = filePath.find_last_of('.');
+    const std::chrono::zoned_time localTime{ std::chrono::current_zone(), date };
+    const std::string timestamp = std::format("{:%Y_%m_%d_%H_%M}", localTime);
+
+    const auto pos = filePath.find_last_of('.');
     if (pos == std::string::npos)
-    {
-        return filePath + "_" + oss.str();
-    }
-    return filePath.substr(0, pos) + "_" + oss.str() + filePath.substr(pos);
+        return filePath + "_" + timestamp;
+
+    return filePath.substr(0, pos) + "_" + timestamp + filePath.substr(pos);
 }
 
-std::string PretrainedManager::AddTimeStampToFilePath(const std::string& filePath) const 
+std::string PretrainedManager::AddTimeStampToFilePath(const std::string& filePath) const
 {
-    auto now = std::chrono::system_clock::now();
-    std::time_t t = std::chrono::system_clock::to_time_t(now);
-    std::tm tm = *std::localtime(&t);
-    return GetTimeStampFile(filePath, tm);
+    return GetTimeStampFile(filePath, std::chrono::system_clock::now());
 }
 
 std::string PretrainedManager::GetLatestTimeStampFile(const std::string& filePath) const 

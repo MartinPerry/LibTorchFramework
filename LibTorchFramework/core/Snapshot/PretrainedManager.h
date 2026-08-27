@@ -57,7 +57,7 @@ private:
 
     // Helpers    
     std::string GetModelFileName(const AbstractModel* model) const;
-    std::string GetTimeStampFile(const std::string& filePath, const std::tm& date) const;
+    std::string GetTimeStampFile(const std::string& filePath, const std::chrono::system_clock::time_point& date) const;
     std::string AddTimeStampToFilePath(const std::string& filePath) const;
     std::string GetLatestTimeStampFile(const std::string& filePath) const;
     bool CanLoadFile(const std::string& path) const;
