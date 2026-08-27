@@ -18,6 +18,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g -fno-omit-frame-pointer")
 
+add_compile_options(-Wno-unused)
+
 set(LIBTORCH_FRAMEWORK_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH
     "Directory containing LibTorchFramework sources and main.cpp")
 

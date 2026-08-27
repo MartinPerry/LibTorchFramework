@@ -72,7 +72,6 @@ void MetricsDefault::Save(const std::string& filePath) const
 	free(json_str);
 	cJSON_Delete(root);
 
-	malloc_trim(0);
 }
 
 /// <summary>
