@@ -6,7 +6,7 @@ project(LibTorchFramework LANGUAGES CXX)
 #   -A x64 ^
 #   -DLIBTORCH_FRAMEWORK_SOURCE_DIR=D:\path\to\LibTorchFramework ^
 #   -DLIBTORCH_CONFIGURATION=Release ^
-#   -DLIBTORCH_ROOT=D:\path\to\libtorch\Release\libtorch_2.10.0 ^
+#   -DLIBTORCH_ROOT=D:\path\to\libtorch\Release\libtorch_2.13.0 ^
 #   -DPLAYGROUND_ROOT=D:\Martin\Programming\test\Playground ^
 #   -DPLAYGROUND_LIBRARY_RELEASE=D:\path\to\Playground.lib
 
@@ -23,13 +23,15 @@ add_compile_options(-Wno-unused)
 set(LIBTORCH_FRAMEWORK_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH
     "Directory containing LibTorchFramework sources and main.cpp")
 
-set(LIBTORCH_VERSION "2.10.0" CACHE STRING "Version suffix of the local LibTorch directory")
+set(LIBTORCH_VERSION "2.13.0" CACHE STRING "Version suffix of the local LibTorch directory")
 set(LIBTORCH_CONFIGURATION "Release" CACHE STRING "Local LibTorch directory: Debug or Release")
 set_property(CACHE LIBTORCH_CONFIGURATION PROPERTY STRINGS Debug Release)
 set(LIBTORCH_ROOT "${LIBTORCH_FRAMEWORK_SOURCE_DIR}/../libtorch/${LIBTORCH_CONFIGURATION}/libtorch_${LIBTORCH_VERSION}"
     CACHE PATH "Root of the LibTorch distribution containing share/cmake/Torch")
 
 option(LIBTORCH_FRAMEWORK_USE_CUDA "Enable CUDA-backed LibTorch code" OFF)
+set(LIBTORCH_CUDA_DEPENDENCY_DIRS "" CACHE STRING
+    "Semicolon-separated runtime library directories required by CUDA LibTorch")
 
 if(LIBTORCH_FRAMEWORK_USE_CUDA)
     include(CheckLanguage)
@@ -251,9 +253,12 @@ if(MSVC)
     target_compile_options(LibTorchFramework PRIVATE /W3 /Zc:preprocessor)
     set_property(TARGET LibTorchFramework PROPERTY
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
+
+if(MSVC AND LIBTORCH_FRAMEWORK_USE_CUDA)
     target_link_options(LibTorchFramework PRIVATE
         "/INCLUDE:?warp_size@cuda@at@@YAHXZ")
-else()
+elseif(NOT MSVC)
     target_compile_options(LibTorchFramework PRIVATE -Wall -Wextra)
 endif()
 
@@ -274,67 +279,46 @@ if(LIBTORCH_FRAMEWORK_USE_CUDA)
         $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
         $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>
     )
+
+    if(UNIX AND LIBTORCH_CUDA_DEPENDENCY_DIRS)
+        # DT_RPATH is inherited by indirect dependencies such as
+        # libtorch_cuda.so -> libcudnn.so.9. DT_RUNPATH is not.
+        target_link_options(LibTorchFramework PRIVATE
+            "LINKER:--disable-new-dtags")
+
+        foreach(_cuda_dependency_dir IN LISTS LIBTORCH_CUDA_DEPENDENCY_DIRS)
+            if(NOT IS_DIRECTORY "${_cuda_dependency_dir}")
+                message(FATAL_ERROR
+                    "LibTorch CUDA dependency directory does not exist: ${_cuda_dependency_dir}")
+            endif()
+
+            target_link_options(LibTorchFramework PRIVATE
+                "LINKER:-rpath-link,${_cuda_dependency_dir}")
+        endforeach()
+
+        target_link_directories(LibTorchFramework PRIVATE
+            ${LIBTORCH_CUDA_DEPENDENCY_DIRS})
+        set_property(TARGET LibTorchFramework APPEND PROPERTY BUILD_RPATH
+            "${LIBTORCH_ROOT}/lib;${LIBTORCH_CUDA_DEPENDENCY_DIRS}")
+    endif()
 endif()
 
-# Torch::Torch supplies the normal transitive dependency graph. These explicit
-# entries also mirror the MSVC auto-link directives used by the source and make
-# the same dependencies visible to non-MSVC linkers.
-target_link_directories(LibTorchFramework PRIVATE "${LIBTORCH_ROOT}/lib")
-if(TARGET Torch::Torch)
-    target_link_libraries(LibTorchFramework PRIVATE Torch::Torch)
-else()
-    target_link_libraries(LibTorchFramework PRIVATE ${TORCH_LIBRARIES})
-endif()
+# TorchConfig.cmake owns LibTorch's dependency graph.  In particular, libraries
+# such as dnnl, kineto, pthreadpool, and XNNPACK are implementation details and
+# are not guaranteed to be separate files in every LibTorch release.
+target_link_libraries(LibTorchFramework PRIVATE ${TORCH_LIBRARIES})
 if(TORCH_CXX_FLAGS)
     separate_arguments(_torch_cxx_flags NATIVE_COMMAND "${TORCH_CXX_FLAGS}")
     target_compile_options(LibTorchFramework PRIVATE ${_torch_cxx_flags})
 endif()
 
-
-find_package(ICU REQUIRED COMPONENTS uc i18n)
-find_package(JPEG REQUIRED)
-find_package(PNG REQUIRED)
-
-find_library(TURBOJPEG_LIBRARY NAMES turbojpeg REQUIRED)
-find_library(WEBP_LIBRARY NAMES webp REQUIRED)
-
-
 target_link_libraries(LibTorchFramework PRIVATE
     Playground::Playground
-    c10
-    cpuinfo
-    dnnl
-    kineto
-    pthreadpool
-    torch
-    torch_cpu
-    XNNPACK	   
 )
 
-if(LIBTORCH_FRAMEWORK_USE_CUDA)
-    target_link_libraries(LibTorchFramework PRIVATE
-        c10_cuda
-        torch_cuda
-        CUDA::cudart
-    )
-
-    if(WIN32)
-        target_link_libraries(LibTorchFramework PRIVATE caffe2_nvrtc)
-    endif()
-endif()
-
-if(WIN32)
-    target_link_libraries(LibTorchFramework PRIVATE		
-        $<$<CONFIG:Debug>:libprotobufd>
-        $<$<CONFIG:Debug>:libprotocd>
-        $<$<NOT:$<CONFIG:Debug>>:libprotobuf>
-        $<$<NOT:$<CONFIG:Debug>>:libprotoc>
-    )
-else()
+if(NOT WIN32)
     target_link_libraries(LibTorchFramework PRIVATE
 		ICU::uc
-		ICU::i18n		
-        protobuf
-        protoc
+		ICU::i18n
     )
 endif()

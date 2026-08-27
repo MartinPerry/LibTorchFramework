@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
 sudo apt-get install -y \
     build-essential \
     cmake \
@@ -7,8 +11,7 @@ sudo apt-get install -y \
     pkg-config \
 	libicu-dev \
 	libprotobuf-dev \
-	protobuf-compiler \
-	cudnn9-cuda-13
+	protobuf-compiler
 
 LIBTORCH_FRAMEWORK_DIR="/mnt/e/Programming/Cpp/LibTorchFramework"
 PLAYGROUND_DIR="/mnt/d/Martin/Programming/test/Playground"
@@ -16,7 +19,7 @@ PLAYGROUND_DIR="/mnt/d/Martin/Programming/test/Playground"
 # Override these on the command line when another release or CUDA build is
 # needed, for example:
 #   LIBTORCH_VERSION=2.11.0 LIBTORCH_VARIANT=cu130 ./build_debian.sh
-LIBTORCH_VERSION="${LIBTORCH_VERSION:-2.10.0}"
+LIBTORCH_VERSION="${LIBTORCH_VERSION:-2.13.0}"
 LIBTORCH_VARIANT="${LIBTORCH_VARIANT:-cu130}"
 #LIBTORCH_VARIANT="cpu"
 
@@ -120,11 +123,120 @@ EOF
     fi
 
     export PATH="${CUDA_ROOT}/bin:${PATH}"
-    export LD_LIBRARY_PATH="${CUDA_ROOT}/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+
+    # LibTorch's Linux CUDA archive does not contain all NVIDIA runtimes.
+    # Keep these versions aligned with PyTorch 2.13's CUDA 13.0 build.
+    CUDNN_VERSION="${CUDNN_VERSION:-9.20.0.48}"
+    CUSPARSELT_VERSION="${CUSPARSELT_VERSION:-0.8.1.1}"
+    NCCL_DEBIAN_VERSION="${NCCL_DEBIAN_VERSION:-2.29.7-1+cuda13.2}"
+    NVSHMEM_VERSION="${NVSHMEM_VERSION:-3.4.5}"
+    CUDA_DEPS_DIR="${LIBTORCH_BASE}/cuda_deps_cudnn-${CUDNN_VERSION}_cusparselt-${CUSPARSELT_VERSION}_nvshmem-${NVSHMEM_VERSION}"
+
+    CUDNN_DIR="${CUDA_DEPS_DIR}/cudnn"
+    CUSPARSELT_DIR="${CUDA_DEPS_DIR}/cusparselt"
+    NCCL_DIR="${CUDA_DEPS_DIR}/nccl"
+    NVSHMEM_DIR="${CUDA_DEPS_DIR}/nvshmem"
+    CUDNN_LIB_DIR="${CUDNN_DIR}/lib"
+    CUSPARSELT_LIB_DIR="${CUSPARSELT_DIR}/lib"
+    NCCL_LIB_DIR="${NCCL_DIR}/usr/lib/x86_64-linux-gnu"
+    NVSHMEM_LIB_DIR="${NVSHMEM_DIR}/lib"
+
+    install_nvidia_redist() {
+        local archive_name="$1"
+        local archive_url="$2"
+        local destination="$3"
+        local expected_library="$4"
+
+        if [[ -e "${expected_library}" ]]; then
+            return
+        fi
+
+        mkdir -p "${destination}"
+        local redist_download_dir
+        redist_download_dir="$(mktemp -d "${LIBTORCH_BASE}/.cuda-redist-download.XXXXXX")"
+        trap 'rm -rf "${redist_download_dir}"' EXIT
+
+        echo "Downloading ${archive_name}"
+        curl --fail --location --retry 3 \
+            --output "${redist_download_dir}/${archive_name}.tar.xz" \
+            "${archive_url}/${archive_name}.tar.xz"
+        tar -xJf "${redist_download_dir}/${archive_name}.tar.xz" \
+            --strip-components=1 \
+            -C "${destination}"
+
+        if [[ ! -e "${expected_library}" ]]; then
+            echo "Archive did not provide expected library: ${expected_library}" >&2
+            exit 1
+        fi
+
+        rm -rf "${redist_download_dir}"
+        trap - EXIT
+    }
+
+    install_nccl_debian_runtime() {
+        if [[ -e "${NCCL_LIB_DIR}/libnccl.so.2" ]]; then
+            return
+        fi
+
+        mkdir -p "${NCCL_DIR}"
+        local nccl_download_dir
+        local nccl_package
+        nccl_download_dir="$(mktemp -d "${LIBTORCH_BASE}/.nccl-download.XXXXXX")"
+        trap 'rm -rf "${nccl_download_dir}"' EXIT
+
+        echo "Downloading libnccl2 ${NCCL_DEBIAN_VERSION}"
+        (
+            cd "${nccl_download_dir}"
+            apt-get download "libnccl2=${NCCL_DEBIAN_VERSION}"
+        )
+        nccl_package="$(find "${nccl_download_dir}" -maxdepth 1 -type f \
+            -name 'libnccl2_*.deb' -print -quit)"
+        if [[ -z "${nccl_package}" ]]; then
+            echo "The downloaded NCCL Debian package was not found" >&2
+            exit 1
+        fi
+
+        dpkg-deb -x "${nccl_package}" "${NCCL_DIR}"
+        if [[ ! -e "${NCCL_LIB_DIR}/libnccl.so.2" ]]; then
+            echo "NCCL package did not provide ${NCCL_LIB_DIR}/libnccl.so.2" >&2
+            exit 1
+        fi
+
+        rm -rf "${nccl_download_dir}"
+        trap - EXIT
+    }
+
+    CUDNN_ARCHIVE="cudnn-linux-x86_64-${CUDNN_VERSION}_cuda13-archive"
+    install_nvidia_redist \
+        "${CUDNN_ARCHIVE}" \
+        "https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-x86_64" \
+        "${CUDNN_DIR}" \
+        "${CUDNN_LIB_DIR}/libcudnn.so.9"
+
+    CUSPARSELT_ARCHIVE="libcusparse_lt-linux-x86_64-${CUSPARSELT_VERSION}_cuda13-archive"
+    install_nvidia_redist \
+        "${CUSPARSELT_ARCHIVE}" \
+        "https://developer.download.nvidia.com/compute/cusparselt/redist/libcusparse_lt/linux-x86_64" \
+        "${CUSPARSELT_DIR}" \
+        "${CUSPARSELT_LIB_DIR}/libcusparseLt.so.0"
+
+    NVSHMEM_ARCHIVE="libnvshmem-linux-x86_64-${NVSHMEM_VERSION}_cuda13-archive"
+    install_nvidia_redist \
+        "${NVSHMEM_ARCHIVE}" \
+        "https://developer.download.nvidia.com/compute/nvshmem/redist/libnvshmem/linux-x86_64" \
+        "${NVSHMEM_DIR}" \
+        "${NVSHMEM_LIB_DIR}/libnvshmem_host.so.3"
+
+    install_nccl_debian_runtime
+
+    CUDA_DEPENDENCY_DIRS="${CUDNN_LIB_DIR};${CUSPARSELT_LIB_DIR};${NCCL_LIB_DIR};${NVSHMEM_LIB_DIR}"
+    CUDA_DEPENDENCY_LIBRARY_PATH="${CUDNN_LIB_DIR}:${CUSPARSELT_LIB_DIR}:${NCCL_LIB_DIR}:${NVSHMEM_LIB_DIR}"
+    export LD_LIBRARY_PATH="${CUDA_DEPENDENCY_LIBRARY_PATH}:${CUDA_ROOT}/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
     CMAKE_CUDA_ARGS=(
         "-DCMAKE_CUDA_COMPILER=${CUDA_ROOT}/bin/nvcc"
         "-DCUDAToolkit_ROOT=${CUDA_ROOT}"
         "-DCUDA_TOOLKIT_ROOT_DIR=${CUDA_ROOT}"
+        "-DLIBTORCH_CUDA_DEPENDENCY_DIRS=${CUDA_DEPENDENCY_DIRS}"
     )
 fi
 
