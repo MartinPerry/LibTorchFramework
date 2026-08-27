@@ -30,8 +30,15 @@ set(LIBTORCH_ROOT "${LIBTORCH_FRAMEWORK_SOURCE_DIR}/../libtorch/${LIBTORCH_CONFI
     CACHE PATH "Root of the LibTorch distribution containing share/cmake/Torch")
 
 option(LIBTORCH_FRAMEWORK_USE_CUDA "Enable CUDA-backed LibTorch code" OFF)
+option(LIBTORCH_FRAMEWORK_USE_NCCL "Enable direct NCCL API support" OFF)
 set(LIBTORCH_CUDA_DEPENDENCY_DIRS "" CACHE STRING
     "Semicolon-separated runtime library directories required by CUDA LibTorch")
+set(LIBTORCH_NCCL_ROOT "" CACHE PATH
+    "Root containing NCCL include and library directories")
+
+if(LIBTORCH_FRAMEWORK_USE_NCCL AND NOT LIBTORCH_FRAMEWORK_USE_CUDA)
+    message(FATAL_ERROR "Direct NCCL support requires LIBTORCH_FRAMEWORK_USE_CUDA=ON")
+endif()
 
 if(LIBTORCH_FRAMEWORK_USE_CUDA)
     include(CheckLanguage)
@@ -247,7 +254,8 @@ target_compile_definitions(LibTorchFramework PRIVATE
     $<$<CONFIG:Debug>:_DEBUG>
     $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
     $<$<NOT:$<CONFIG:Debug>>:USE_RELEASE_LOG_INFO>
-    $<$<BOOL:${LIBTORCH_FRAMEWORK_USE_CUDA}>:USE_CUDA>)
+    $<$<BOOL:${LIBTORCH_FRAMEWORK_USE_CUDA}>:USE_CUDA>
+    $<$<BOOL:${LIBTORCH_FRAMEWORK_USE_NCCL}>:LIBTORCH_FRAMEWORK_HAS_NCCL>)
 
 if(MSVC)
     target_compile_options(LibTorchFramework PRIVATE /W3 /Zc:preprocessor)
@@ -301,6 +309,24 @@ if(LIBTORCH_FRAMEWORK_USE_CUDA)
         set_property(TARGET LibTorchFramework APPEND PROPERTY BUILD_RPATH
             "${LIBTORCH_ROOT}/lib;${LIBTORCH_CUDA_DEPENDENCY_DIRS}")
     endif()
+endif()
+
+if(LIBTORCH_FRAMEWORK_USE_NCCL)
+    find_path(LIBTORCH_NCCL_INCLUDE_DIR
+        NAMES nccl.h
+        HINTS "${LIBTORCH_NCCL_ROOT}/include"
+        REQUIRED)
+    find_library(LIBTORCH_NCCL_LIBRARY
+        NAMES nccl
+        HINTS
+            "${LIBTORCH_NCCL_ROOT}/lib"
+            "${LIBTORCH_NCCL_ROOT}/lib/${CMAKE_LIBRARY_ARCHITECTURE}"
+        REQUIRED)
+
+    target_include_directories(LibTorchFramework PRIVATE
+        "${LIBTORCH_NCCL_INCLUDE_DIR}")
+    target_link_libraries(LibTorchFramework PRIVATE
+        "${LIBTORCH_NCCL_LIBRARY}")
 endif()
 
 # TorchConfig.cmake owns LibTorch's dependency graph.  In particular, libraries

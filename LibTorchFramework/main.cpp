@@ -144,10 +144,12 @@ private:
     torch::nn::AnyModule linearAny;
 };
 
+/*
 #include <c10/core/CPUAllocator.h>
 #ifdef USE_CUDA
 #   include <c10/cuda/CUDACachingAllocator.h>
 #endif
+
 
 #ifdef _WIN32
 #   include <Windows.h>
@@ -175,6 +177,20 @@ void PrintMemory(const char* label)
         (float)info.PrivateUsage / 1024 / 1024 / 1024);
 }
 #endif
+*/
+
+/*
+#ifdef _WIN32
+#define LIBTORCH_FRAMEWORK_HAS_NCCL
+#endif
+
+#ifdef LIBTORCH_FRAMEWORK_HAS_NCCL
+#   include <nccl.h>
+#   ifdef _MSC_VER
+#       pragma comment(lib, "nccl.lib")
+#   endif
+#endif
+*/
 
 int main(int argc, char** argv)
 {
@@ -183,8 +199,22 @@ int main(int argc, char** argv)
     log->Enable(MyUtils::Logger::LogType::Warning, MyUtils::Logger::LogOutput::StdOut);
     log->Enable(MyUtils::Logger::LogType::Info, MyUtils::Logger::LogOutput::StdOut);
 
-    //use nccl for multi-gpu train?
-    //https://github.com/SystemPanic/nccl-windows/tree/nccl-windows#building-from-source
+    /*
+#ifdef LIBTORCH_FRAMEWORK_HAS_NCCL
+    MY_LOG_INFO("NCCL supported");
+
+    ncclComm_t comms[1];
+    int devs[1] = { 0 };
+    const ncclResult_t ncclResult = ncclCommInitAll(comms, 1, devs);
+    if (ncclResult != ncclSuccess)
+    {
+        MY_LOG_ERROR("NCCL initialization failed: %s", ncclGetErrorString(ncclResult));
+        return 1;
+    }
+    ncclCommDestroy(comms[0]);    
+#endif
+    */
+    
 
     /*
     PrintMemory("Before");

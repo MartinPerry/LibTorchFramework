@@ -21,6 +21,7 @@ PLAYGROUND_DIR="/mnt/d/Martin/Programming/test/Playground"
 #   LIBTORCH_VERSION=2.11.0 LIBTORCH_VARIANT=cu130 ./build_debian.sh
 LIBTORCH_VERSION="${LIBTORCH_VERSION:-2.13.0}"
 LIBTORCH_VARIANT="${LIBTORCH_VARIANT:-cu130}"
+USE_NCCL="${USE_NCCL:-OFF}"
 #LIBTORCH_VARIANT="cpu"
 
 BIN_DIR="${LIBTORCH_FRAMEWORK_DIR}/bin/${LIBTORCH_VERSION}_${LIBTORCH_VARIANT}"
@@ -173,8 +174,11 @@ EOF
         trap - EXIT
     }
 
-    install_nccl_debian_runtime() {
-        if [[ -e "${NCCL_LIB_DIR}/libnccl.so.2" ]]; then
+    install_nccl_debian_package() {
+        local package_name="$1"
+        local expected_file="$2"
+
+        if [[ -e "${expected_file}" ]]; then
             return
         fi
 
@@ -184,21 +188,21 @@ EOF
         nccl_download_dir="$(mktemp -d "${LIBTORCH_BASE}/.nccl-download.XXXXXX")"
         trap 'rm -rf "${nccl_download_dir}"' EXIT
 
-        echo "Downloading libnccl2 ${NCCL_DEBIAN_VERSION}"
+        echo "Downloading ${package_name} ${NCCL_DEBIAN_VERSION}"
         (
             cd "${nccl_download_dir}"
-            apt-get download "libnccl2=${NCCL_DEBIAN_VERSION}"
+            apt-get download "${package_name}=${NCCL_DEBIAN_VERSION}"
         )
         nccl_package="$(find "${nccl_download_dir}" -maxdepth 1 -type f \
-            -name 'libnccl2_*.deb' -print -quit)"
+            -name "${package_name}_*.deb" -print -quit)"
         if [[ -z "${nccl_package}" ]]; then
-            echo "The downloaded NCCL Debian package was not found" >&2
+            echo "The downloaded ${package_name} package was not found" >&2
             exit 1
         fi
 
         dpkg-deb -x "${nccl_package}" "${NCCL_DIR}"
-        if [[ ! -e "${NCCL_LIB_DIR}/libnccl.so.2" ]]; then
-            echo "NCCL package did not provide ${NCCL_LIB_DIR}/libnccl.so.2" >&2
+        if [[ ! -e "${expected_file}" ]]; then
+            echo "${package_name} did not provide ${expected_file}" >&2
             exit 1
         fi
 
@@ -227,7 +231,17 @@ EOF
         "${NVSHMEM_DIR}" \
         "${NVSHMEM_LIB_DIR}/libnvshmem_host.so.3"
 
-    install_nccl_debian_runtime
+    # The CUDA LibTorch binary itself has a DT_NEEDED entry for libnccl.so.2,
+    # even when this application does not use the NCCL API directly.
+    install_nccl_debian_package \
+        libnccl2 \
+        "${NCCL_LIB_DIR}/libnccl.so.2"
+
+    if [[ "${USE_NCCL}" == "ON" ]]; then
+        install_nccl_debian_package \
+            libnccl-dev \
+            "${NCCL_DIR}/usr/include/nccl.h"
+    fi
 
     CUDA_DEPENDENCY_DIRS="${CUDNN_LIB_DIR};${CUSPARSELT_LIB_DIR};${NCCL_LIB_DIR};${NVSHMEM_LIB_DIR}"
     CUDA_DEPENDENCY_LIBRARY_PATH="${CUDNN_LIB_DIR}:${CUSPARSELT_LIB_DIR}:${NCCL_LIB_DIR}:${NVSHMEM_LIB_DIR}"
@@ -237,6 +251,8 @@ EOF
         "-DCUDAToolkit_ROOT=${CUDA_ROOT}"
         "-DCUDA_TOOLKIT_ROOT_DIR=${CUDA_ROOT}"
         "-DLIBTORCH_CUDA_DEPENDENCY_DIRS=${CUDA_DEPENDENCY_DIRS}"
+        "-DLIBTORCH_FRAMEWORK_USE_NCCL=${USE_NCCL}"
+        "-DLIBTORCH_NCCL_ROOT=${NCCL_DIR}/usr"
     )
 fi
 
