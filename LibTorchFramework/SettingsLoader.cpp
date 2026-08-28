@@ -49,6 +49,7 @@ ModelSettings SettingsLoader::Load(JsonCmdDefaults& json)
     LoadTraining(json, settings.training);
     LoadDataset(json, settings.dataset);
     LoadSnapshot(json, settings.snapshot);
+    LoadDashboard(json, settings.dashboard);
 
     return settings;
 }
@@ -81,4 +82,10 @@ void SettingsLoader::LoadSnapshot(const JsonCmdDefaults& json, SnapshotSettings&
     settings.path = json.GetValue<std::string>("snapshot.path", settings.path);
     settings.enableSave = json.GetValue<bool>("snapshot.enable_save", settings.enableSave);
     settings.enableLoad = json.GetValue<bool>("snapshot.enable_load", settings.enableLoad);
+}
+
+void SettingsLoader::LoadDashboard(const JsonCmdDefaults& json, DashboardSettings& settings)
+{
+    settings.url = json.GetValue<std::string>("dashboard.url", settings.url);
+    settings.token = json.GetValue<std::string>("dashboard.token", settings.token);
 }

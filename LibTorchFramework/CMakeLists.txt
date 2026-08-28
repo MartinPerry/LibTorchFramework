@@ -73,7 +73,7 @@ else()
     set(_playground_debug_library
         "${PLAYGROUND_CMAKE_BUILD_DIR}/libPlayground.a")
 endif()
-set(PLAYGROUND_LIBRARY_RELEASE "${_playground_release_library}" CACHE FILEPATH
+set(PLAYGROUND_LIBRARY_RELEASE "${_playground_release_library}" CACHE FILEPATH 
     "Release Playground library built by CMake")
 set(PLAYGROUND_LIBRARY_DEBUG "${_playground_debug_library}" CACHE FILEPATH
     "Debug Playground library built by CMake")
@@ -82,7 +82,9 @@ if(NOT WIN32)
     find_package(ICU REQUIRED COMPONENTS uc i18n)
     find_package(JPEG REQUIRED)
     find_package(PNG REQUIRED)
-
+    find_package(OpenSSL REQUIRED)        
+    find_package(CURL REQUIRED) 
+        
     find_library(TURBOJPEG_LIBRARY NAMES turbojpeg REQUIRED)
     find_library(WEBP_LIBRARY NAMES webp REQUIRED)
 endif()
@@ -111,6 +113,7 @@ set(LIBTORCH_FRAMEWORK_SOURCES
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Metrics/MetricsDefault.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Metrics/MetricsImage.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Metrics/MetricsVideo.cpp
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Metrics/MetricsUploader.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Modules/Convolutions/ConvGRU.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Modules/Convolutions/CoordConv.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Modules/Convolutions/DeformConv.cpp
@@ -316,6 +319,7 @@ if(LIBTORCH_FRAMEWORK_USE_NCCL)
         NAMES nccl.h
         HINTS "${LIBTORCH_NCCL_ROOT}/include"
         REQUIRED)
+
     find_library(LIBTORCH_NCCL_LIBRARY
         NAMES nccl
         HINTS
@@ -346,5 +350,8 @@ if(NOT WIN32)
     target_link_libraries(LibTorchFramework PRIVATE
 		ICU::uc
 		ICU::i18n
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        CURL::libcurl 
     )
 endif()

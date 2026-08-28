@@ -33,6 +33,12 @@ struct SnapshotSettings
     bool enableLoad = false;
 };
 
+struct DashboardSettings
+{
+    std::string url;
+    std::string token;    
+};
+
 struct ModelSettings
 {
     std::string modelId;
@@ -40,6 +46,7 @@ struct ModelSettings
     TrainingSettings training;
     DatasetSettings dataset;
     SnapshotSettings snapshot;
+    DashboardSettings dashboard;
 };
 
 class SettingsLoader
@@ -55,5 +62,6 @@ private:
     static void LoadTraining(const JsonCmdDefaults& json, TrainingSettings& settings);
     static void LoadDataset(const JsonCmdDefaults& json, DatasetSettings& settings);
     static void LoadSnapshot(const JsonCmdDefaults& json, SnapshotSettings& settings);
+    static void LoadDashboard(const JsonCmdDefaults& json, DashboardSettings& settings);
 };
 

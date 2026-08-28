@@ -26,6 +26,10 @@
     "path": "D://CppTorchModels//[date]",
     "enable_save": true,
     "enable_load": false
+  },
+  "dashboard": {
+    "url": "http://perry.cz/files/dashboard/upload.php",
+    "token": "8796542131654564"
   }
   
 }

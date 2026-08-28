@@ -95,6 +95,59 @@
 
     #folderInput { display: none; }
 
+    .source-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .server-panel {
+      padding: 18px 20px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(18, 27, 48, 0.72);
+    }
+
+    .source-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 13px;
+    }
+
+    .source-heading h2 { margin: 0; font-size: 1rem; }
+    .source-heading p { margin: 4px 0 0; color: var(--muted); font-size: 0.82rem; }
+    .source-heading .button { min-height: 36px; padding: 0 12px; font-size: 0.78rem; }
+
+    .run-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 9px;
+      max-height: 230px;
+      overflow-y: auto;
+    }
+
+    .run-card {
+      min-width: 0;
+      padding: 12px 13px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      background: var(--panel-strong);
+      text-align: left;
+      cursor: pointer;
+      transition: 140ms ease;
+    }
+
+    .run-card:hover { border-color: var(--accent-2); transform: translateY(-1px); }
+    .run-card.active { border-color: var(--accent); background: rgba(16, 185, 129, 0.12); }
+    .run-card:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .run-card strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .run-card-meta { display: block; margin-top: 5px; color: var(--muted); font-size: 0.74rem; }
+    .run-empty { padding: 11px 2px; color: var(--muted); font-size: 0.84rem; }
+
     .drop-zone {
       display: grid;
       grid-template-columns: auto 1fr auto;
@@ -106,6 +159,8 @@
       background: rgba(18, 27, 48, 0.72);
       transition: 160ms ease;
     }
+
+    .source-grid .drop-zone { height: 100%; }
 
     .drop-zone.dragging {
       border-color: var(--accent);
@@ -172,6 +227,7 @@
 
     select:focus { border-color: var(--accent-2); }
     .toolbar-summary { margin-left: auto; color: var(--muted); font-size: 0.88rem; }
+    .source-label { color: var(--accent); font-size: 0.82rem; font-weight: 750; }
 
     .stats {
       display: grid;
@@ -251,6 +307,7 @@
 
     @media (max-width: 900px) {
       header { align-items: flex-start; flex-direction: column; }
+      .source-grid { grid-template-columns: 1fr; }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .toolbar-summary { width: 100%; margin-left: 0; }
     }
@@ -278,19 +335,30 @@
       <button class="button secondary" id="demoButton" type="button">Load demo data</button>
     </header>
 
-    <section class="drop-zone" id="dropZone" aria-label="JSON folder uploader">
-      <div class="drop-icon" aria-hidden="true">↥</div>
-      <div class="drop-copy">
-        <strong>Select a metrics folder</strong>
-        <span>or drag a folder / multiple .json files here</span>
-      </div>
-      <label class="button" for="folderInput">Choose folder</label>
-      <input id="folderInput" type="file" accept=".json,application/json" webkitdirectory directory multiple>
+    <section class="source-grid" aria-label="Metric data sources">
+      <article class="server-panel">
+        <div class="source-heading">
+          <div><h2>Runs on this server</h2><p>Select a folder from data/&lt;run_id&gt;/</p></div>
+          <button class="button secondary" id="refreshRunsButton" type="button">Refresh list</button>
+        </div>
+        <div class="run-list" id="runList"><div class="run-empty">Checking server run folders…</div></div>
+      </article>
+
+      <section class="drop-zone" id="dropZone" aria-label="Local JSON folder uploader">
+        <div class="drop-icon" aria-hidden="true">↥</div>
+        <div class="drop-copy">
+          <strong>Load from this PC</strong>
+          <span>Select or drag a folder / multiple .json files</span>
+        </div>
+        <label class="button" for="folderInput">Choose folder</label>
+        <input id="folderInput" type="file" accept=".json,application/json" webkitdirectory directory multiple>
+      </section>
     </section>
-    <p class="status" id="status" role="status">Expected filename: model_YYYY_MM_DD_HH_MM_type_runId.json</p>
+    <p class="status" id="status" role="status">Choose a server run or load a folder from this PC.</p>
 
     <section class="dashboard" id="dashboard">
       <div class="toolbar">
+        <div><div class="source-label">Active source</div><div id="activeSourceLabel">—</div></div>
         <div class="field">
           <label for="modelSelect">Model</label>
           <select id="modelSelect"></select>
@@ -367,8 +435,8 @@
       { id: "class", canvas: "classChart", legend: "classLegend", fixedRange: [0, 1], fields: [{ key: "acc", label: "Accuracy" }, { key: "mcr", label: "MCR" }] }
     ];
 
-    const state = { records: [], filtered: [], charts: new Map() };
-    const el = id => document.getElementById(id);
+    const state = { records: [], filtered: [], charts: new Map(), activeSource: "" };
+    function el(id) { return document.getElementById(id); }
 
     function parseFilename(fileName) {
       const name = fileName.split(/[\\/]/).pop();
@@ -385,7 +453,7 @@
       };
     }
 
-    function normalizeRecord(data, fileName, path = fileName) {
+    function normalizeRecord(data, fileName, path = fileName, runGroup = "Selected folder") {
       if (!data || Array.isArray(data) || typeof data !== "object") throw new Error("root must be a JSON object");
       const meta = parseFilename(fileName);
       const metrics = {};
@@ -394,28 +462,32 @@
         if (Number.isFinite(numeric)) metrics[key] = numeric;
       }
       if (!Object.keys(metrics).length) throw new Error("no numeric metrics found");
-      return { ...meta, metrics, fileName, path };
+      return { ...meta, metrics, fileName, path, runGroup };
     }
 
     async function readFiles(fileList) {
-      const files = [...fileList].filter(file => file.name.toLowerCase().endsWith(".json"));
+      const files = [...fileList].filter(function isJsonFile(file) {
+        return file.name.toLowerCase().endsWith(".json");
+      });
       if (!files.length) return setStatus("No .json files were found.", true);
       setStatus(`Reading ${files.length} JSON file${files.length === 1 ? "" : "s"}…`);
       const records = [];
       const failures = [];
-      await Promise.all(files.map(async file => {
+      const localGroup = files[0]?.webkitRelativePath?.split(/[\\/]/)[0] || "PC selection";
+      await Promise.all(files.map(async function readJsonFile(file) {
         try {
           const data = JSON.parse(await file.text());
-          records.push(normalizeRecord(data, file.name, file.webkitRelativePath || file.name));
+          records.push(normalizeRecord(data, file.name, file.webkitRelativePath || file.name, localGroup));
         } catch (error) {
           failures.push(`${file.name}: ${error.message}`);
         }
       }));
       if (!records.length) return setStatus(`Could not load the files. ${failures[0] || ""}`, true);
-      state.records = records;
-      populateFilters();
-      applyFilters();
-      const unmatched = records.filter(record => !record.matched).length;
+      activateRecords(records, `This PC / ${localGroup}`);
+      clearRunSelection();
+      const unmatched = records.filter(function hasUnmatchedFilename(record) {
+        return !record.matched;
+      }).length;
       const notes = [
         `Loaded ${records.length} checkpoint${records.length === 1 ? "" : "s"}`,
         failures.length ? `${failures.length} invalid file${failures.length === 1 ? "" : "s"} skipped` : "",
@@ -425,7 +497,9 @@
     }
 
     function fileFromEntry(entry) {
-      return new Promise((resolve, reject) => entry.file(resolve, reject));
+      return new Promise(function getEntryFile(resolve, reject) {
+        entry.file(resolve, reject);
+      });
     }
 
     async function filesFromEntry(entry) {
@@ -434,7 +508,9 @@
       const reader = entry.createReader();
       const children = [];
       while (true) {
-        const batch = await new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+        const batch = await new Promise(function readDirectoryEntries(resolve, reject) {
+          reader.readEntries(resolve, reject);
+        });
         if (!batch.length) break;
         children.push(...batch);
       }
@@ -443,7 +519,7 @@
 
     async function droppedFiles(dataTransfer) {
       const entries = [...dataTransfer.items]
-        .map(item => item.webkitGetAsEntry?.())
+        .map(function getDroppedEntry(item) { return item.webkitGetAsEntry?.(); })
         .filter(Boolean);
       return entries.length ? (await Promise.all(entries.map(filesFromEntry))).flat() : [...dataTransfer.files];
     }
@@ -453,7 +529,8 @@
       el("status").classList.toggle("error", isError);
     }
 
-    function uniqueSorted(values) { return [...new Set(values)].sort((a, b) => a.localeCompare(b)); }
+    function compareText(a, b) { return a.localeCompare(b); }
+    function uniqueSorted(values) { return [...new Set(values)].sort(compareText); }
 
     function fillSelect(select, values) {
       select.innerHTML = "";
@@ -465,16 +542,28 @@
     }
 
     function populateFilters() {
-      const models = uniqueSorted(state.records.map(record => record.model));
+      const previous = el("modelSelect").value;
+      const models = uniqueSorted(state.records.map(function getRecordModel(record) { return record.model; }));
       fillSelect(el("modelSelect"), models);
+      if (models.includes(previous)) el("modelSelect").value = previous;
       updateTypeFilter();
       el("dashboard").classList.add("visible");
+      el("activeSourceLabel").textContent = state.activeSource;
+    }
+
+    function activateRecords(records, sourceLabel) {
+      state.records = records;
+      state.activeSource = sourceLabel;
+      populateFilters();
+      applyFilters();
     }
 
     function updateTypeFilter() {
       const model = el("modelSelect").value;
       const previous = el("typeSelect").value;
-      const types = uniqueSorted(state.records.filter(record => record.model === model).map(record => record.type));
+      const types = uniqueSorted(state.records
+        .filter(function matchesModel(record) { return record.model === model; })
+        .map(function getRecordType(record) { return record.type; }));
       fillSelect(el("typeSelect"), types);
       if (types.includes(previous)) el("typeSelect").value = previous;
     }
@@ -488,10 +577,12 @@
     function applyFilters() {
       const model = el("modelSelect").value;
       const type = el("typeSelect").value;
-      const matching = state.records.filter(record => record.model === model && record.type === type);
+      const matching = state.records.filter(function matchesFilters(record) {
+        return record.model === model && record.type === type;
+      });
       const newestByRun = new Map();
       const unnumbered = [];
-      matching.forEach(record => {
+      matching.forEach(function collectLatestRun(record) {
         if (record.runId == null) return unnumbered.push(record);
         const previous = newestByRun.get(record.runId);
         if (!previous || (record.savedAt?.getTime() || 0) >= (previous.savedAt?.getTime() || 0)) newestByRun.set(record.runId, record);
@@ -512,9 +603,15 @@
         { key: "csi", label: "Latest CSI", lower: false },
         { key: "psnr", label: "Latest PSNR", lower: false, suffix: " dB" },
         { key: "rmse", label: "Latest RMSE", lower: true }
-      ].filter(def => state.filtered.some(record => Number.isFinite(record.metrics[def.key])));
-      el("stats").innerHTML = definitions.map(def => {
-        const observations = state.filtered.filter(record => Number.isFinite(record.metrics[def.key]));
+      ].filter(function statMetricAvailable(definition) {
+        return state.filtered.some(function recordHasStatMetric(record) {
+          return Number.isFinite(record.metrics[definition.key]);
+        });
+      });
+      el("stats").innerHTML = definitions.map(function renderStatCard(def) {
+        const observations = state.filtered.filter(function recordHasMetric(record) {
+          return Number.isFinite(record.metrics[def.key]);
+        });
         const current = observations.at(-1)?.metrics[def.key];
         const initial = observations[0]?.metrics[def.key];
         const delta = Number.isFinite(current) && Number.isFinite(initial) ? current - initial : NaN;
@@ -541,10 +638,20 @@
     function createChart(definition) {
       const canvas = el(definition.canvas);
       const ctx = canvas.getContext("2d");
-      const availableFields = definition.fields.filter(field => state.filtered.some(record => Number.isFinite(record.metrics[field.key])));
-      const series = availableFields.map((field, index) => ({ ...field, color: COLORS[index], values: state.filtered.map(record => record.metrics[field.key]) }));
+      const availableFields = definition.fields.filter(function chartMetricAvailable(field) {
+        return state.filtered.some(function recordHasChartMetric(record) {
+          return Number.isFinite(record.metrics[field.key]);
+        });
+      });
+      const series = availableFields.map(function buildSeries(field, index) {
+        return {
+          ...field,
+          color: COLORS[index],
+          values: state.filtered.map(function getSeriesValue(record) { return record.metrics[field.key]; })
+        };
+      });
       canvas.closest(".chart-card").hidden = series.length === 0;
-      const allValues = series.flatMap(item => item.values).filter(Number.isFinite);
+      const allValues = series.flatMap(function getSeriesValues(item) { return item.values; }).filter(Number.isFinite);
       const range = niceRange(allValues, definition.fixedRange);
       const chart = { canvas, ctx, definition, series, range, points: [] };
       state.charts.set(definition.id, chart);
@@ -554,7 +661,9 @@
 
     function renderLegend(id, series) {
       el(id).innerHTML = series.length
-        ? series.map(item => `<span class="legend-item"><i class="legend-line" style="background:${item.color}"></i>${item.label}</span>`).join("")
+        ? series.map(function renderLegendItem(item) {
+            return `<span class="legend-item"><i class="legend-line" style="background:${item.color}"></i>${item.label}</span>`;
+          }).join("")
         : `<span>No matching metric in these files</span>`;
     }
 
@@ -581,8 +690,12 @@
       }
 
       const [minY, maxY] = range;
-      const yFor = value => pad.top + plotH - ((value - minY) / (maxY - minY || 1)) * plotH;
-      const xFor = index => pad.left + (state.filtered.length === 1 ? plotW / 2 : index / (state.filtered.length - 1) * plotW);
+      function yFor(value) {
+        return pad.top + plotH - ((value - minY) / (maxY - minY || 1)) * plotH;
+      }
+      function xFor(index) {
+        return pad.left + (state.filtered.length === 1 ? plotW / 2 : index / (state.filtered.length - 1) * plotW);
+      }
 
       ctx.lineWidth = 1;
       ctx.font = "11px system-ui";
@@ -610,21 +723,21 @@
       ctx.fillStyle = "#667695";
       ctx.fillText("run ID", pad.left + plotW / 2, height - 10);
 
-      series.forEach(item => {
+      series.forEach(function drawSeries(item) {
         ctx.strokeStyle = item.color;
         ctx.lineWidth = 2.25;
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
         ctx.beginPath();
         let started = false;
-        item.values.forEach((value, index) => {
+        item.values.forEach(function addLinePoint(value, index) {
           if (!Number.isFinite(value)) { started = false; return; }
           const x = xFor(index), y = yFor(value);
           if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
         });
         ctx.stroke();
 
-        item.values.forEach((value, index) => {
+        item.values.forEach(function drawPoint(value, index) {
           if (!Number.isFinite(value)) return;
           const x = xFor(index), y = yFor(value);
           ctx.fillStyle = "#131d32";
@@ -637,21 +750,29 @@
 
     function renderTable() {
       const preferred = ["loss", "csi", "psnr", "rmse", "mae", "mse", "jaccard_positive", "jaccard_macro", "jaccard_inverted", "acc", "mcr"];
-      const keys = [...new Set(state.filtered.flatMap(record => Object.keys(record.metrics)))];
-      keys.sort((a, b) => {
+      const keys = [...new Set(state.filtered.flatMap(function getMetricKeys(record) {
+        return Object.keys(record.metrics);
+      }))];
+      keys.sort(function compareMetricKeys(a, b) {
         const ai = preferred.indexOf(a), bi = preferred.indexOf(b);
         if (ai !== -1 || bi !== -1) return (ai === -1 ? preferred.length : ai) - (bi === -1 ? preferred.length : bi);
         return a.localeCompare(b);
       });
-      el("metricsTableHead").innerHTML = ["Run", "Saved", ...keys, "File"].map(label => `<th>${escapeHtml(label.replaceAll("_", " "))}</th>`).join("");
-      el("metricsTable").innerHTML = [...state.filtered].reverse().slice(0, 25).map(record => {
-        const metricCells = keys.map(key => `<td>${fmt(record.metrics[key])}</td>`).join("");
+      el("metricsTableHead").innerHTML = ["Run", "Saved", ...keys, "File"].map(function renderTableHeading(label) {
+        return `<th>${escapeHtml(label.replaceAll("_", " "))}</th>`;
+      }).join("");
+      el("metricsTable").innerHTML = [...state.filtered].reverse().slice(0, 25).map(function renderTableRow(record) {
+        const metricCells = keys.map(function renderMetricCell(key) {
+          return `<td>${fmt(record.metrics[key])}</td>`;
+        }).join("");
         return `<tr><td>${record.runId ?? "—"}</td><td>${record.savedLabel}</td>${metricCells}<td class="file-cell" title="${escapeHtml(record.path)}">${escapeHtml(record.fileName)}</td></tr>`;
       }).join("");
     }
 
     function escapeHtml(value) {
-      return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
+      return String(value).replace(/[&<>'"]/g, function replaceUnsafeCharacter(character) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character];
+      });
     }
 
     function render() {
@@ -675,8 +796,10 @@
       if (!closest || distance > 18) { tooltip.style.display = "none"; return; }
       const record = state.filtered[closest.recordIndex];
       const rows = chart.series
-        .filter(item => Number.isFinite(item.values[closest.recordIndex]))
-        .map(item => `<div class="tooltip-row"><span style="color:${item.color}">${item.label}</span><b>${fmt(item.values[closest.recordIndex], 6)}</b></div>`).join("");
+        .filter(function tooltipMetricAvailable(item) { return Number.isFinite(item.values[closest.recordIndex]); })
+        .map(function renderTooltipMetric(item) {
+          return `<div class="tooltip-row"><span style="color:${item.color}">${item.label}</span><b>${fmt(item.values[closest.recordIndex], 6)}</b></div>`;
+        }).join("");
       tooltip.innerHTML = `<strong>Run ${record.runId ?? closest.recordIndex + 1} · ${record.savedLabel}</strong>${rows}`;
       tooltip.style.display = "block";
       const tipWidth = tooltip.offsetWidth, tipHeight = tooltip.offsetHeight;
@@ -686,7 +809,7 @@
 
     function loadDemo() {
       const base = { loss: .48, csi: .055, psnr: 22.9, rmse: .073, mae: .037, mse: .0053, acc: .9962, mcr: .0038, jaccard_positive: .055, jaccard_macro: .526, jaccard_inverted: .996, csi_mean_pool1: .33, csi_mean_pool4: .36, csi_mean_pool16: .42 };
-      state.records = Array.from({ length: 18 }, (_, index) => {
+      const records = Array.from({ length: 18 }, function createDemoRecord(unused, index) {
         const run = index + 1, progress = index / 17, wobble = Math.sin(index * 1.7) * .008;
         const metrics = {
           loss: base.loss * Math.exp(-progress * 1.25) + wobble,
@@ -705,37 +828,115 @@
           mcr: base.mcr - progress * .0022
         };
         const fileName = `exPreCastModel_2026_08_27_20_${String(index + 1).padStart(2, "0")}_train_${run}.json`;
-        return normalizeRecord(metrics, fileName);
+        return normalizeRecord(metrics, fileName, fileName, "Demo run");
       });
-      populateFilters(); applyFilters(); setStatus("Demo data loaded · choose a folder to replace it");
+      activateRecords(records, "Demo data");
+      clearRunSelection();
+      setStatus("Demo data loaded · choose a server run or PC folder to replace it");
     }
 
-    async function loadServerData() {
+    function clearRunSelection() {
+      document.querySelectorAll(".run-card.active").forEach(function clearActiveRun(card) {
+        card.classList.remove("active");
+      });
+    }
+
+    function renderRunList(runs) {
+      const runList = el("runList");
+      if (!runs.length) {
+        runList.innerHTML = `<div class="run-empty">No run folders containing JSON files were found.</div>`;
+        return;
+      }
+      runList.innerHTML = runs.map(function renderRunCard(run) {
+        const modified = run.modifiedAt ? ` · updated ${new Date(run.modifiedAt).toLocaleString()}` : "";
+        return `<button class="run-card" type="button" data-run-id="${escapeHtml(run.id)}" ${run.fileCount ? "" : "disabled"}>
+          <strong title="${escapeHtml(run.label)}">${escapeHtml(run.label)}</strong>
+          <span class="run-card-meta">${run.fileCount} JSON file${run.fileCount === 1 ? "" : "s"}${escapeHtml(modified)}</span>
+        </button>`;
+      }).join("");
+      runList.querySelectorAll(".run-card").forEach(function bindRunCard(button) {
+        const run = runs.find(function findRun(item) { return item.id === button.dataset.runId; });
+        button.addEventListener("click", function selectServerRun() { loadServerRun(run, button); });
+      });
+    }
+
+    async function fetchApi(url) {
+      const response = await fetch(url, { cache: "no-store" });
+      const text = await response.text();
+      let payload;
       try {
-        const response = await fetch("/api/metrics", { cache: "no-store" });
-        if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return;
-        const payload = await response.json();
-        if (!Array.isArray(payload.files) || !payload.files.length) return setStatus("The data folder does not contain any JSON files.", true);
-        state.records = payload.files.map(file => normalizeRecord(file.data, file.name, file.path));
-        populateFilters();
-        applyFilters();
-        const notes = [`Loaded ${state.records.length} checkpoints from ./data`];
-        if (payload.errors?.length) notes.push(`${payload.errors.length} invalid file${payload.errors.length === 1 ? "" : "s"} skipped`);
-        setStatus(notes.join(" · "), Boolean(payload.errors?.length));
-      } catch (_) {
-        // Opening index.html directly has no API; the folder picker remains available.
+        payload = JSON.parse(text);
+      } catch (error) {
+        const preview = text.trim().slice(0, 120).replace(/\s+/g, " ");
+        throw new Error(`API did not return JSON${preview ? `: ${preview}` : " (empty response)"}`);
+      }
+      if (!response.ok) {
+        const apiMessage = payload.error || payload.errors?.[0]?.error;
+        throw new Error(apiMessage || `server returned ${response.status}`);
+      }
+      return payload;
+    }
+
+    async function loadServerRuns() {
+      el("runList").innerHTML = `<div class="run-empty">Checking server run folders…</div>`;
+      try {
+        const payload = await fetchApi("api.php?action=runs");
+        const runs = Array.isArray(payload.runs) ? payload.runs : [];
+        renderRunList(runs);
+        setStatus(runs.length
+          ? `Found ${runs.length} server run${runs.length === 1 ? "" : "s"} · select one to load, or choose a folder from this PC`
+          : "No server runs found · you can still load a folder from this PC");
+      } catch (error) {
+        el("runList").innerHTML = `<div class="run-empty">Could not list server runs.</div>`;
+        setStatus(`Server run list unavailable: ${error.message}. You can still load files from this PC.`, true);
       }
     }
 
-    el("folderInput").addEventListener("change", event => readFiles(event.target.files));
-    el("modelSelect").addEventListener("change", () => { updateTypeFilter(); applyFilters(); });
+    async function loadServerRun(run, button) {
+      if (!run) return;
+      setStatus(`Loading server run ${run.label}…`);
+      button.disabled = true;
+      try {
+        const payload = await fetchApi(`api.php?action=metrics&run=${encodeURIComponent(run.id)}`);
+        const records = [];
+        const failures = [...(payload.errors || [])];
+        for (const file of payload.files || []) {
+          try {
+            records.push(normalizeRecord(file.data, file.name, file.path, file.runGroup));
+          } catch (error) {
+            failures.push({ name: file.name, error: error.message });
+          }
+        }
+        if (!records.length) throw new Error("this run has no valid metric JSON files");
+        activateRecords(records, `Server / ${run.label}`);
+        clearRunSelection();
+        button.classList.add("active");
+        const notes = [`Loaded ${records.length} checkpoint${records.length === 1 ? "" : "s"} from ${run.label}`];
+        if (failures.length) notes.push(`${failures.length} invalid file${failures.length === 1 ? "" : "s"} skipped`);
+        setStatus(notes.join(" · "), failures.length > 0);
+      } catch (error) {
+        setStatus(`Could not load ${run.label}: ${error.message}`, true);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function onFolderInputChange(event) { readFiles(event.target.files); }
+    function onModelChange() { updateTypeFilter(); applyFilters(); }
+    el("folderInput").addEventListener("change", onFolderInputChange);
+    el("modelSelect").addEventListener("change", onModelChange);
     el("typeSelect").addEventListener("change", applyFilters);
     el("demoButton").addEventListener("click", loadDemo);
+    el("refreshRunsButton").addEventListener("click", loadServerRuns);
 
     const dropZone = el("dropZone");
-    ["dragenter", "dragover"].forEach(type => dropZone.addEventListener(type, event => { event.preventDefault(); dropZone.classList.add("dragging"); }));
-    ["dragleave", "drop"].forEach(type => dropZone.addEventListener(type, event => { event.preventDefault(); dropZone.classList.remove("dragging"); }));
-    dropZone.addEventListener("drop", async event => {
+    function showDropTarget(event) { event.preventDefault(); dropZone.classList.add("dragging"); }
+    function hideDropTarget(event) { event.preventDefault(); dropZone.classList.remove("dragging"); }
+    function bindShowDropTarget(type) { dropZone.addEventListener(type, showDropTarget); }
+    function bindHideDropTarget(type) { dropZone.addEventListener(type, hideDropTarget); }
+    ["dragenter", "dragover"].forEach(bindShowDropTarget);
+    ["dragleave", "drop"].forEach(bindHideDropTarget);
+    dropZone.addEventListener("drop", async function onFolderDrop(event) {
       try {
         await readFiles(await droppedFiles(event.dataTransfer));
       } catch (error) {
@@ -743,21 +944,24 @@
       }
     });
 
-    chartDefinitions.forEach(definition => {
-      el(definition.canvas).addEventListener("mousemove", event => {
+    chartDefinitions.forEach(function bindChartEvents(definition) {
+      el(definition.canvas).addEventListener("mousemove", function onChartMouseMove(event) {
         const chart = state.charts.get(definition.id);
         if (chart) showTooltip(event, chart);
       });
-      el(definition.canvas).addEventListener("mouseleave", () => { el("tooltip").style.display = "none"; });
+      el(definition.canvas).addEventListener("mouseleave", function onChartMouseLeave() {
+        el("tooltip").style.display = "none";
+      });
     });
 
     let resizeTimer;
-    window.addEventListener("resize", () => {
+    function redrawAllCharts() { state.charts.forEach(drawChart); }
+    window.addEventListener("resize", function onWindowResize() {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => state.charts.forEach(drawChart), 100);
+      resizeTimer = setTimeout(redrawAllCharts, 100);
     });
 
-    loadServerData();
+    loadServerRuns();
   </script>
 </body>
 </html>

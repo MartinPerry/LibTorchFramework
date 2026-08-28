@@ -105,6 +105,7 @@
     <ClCompile Include="core\CudaGraphHelper.cpp" />
     <ClCompile Include="core\Metrics\MetricsDefault.cpp" />
     <ClCompile Include="core\Metrics\MetricsImage.cpp" />
+    <ClCompile Include="core\Metrics\MetricsUploader.cpp" />
     <ClCompile Include="core\Metrics\MetricsVideo.cpp" />
     <ClCompile Include="core\Modules\Convolutions\ConvGRU.cpp" />
     <ClCompile Include="core\Modules\Convolutions\CoordConv.cpp" />
@@ -224,6 +225,7 @@
     <ClInclude Include="core\CudaGraphHelper.h" />
     <ClInclude Include="core\Metrics\MetricsDefault.h" />
     <ClInclude Include="core\Metrics\MetricsImage.h" />
+    <ClInclude Include="core\Metrics\MetricsUploader.h" />
     <ClInclude Include="core\Metrics\MetricsVideo.h" />
     <ClInclude Include="core\Metrics\PredictionEvaluators.h" />
     <ClInclude Include="core\Modules\ChangableModule.h" />

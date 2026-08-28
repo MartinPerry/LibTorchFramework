@@ -2,9 +2,11 @@
 #define METRICS_DEFAULT_H
 
 class PredictionEvaluator;
+class MetricsUploader;
 
 #include <vector>
 #include <unordered_map>
+#include <memory>
 
 #include <torch/torch.h>
 
@@ -16,6 +18,7 @@ public:
 	MetricsDefault();
 	virtual ~MetricsDefault();
 
+	void SetDashboradEnabled(bool val, std::optional<std::string> id = std::nullopt);
 	void SetPredictionEvaluator(std::shared_ptr<PredictionEvaluator> predEval);
 
 	virtual void Reset();
@@ -37,6 +40,8 @@ public:
 protected:
 	size_t batchesCount;
 	size_t processCounter;
+
+	std::shared_ptr<MetricsUploader> mup;
 
 	std::vector<float> losses;
 	mutable std::optional<float> meanLoss;

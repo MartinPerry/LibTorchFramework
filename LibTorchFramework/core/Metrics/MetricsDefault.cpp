@@ -5,6 +5,8 @@
 #include <FileUtils/Writing/TextFileWriter.h>
 #include <Utils/cJSON.h>
 
+#include "./MetricsUploader.h"
+
 MetricsDefault::MetricsDefault() : 
 	batchesCount(0),
 	processCounter(0),
@@ -15,6 +17,27 @@ MetricsDefault::MetricsDefault() :
 
 MetricsDefault::~MetricsDefault()
 {
+}
+
+void MetricsDefault::SetDashboradEnabled(bool val, std::optional<std::string> id)
+{
+	if (val)
+	{
+		if (this->mup == nullptr)
+		{
+			this->mup = std::make_shared<MetricsUploader>();			
+		}
+	}
+	else
+	{
+		this->mup = nullptr;
+	}
+
+
+	if ((this->mup) && (id.has_value()))
+	{
+		this->mup->SetRunId(*id);
+	}
 }
 
 void MetricsDefault::SetPredictionEvaluator(std::shared_ptr<PredictionEvaluator> predEval)
@@ -71,6 +94,11 @@ void MetricsDefault::Save(const std::string& filePath) const
 
 	free(json_str);
 	cJSON_Delete(root);
+
+	if (mup != nullptr)
+	{
+		mup->UploadMetrics(res);
+	}	
 
 }
 

@@ -20,6 +20,7 @@
 #include "../../core/Metrics/MetricsDefault.h"
 #include "../../core/Metrics/MetricsImage.h"
 #include "../../core/Metrics/MetricsVideo.h"
+#include "../../core/Metrics/MetricsUploader.h"
 
 #include "../../core/Modules/LossFunctions/DiceLoss.h"
 #include "../../core/Modules/LossFunctions/MultiBceLoss.h"
@@ -73,7 +74,13 @@ namespace CustomScenarios::exPreCastTraining
 		//./app --config config.json		
 		ModelSettings settings = SettingsLoader::LoadFromFile(cmd, "config.json");
 
+		if (settings.dashboard.token != "")
+		{
+			MetricsUploader::API_URL = settings.dashboard.url;
+			MetricsUploader::UPLOAD_TOKEN = settings.dashboard.token;
+		}
 		
+
 		FACL facl(settings.training.epochCount);
 		
 		Settings sets;
@@ -85,6 +92,7 @@ namespace CustomScenarios::exPreCastTraining
 		sets.metricsInitFn = []() -> auto {
 			auto metr = std::make_shared<MetricsVideo>();
 
+			metr->SetDashboradEnabled(true);
 			metr->SetCsiThresholds({ 19 / 255.0f, 28 / 255.0f, 35 / 255.0f, 40 / 255.0f, 47 / 255.0f });
 
 			TorchImageUtils::IntervalMapping intervalMapping;
