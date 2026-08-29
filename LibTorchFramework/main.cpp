@@ -246,14 +246,16 @@ int main(int argc, char** argv)
         << std::endl;
     */
 
+    /*
     MetricsUploader::API_URL = "http://perry.cz/files/dashboard/upload.php";
     MetricsUploader::UPLOAD_TOKEN = "8796542131654564";
 
     MetricsUploader mup;
     mup.SetRunId("test8");
     mup.UploadMetrics({ {"test", 45}, {"loss", 78} });
+    */
 
-    //CustomScenarios::exPreCastTraining::setup(argc, argv);
+    CustomScenarios::exPreCastTraining::setup(argc, argv);
     return 0;
     /*
     Test rr;

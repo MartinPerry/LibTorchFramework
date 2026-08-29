@@ -74,10 +74,15 @@ namespace CustomScenarios::exPreCastTraining
 		//./app --config config.json		
 		ModelSettings settings = SettingsLoader::LoadFromFile(cmd, "config.json");
 
+
+		std::shared_ptr<MetricsUploader> dashboard = nullptr;		
 		if (settings.dashboard.token != "")
 		{
 			MetricsUploader::API_URL = settings.dashboard.url;
 			MetricsUploader::UPLOAD_TOKEN = settings.dashboard.token;
+			
+			dashboard = std::make_shared<MetricsUploader>();
+			dashboard->SetRunId("exprecast_" + std::to_string(time(0)));
 		}
 		
 
@@ -89,10 +94,10 @@ namespace CustomScenarios::exPreCastTraining
 		sets.perf.enableAutoCast = settings.training.autocast;				
 		sets.epochCount = settings.training.epochCount;
 		sets.batchSize = settings.training.batchSize;
-		sets.metricsInitFn = []() -> auto {
+		sets.metricsInitFn = [dashboard]() -> auto {
 			auto metr = std::make_shared<MetricsVideo>();
 
-			metr->SetDashboradEnabled(true);
+			metr->SetDashborad(dashboard);
 			metr->SetCsiThresholds({ 19 / 255.0f, 28 / 255.0f, 35 / 255.0f, 40 / 255.0f, 47 / 255.0f });
 
 			TorchImageUtils::IntervalMapping intervalMapping;

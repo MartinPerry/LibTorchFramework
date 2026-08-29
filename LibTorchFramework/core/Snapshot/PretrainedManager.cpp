@@ -33,7 +33,7 @@ std::time_t to_time_t(std::filesystem::file_time_type ft)
 std::filesystem::path replaceDate(std::filesystem::path path)
 {
     const auto now = std::chrono::floor<std::chrono::minutes>(std::chrono::system_clock::now());
-    const std::string date = std::format("{:%Y-%m-%dT%H:%M}", now); // UTC
+    const std::string date = std::format("{:%Y-%m-%dT%H-%M}", now); // UTC
 
     std::string s = path.string();
 
@@ -68,7 +68,13 @@ PretrainedManager::PretrainedManager(const std::string& directory,
 {
     modelsDir = replaceDate(modelsDir);
 
-    std::filesystem::create_directories(modelsDir);
+    std::error_code e;
+    std::filesystem::create_directories(modelsDir, e);
+    if (e.value() != 0)
+    {
+        MY_LOG_ERROR("Failed to create dir %s: %s", modelsDir.c_str(), e.message().c_str());
+    }
+
     if (snapshot != "latest")
     {
         MY_LOG_INFO("PretrainedManager - direct file path, disabling saving by default");
@@ -160,7 +166,12 @@ std::string PretrainedManager::BuildFilePathForSave(const AbstractModel* model,
     if (subDir.has_value()) 
     {
         outputDir /= subDir.value();
-        std::filesystem::create_directories(outputDir);
+        std::error_code e;
+        std::filesystem::create_directories(outputDir, e);
+        if (e.value() != 0)
+        {
+            MY_LOG_ERROR("Failed to create dir %s: %s", outputDir.c_str(), e.message().c_str());
+        }        
     }
 
     std::string fileName = this->GetModelFileName(model);

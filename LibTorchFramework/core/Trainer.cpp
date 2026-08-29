@@ -88,16 +88,16 @@ void Trainer::RunOptimizerFull(std::shared_ptr<torch::optim::Optimizer> optimize
     }
 
 #ifdef _DEBUG
-    auto p = model->parameters().front();
-    auto before = p.detach().clone();
+    //auto p = model->parameters().front();
+    //auto before = p.detach().clone();
 #endif
 
     optimizer->step();
     optimizer->zero_grad();    
 
 #ifdef _DEBUG
-    MY_LOG_INFO("grad norm: %f", p.grad().norm().item<float>());
-    MY_LOG_INFO("update norm: %f", (p.detach() - before).norm().item<float>());
+    //MY_LOG_INFO("grad norm: %f", p.grad().norm().item<float>());
+    //MY_LOG_INFO("update norm: %f", (p.detach() - before).norm().item<float>());
 #endif
 }
 

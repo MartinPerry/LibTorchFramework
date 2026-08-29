@@ -10,6 +10,7 @@
 MetricsDefault::MetricsDefault() : 
 	batchesCount(0),
 	processCounter(0),
+	dashboard(nullptr),
 	meanLoss(std::nullopt),
 	predEval(nullptr)
 {
@@ -19,25 +20,9 @@ MetricsDefault::~MetricsDefault()
 {
 }
 
-void MetricsDefault::SetDashboradEnabled(bool val, std::optional<std::string> id)
+void MetricsDefault::SetDashborad(std::shared_ptr<MetricsUploader> dasboard)
 {
-	if (val)
-	{
-		if (this->mup == nullptr)
-		{
-			this->mup = std::make_shared<MetricsUploader>();			
-		}
-	}
-	else
-	{
-		this->mup = nullptr;
-	}
-
-
-	if ((this->mup) && (id.has_value()))
-	{
-		this->mup->SetRunId(*id);
-	}
+	this->dashboard = dashboard;
 }
 
 void MetricsDefault::SetPredictionEvaluator(std::shared_ptr<PredictionEvaluator> predEval)
@@ -95,9 +80,9 @@ void MetricsDefault::Save(const std::string& filePath) const
 	free(json_str);
 	cJSON_Delete(root);
 
-	if (mup != nullptr)
+	if (dashboard != nullptr)
 	{
-		mup->UploadMetrics(res);
+		dashboard->UploadMetrics(res);
 	}	
 
 }

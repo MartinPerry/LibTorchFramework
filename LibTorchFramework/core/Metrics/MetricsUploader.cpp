@@ -27,7 +27,7 @@ MetricsUploader::MetricsUploader() :
 
 MetricsUploader::~MetricsUploader()
 {
-    DownloadManager::Destroy();
+    //DownloadManager::Destroy();
 }
 
 void MetricsUploader::SetRunId(const std::string& id)
@@ -94,12 +94,19 @@ static size_t receiveResponse(char* contents, size_t size, size_t count, void* u
 }
 
 void MetricsUploader::UploadMetrics(const std::unordered_map<std::string, float>& metrics)
-{    
+{        
+    auto dl = DownloadManager::GetInstance();
+    if (dl == nullptr)
+    {
+        MY_LOG_ERROR("Web manager not inited");
+        return;
+    }
+
     const std::string requestBody = this->BuildRequestBody(runId, metrics);
 
     const std::string tokenHeader = "X-Upload-Token: " + MetricsUploader::UPLOAD_TOKEN;
 
-    auto dl = DownloadManager::GetInstance();
+
     //dl->SetVerbose(true);
     DownloadJobSettings s;
     s.additionalHttpHeaders.push_back("Content-Type: application/json");

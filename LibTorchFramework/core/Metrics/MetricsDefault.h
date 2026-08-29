@@ -18,7 +18,7 @@ public:
 	MetricsDefault();
 	virtual ~MetricsDefault();
 
-	void SetDashboradEnabled(bool val, std::optional<std::string> id = std::nullopt);
+	void SetDashborad(std::shared_ptr<MetricsUploader> dasboard);
 	void SetPredictionEvaluator(std::shared_ptr<PredictionEvaluator> predEval);
 
 	virtual void Reset();
@@ -41,7 +41,7 @@ protected:
 	size_t batchesCount;
 	size_t processCounter;
 
-	std::shared_ptr<MetricsUploader> mup;
+	std::shared_ptr<MetricsUploader> dashboard;
 
 	std::vector<float> losses;
 	mutable std::optional<float> meanLoss;
