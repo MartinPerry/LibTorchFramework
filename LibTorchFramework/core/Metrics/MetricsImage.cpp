@@ -155,7 +155,7 @@ std::unordered_map<std::string, float> MetricsImage::GetResultExtended() const
 
         ++thresholdCount;
 
-        const std::string thresholdStr = std::to_string(static_cast<int>(threshold));
+        const std::string thresholdStr = std::to_string(threshold);
 
         res.try_emplace("csi_" + thresholdStr + "_pool1", csiPool1);
         res.try_emplace("csi_" + thresholdStr + "_pool4", csiPool4);

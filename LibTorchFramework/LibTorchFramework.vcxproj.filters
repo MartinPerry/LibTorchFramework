@@ -597,6 +597,9 @@
     <ClCompile Include="core\Metrics\MetricsUploader.cpp">
       <Filter>Source Files\core\Metrics</Filter>
     </ClCompile>
+    <ClCompile Include="core\NcclTrainerContext.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InputProcessing\DefaultDataset.h">
@@ -952,6 +955,9 @@
     </ClInclude>
     <ClInclude Include="core\Metrics\MetricsUploader.h">
       <Filter>Header Files\core\Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="core\NcclTrainerContext.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

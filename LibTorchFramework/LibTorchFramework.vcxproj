@@ -158,6 +158,7 @@
     <ClCompile Include="core\Modules\LossFunctions\SSIMLoss.cpp" />
     <ClCompile Include="core\Modules\MLP.cpp" />
     <ClCompile Include="core\Modules\WeightsInit\TruncatedNormalInit.cpp" />
+    <ClCompile Include="core\NcclTrainerContext.cpp" />
     <ClCompile Include="core\Optimizers\AdamW8bit.cpp" />
     <ClCompile Include="core\Optimizers\FusedAdamW8bit.cpp" />
     <ClCompile Include="core\Optimizers\LAMB.cpp" />
@@ -272,6 +273,7 @@
     <ClInclude Include="core\Modules\ResNetBlock.h" />
     <ClInclude Include="core\Modules\UpSample2d.h" />
     <ClInclude Include="core\Modules\WeightsInit\TruncatedNormalInit.h" />
+    <ClInclude Include="core\NcclTrainerContext.h" />
     <ClInclude Include="core\Optimizers\AdamW8bit.h" />
     <ClInclude Include="core\Optimizers\FusedAdamW8bit.h" />
     <ClInclude Include="core\Optimizers\FusedAdamW8bit_cuda.h" />
