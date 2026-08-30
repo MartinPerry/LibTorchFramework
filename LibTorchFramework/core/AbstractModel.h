@@ -4,6 +4,7 @@
 class FreezeInfo;
 struct DataLoaderData;
 class Trainer;
+class NcclTrainer;
 
 #include <vector>
 
@@ -34,6 +35,7 @@ public:
 	virtual void OnEpochEnd();
 
 	friend class Trainer;
+	friend class NcclTrainer;
 
 protected:
 

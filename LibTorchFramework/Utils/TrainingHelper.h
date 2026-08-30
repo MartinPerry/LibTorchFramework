@@ -19,6 +19,8 @@ class ProgressBar;
 #include "../core/Runner.h"
 #include "../core/Trainer.h"
 
+#include "../core/Distributed/NcclTrainer.h"
+
 #include "../InputProcessing/InputLoader.h"
 #include "../InputProcessing/InputLoadersWrapper.h"
 
@@ -30,15 +32,17 @@ class TrainingHelper
 {
 public:
     TrainingHelper(const Settings& sets, std::shared_ptr<AbstractModel> model);
+    TrainingHelper(const Settings& sets, std::shared_ptr<AbstractModel> model, int gpuCount);
     ~TrainingHelper() = default;
 
 	template <typename DatasetType = DefaultDataset>
 	void Run(std::shared_ptr<InputLoadersWrapper> loaders);
 
 protected:
-    
+        
     const Settings& sets;
     std::shared_ptr<AbstractModel> model;
+    int gpuCount;
 
     template <typename DatasetType>
     auto BuildDataLoader(RunMode type, std::shared_ptr<InputLoadersWrapper> loaders, int& bacthesCount);
@@ -78,7 +82,24 @@ void TrainingHelper::Run(std::shared_ptr<InputLoadersWrapper> loaders)
       
     Runner runnerValid(RunMode::VALID, sets, model);
     Runner runnerTest(RunMode::TEST, sets, model);
-    Trainer train(sets, model);
+
+#ifdef LIBTORCH_FRAMEWORK_HAS_NCCL           
+    std::shared_ptr<Runner> train = nullptr;
+    if (gpuCount > 1)
+    {
+        train = std::make_shared<NcclTrainer>(sets, model);
+    }
+    else
+    {
+        train = std::make_shared<Trainer>(sets, model);
+    }
+#else
+    if (gpuCount > 1)
+    {
+        MY_LOG_ERROR("NCCL is not available. Will use single GPU training.");
+    }
+    std::shared_ptr<Runner> train = std::make_shared<Trainer>(sets, model);
+#endif
 
     for (int i = 0; i < sets.epochCount; i++)
     {
@@ -87,7 +108,7 @@ void TrainingHelper::Run(std::shared_ptr<InputLoadersWrapper> loaders)
         if (dlTrain)
         {
             MY_LOG_INFO("Batches count (train): %d", bacthesCountTrain);
-            train.RunEpoch(dlTrain, i, bacthesCountTrain);
+            train->RunEpoch(dlTrain, i, bacthesCountTrain);
         }
         
         if (dlValid)

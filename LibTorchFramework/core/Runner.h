@@ -45,10 +45,14 @@ protected:
 
     int activeEpochId;
 
-    torch::Tensor ForwardAndLoss(DataLoaderData& batch);
+    torch::Tensor ForwardAndLoss(DataLoaderData& batch);    
 
+    virtual void PrepareModel();
     virtual void OnEpochStart();
+    virtual void OnModelEpochStart();
+    virtual void PrepareBatch(DataLoaderData& batch);
     virtual void ProcessBatch(DataLoaderData& batch);
+    virtual void OnModelEpochEnd();
     virtual void OnEpochEnd();
     
 };
@@ -79,19 +83,19 @@ void Runner::RunEpoch(DataLoaderType& dl, int epochId, int batchesCount)
     this->dataLoaderBatchesCount = batchesCount;
     this->activeEpochId = epochId;
 
-    model->to(sets.device);
+    this->PrepareModel();
 
     this->OnEpochStart();
     
-    model->OnEpochStart();
-
+    this->OnModelEpochStart();
+    
     batchIndex = 0;
     
     for (auto& batch : *dl)
     {
         model->OnBatchStart();
 
-        batch.setupDevice(sets);
+        this->PrepareBatch(batch);
 
         this->ProcessBatch(batch);
 
@@ -100,7 +104,7 @@ void Runner::RunEpoch(DataLoaderType& dl, int epochId, int batchesCount)
         batchIndex++;
     }
 
-    model->OnEpochEnd();
+    this->OnModelEpochEnd();
 
     this->OnEpochEnd();
 }

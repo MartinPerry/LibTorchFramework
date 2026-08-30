@@ -241,6 +241,12 @@
     <Filter Include="Source Files\core\Modules\Convolutions\DeformConvImpl\tvdcn\ops\utils">
       <UniqueIdentifier>{e4a55bfb-8a19-4873-9ee2-fd89b4178ab4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\core\Distributed">
+      <UniqueIdentifier>{eb20afea-c3eb-4bca-84e9-527ad8fa9b9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Distributed">
+      <UniqueIdentifier>{e74f4176-97e0-473e-ab6b-c470cc0eb9bc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -597,8 +603,11 @@
     <ClCompile Include="core\Metrics\MetricsUploader.cpp">
       <Filter>Source Files\core\Metrics</Filter>
     </ClCompile>
-    <ClCompile Include="core\NcclTrainerContext.cpp">
-      <Filter>Source Files\core</Filter>
+    <ClCompile Include="core\Distributed\NcclTrainer.cpp">
+      <Filter>Source Files\core\Distributed</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Distributed\NcclTrainerContext.cpp">
+      <Filter>Source Files\core\Distributed</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -958,6 +967,15 @@
     </ClInclude>
     <ClInclude Include="core\NcclTrainerContext.h">
       <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\NcclTrainer.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Distributed\NcclTrainer.h">
+      <Filter>Header Files\core\Distributed</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Distributed\NcclTrainerContext.h">
+      <Filter>Header Files\core\Distributed</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

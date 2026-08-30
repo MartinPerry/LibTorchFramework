@@ -18,6 +18,8 @@ Runner::Runner(RunMode type, const Settings& sets, std::shared_ptr<AbstractModel
 	sets(sets),
 	model(model),
     metrics(nullptr),
+    batchIndex(0),
+    dataLoaderBatchesCount(0),
     activeEpochId(0)
 {
     this->pBar = std::make_shared<ProgressBar>();
@@ -38,7 +40,7 @@ torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch)
             at::autocast::set_autocast_dtype(sets.device, *sets.perf.autocastType);
         }
     }
-    auto result = model->RunForward(batch);
+    auto result = this->model->RunForward(batch);
   
     torch::Tensor loss;
 
@@ -78,6 +80,12 @@ torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch)
 // Main loop callbacks
 //============================================================
 
+
+void Runner::PrepareModel()
+{
+    model->to(sets.device);
+}
+
 void Runner::OnEpochStart()
 {
     if (sets.metricsInitFn)
@@ -93,6 +101,16 @@ void Runner::OnEpochStart()
     this->pBar->Start(this->dataLoaderBatchesCount);
 }
 
+void Runner::OnModelEpochStart()
+{
+    model->OnEpochStart();
+}
+
+void Runner::PrepareBatch(DataLoaderData& batch)
+{
+    batch.setupDevice(sets);
+}
+
 void Runner::ProcessBatch(DataLoaderData& batch)
 {
     auto loss = this->ForwardAndLoss(batch);
@@ -103,6 +121,12 @@ void Runner::ProcessBatch(DataLoaderData& batch)
     this->pBar->NextStep();
    
 }
+
+void Runner::OnModelEpochEnd()
+{
+    model->OnEpochEnd();
+}
+
 
 void Runner::OnEpochEnd()
 {

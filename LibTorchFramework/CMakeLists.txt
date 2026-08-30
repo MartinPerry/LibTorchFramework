@@ -107,9 +107,7 @@ if(NOT WIN32)
 endif()
 
 # Source files are intentionally listed explicitly.
-set(LIBTORCH_FRAMEWORK_SOURCES
-    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/AbstractModel.cpp
-    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/CudaGraphHelper.cpp
+set(LIBTORCH_FRAMEWORK_SOURCES    
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Metrics/MetricsDefault.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Metrics/MetricsImage.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Metrics/MetricsVideo.cpp
@@ -167,8 +165,7 @@ set(LIBTORCH_FRAMEWORK_SOURCES
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Modules/WeightsInit/TruncatedNormalInit.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Optimizers/AdamW8bit.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Optimizers/FusedAdamW8bit.cpp
-    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Optimizers/LAMB.cpp
-    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Runner.cpp
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Optimizers/LAMB.cpp    
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Snapshot/PretrainedManager.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Snapshot/SafeTensorLoader.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Snapshot/safetensors.cpp
@@ -177,6 +174,11 @@ set(LIBTORCH_FRAMEWORK_SOURCES
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Tokenizers/Strings/UnicodeRegex.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Tokenizers/TokenizerBPE.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Tokenizers/TokenizerJsonLoader.cpp
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Distributed/NcclTrainer.cpp
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Distributed/NcclTrainerContext.cpp
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/AbstractModel.cpp
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/CudaGraphHelper.cpp
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Runner.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Trainer.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/CustomScenarios/exPreCastTraining/MeteonetInputLoader.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/CustomScenarios/exPreCastTraining/setup_exprecast.cpp
@@ -196,8 +198,7 @@ set(LIBTORCH_FRAMEWORK_SOURCES
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/InputProcessing/InputLoaders/EncoderDecoderInputLoader.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/InputProcessing/InputLoaders/SegmentationInputLoader.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/InputProcessing/InputLoaders/TextFilesInputLoader.cpp
-    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/InputProcessing/InputLoaders/VideoSequenceInputLoader.cpp
-    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/main.cpp
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/InputProcessing/InputLoaders/VideoSequenceInputLoader.cpp    
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/exPreCast/BasicLayerSkip.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/exPreCast/CubicDualUpsample.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/exPreCast/exPreCastModel.cpp
@@ -219,13 +220,14 @@ set(LIBTORCH_FRAMEWORK_SOURCES
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/SimVPv2/SimVPv2Model.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/U2Net/U2NetModel.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/UNet/UNetModel.cpp
-    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/PerformanceSettings.cpp
-    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/SettingsLoader.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/Utils/ModelInfo.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/Utils/ProgressBar.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/Utils/TorchImageUtils.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/Utils/TorchUtils.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/Utils/TrainingHelper.cpp
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/PerformanceSettings.cpp
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/SettingsLoader.cpp
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/main.cpp
 )
 
 if(LIBTORCH_FRAMEWORK_USE_CUDA)
