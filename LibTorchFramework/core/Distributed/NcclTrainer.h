@@ -26,8 +26,7 @@ namespace torch {
 class NcclTrainer : public Runner
 {
 public:	
-
-	NcclTrainer(const Settings& sets, std::shared_ptr<AbstractModel> model, int gpuCount);
+	
 	NcclTrainer(const Settings& sets, std::vector<std::shared_ptr<AbstractModel>> models);
 	virtual ~NcclTrainer();
 	

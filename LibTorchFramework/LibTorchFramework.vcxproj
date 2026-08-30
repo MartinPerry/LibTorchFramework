@@ -59,7 +59,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;NOMINMAX;USE_CUDA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;NOMINMAX;USE_CUDA;LIBTORCH_FRAMEWORK_HAS_NCCL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -276,8 +276,6 @@
     <ClInclude Include="core\Modules\ResNetBlock.h" />
     <ClInclude Include="core\Modules\UpSample2d.h" />
     <ClInclude Include="core\Modules\WeightsInit\TruncatedNormalInit.h" />
-    <ClInclude Include="core\NcclTrainer.h" />
-    <ClInclude Include="core\NcclTrainerContext.h" />
     <ClInclude Include="core\Optimizers\AdamW8bit.h" />
     <ClInclude Include="core\Optimizers\FusedAdamW8bit.h" />
     <ClInclude Include="core\Optimizers\FusedAdamW8bit_cuda.h" />

@@ -965,12 +965,6 @@
     <ClInclude Include="core\Metrics\MetricsUploader.h">
       <Filter>Header Files\core\Metrics</Filter>
     </ClInclude>
-    <ClInclude Include="core\NcclTrainerContext.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\NcclTrainer.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="core\Distributed\NcclTrainer.h">
       <Filter>Header Files\core\Distributed</Filter>
     </ClInclude>

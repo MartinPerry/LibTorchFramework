@@ -12,7 +12,6 @@ AbstractModel::~AbstractModel()
 }
 
 
-
 void AbstractModel::RemoveOptimizer()
 {	
 	this->optimizer = nullptr;

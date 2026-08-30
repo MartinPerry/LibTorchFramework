@@ -154,41 +154,88 @@ namespace CustomScenarios::exPreCastTraining
 		}
 		
 		//-------
-
-		auto m = std::make_shared<ModelZoo::exPreCast::exPreCastModel>();
-	
-		if (settings.snapshot.weights != "")
-		{			
-			SafeTensorLoader tl;
-			auto loadRes = tl.LoadModel(settings.snapshot.weights,
-				*m.get(), false, [](const std::string& name) -> std::string {
-					std::string newName = name;
-					StringUtils::ReplaceSubStr(newName, "module.", "");
-
-					return newName;
-			});
-		}
-
-		//expected input shape: [4, 1, 12, 256, 256]
-		//expected output/gt shape: [4, 12, 256, 256]
 		
-		m->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(1e-3).weight_decay(0.0));
+		auto modelIniter = [&](size_t device) -> std::shared_ptr<AbstractModel> {
 
-		sets.pretrainedManager = std::make_shared<PretrainedManager>(settings.snapshot.path);
-		sets.pretrainedManager->EnableTrainingSnapshot(true);
-		sets.pretrainedManager->EnableSaving(settings.snapshot.enableSave);
-		sets.pretrainedManager->EnableLoading(settings.snapshot.enableLoad);
+			auto m = std::make_shared<ModelZoo::exPreCast::exPreCastModel>();
 
-		// 
-		//SnapshotSaver saver(m.get());
-		//saver.Save(sets.pretrainedManager);
+			if (settings.snapshot.weights != "")
+			{
+				SafeTensorLoader tl;
+				auto loadRes = tl.LoadModel(settings.snapshot.weights,
+					*m.get(), false, [](const std::string& name) -> std::string {
+						std::string newName = name;
+						StringUtils::ReplaceSubStr(newName, "module.", "");
 
-		//SnapshotLoader loader(m.get());
-		//loader.Load(sets.pretrainedManager);
-		
-		m->to(sets.device);
+						return newName;
+					});
+			}
 
-		TrainingHelper th(sets, m);
+			//expected input shape: [4, 1, 12, 256, 256]
+			//expected output/gt shape: [4, 12, 256, 256]
+
+			m->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(1e-3).weight_decay(0.0));
+
+			sets.pretrainedManager = std::make_shared<PretrainedManager>(settings.snapshot.path);
+			sets.pretrainedManager->EnableTrainingSnapshot(true);
+			sets.pretrainedManager->EnableSaving(settings.snapshot.enableSave);
+			sets.pretrainedManager->EnableLoading(settings.snapshot.enableLoad);
+
+			// 
+			//SnapshotSaver saver(m.get());
+			//saver.Save(sets.pretrainedManager);
+
+			//SnapshotLoader loader(m.get());
+			//loader.Load(sets.pretrainedManager);
+
+			//todo - specify device
+			m->to(sets.device);
+
+			return m;
+		};
+
+		TrainingHelper th(sets, modelIniter, 1);
 		th.Run(ilw);
 	}
 }
+
+/*
+
+template <typename ModelType>
+std::shared_ptr<ModelType> TrainingHelper::CreateModelDeepCopy(std::shared_ptr<ModelType> model)
+{
+	if (model == nullptr)
+	{
+		return nullptr;
+	}
+
+
+	auto params = model->named_parameters(true);
+	auto clonedParams = clonedModel->named_parameters(true);
+	for (auto& item : params)
+	{
+		auto it = clonedParams.find(item);
+		if (it == clonedParams.end())
+		{
+			continue;
+		}
+
+		it->second.copy(item, true);
+	}
+
+	auto buffers = model->named_buffers(true);
+	auto clonedBuffers = clonedModel->named_buffers(true);
+	for (auto& item : buffers)
+	{
+		auto it = clonedParams.find(item);
+		if (it == clonedParams.end())
+		{
+			continue;
+		}
+
+		it->second.copy(item, true);
+	}
+
+	return nullptr;
+}
+*/

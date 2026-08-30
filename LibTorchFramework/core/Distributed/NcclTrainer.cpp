@@ -35,11 +35,6 @@ bool IsSingleGpuNcclTestEnabled()
 }
 
 
-NcclTrainer::NcclTrainer(const Settings& sets, std::shared_ptr<AbstractModel> model, int gpuCount) :
-    NcclTrainer(sets, std::vector<std::shared_ptr<AbstractModel>>(gpuCount, model))
-{    
-}
-
 NcclTrainer::NcclTrainer(const Settings& sets, std::vector<std::shared_ptr<AbstractModel>> models) :
     Runner(RunMode::TRAIN, sets, models.front()),
     cudaGraph(nullptr),

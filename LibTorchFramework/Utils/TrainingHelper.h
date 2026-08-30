@@ -7,6 +7,7 @@ class DefaultDataset;
 class ProgressBar;
 
 #include <memory>
+#include <functional>
 
 #include <torch/torch.h>
 
@@ -31,8 +32,10 @@ class ProgressBar;
 class TrainingHelper
 {
 public:
+    
     TrainingHelper(const Settings& sets, std::shared_ptr<AbstractModel> model);
-    TrainingHelper(const Settings& sets, std::shared_ptr<AbstractModel> model, int gpuCount);
+    TrainingHelper(const Settings& sets, std::function<std::shared_ptr<AbstractModel>(size_t)> modelIniter,
+        int gpuCount);
     ~TrainingHelper() = default;
 
 	template <typename DatasetType = DefaultDataset>
@@ -42,8 +45,10 @@ protected:
         
     const Settings& sets;
     std::shared_ptr<AbstractModel> model;
-    int gpuCount;
 
+    std::function<std::shared_ptr<AbstractModel>(size_t)> modelIniter;
+    int gpuCount;
+   
     template <typename DatasetType>
     auto BuildDataLoader(RunMode type, std::shared_ptr<InputLoadersWrapper> loaders, int& bacthesCount);
 
@@ -52,7 +57,6 @@ protected:
 
 
 //================================================================================
-
 
 template <typename DatasetType>
 auto TrainingHelper::BuildDataLoader(RunMode type, 
@@ -87,7 +91,14 @@ void TrainingHelper::Run(std::shared_ptr<InputLoadersWrapper> loaders)
     std::shared_ptr<Runner> train = nullptr;
     if (gpuCount > 1)
     {
-        train = std::make_shared<NcclTrainer>(sets, model);
+        std::vector<std::shared_ptr<AbstractModel>> models;
+        for (int i = 0; i < gpuCount; i++)
+        {
+            models.emplace_back(modelIniter(i));
+        }
+
+
+        train = std::make_shared<NcclTrainer>(sets, models);
     }
     else
     {
