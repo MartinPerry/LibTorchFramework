@@ -20,7 +20,7 @@ MetricsDefault::~MetricsDefault()
 {
 }
 
-void MetricsDefault::SetDashborad(std::shared_ptr<MetricsUploader> dasboard)
+void MetricsDefault::SetDashborad(std::shared_ptr<MetricsUploader> dashboard)
 {
 	this->dashboard = dashboard;
 }

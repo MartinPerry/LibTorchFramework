@@ -131,7 +131,7 @@ namespace CustomScenarios::exPreCastTraining
 		loaderSets.subsetSize = settings.dataset.subsetSize;
 				
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);	
-		ilw->SetShuffleSeed(456);
+		ilw->SetShuffleSeed(settings.dataset.seed);
 		ilw->SetTrainValTestSplit(0.8, 0.0);
 		ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } },
 			settings.dataset.path, prevCount, futureCount);

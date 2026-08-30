@@ -66,6 +66,9 @@ void SettingsLoader::LoadDataset(const JsonCmdDefaults& json, DatasetSettings& s
 {
     settings.path = json.GetValue<std::string>("dataset.path", settings.path);
 
+    int seed = json.GetValue<int>("dataset.seed", -1);
+    settings.seed = seed >= 0 ? std::optional<int>(seed) : std::nullopt;
+
     int subsetSize = json.GetValue<int>("dataset.subset_size", -1);
     settings.subsetSize = subsetSize >= 0 ? std::optional<size_t>(subsetSize) : std::nullopt;
 

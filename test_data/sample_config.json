@@ -11,6 +11,7 @@
     "path_uni": "d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE",
     "path_linux": "/data/perry/gp/datasets/meteonet/SE",
     "path": "e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet_256/SE",
+    "seed": -1,
     "subset_size": 2,
     "channels_count": 1,
     "width": 256,

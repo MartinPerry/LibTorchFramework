@@ -18,6 +18,7 @@ struct DatasetSettings
 {
     std::string path;
     std::optional<size_t> subsetSize;
+    std::optional<int> seed = std::nullopt;
     int channelsCount = 1;
     int width = 256;
     int height = 256;
