@@ -18,6 +18,7 @@ public:
 	~MetricsUploader();
 
 	void SetRunId(const std::string& id);
+	void SetImageUploadEnabled(bool val);
 
 	void UploadMetrics(const std::unordered_map<std::string, float>& metrics, 
 		const MetricsDefault::SaveInfo& si);
@@ -28,6 +29,7 @@ public:
 
 protected:
 	std::string runId;
+	bool imgUploadEnabled;
 
 	std::vector<char> LoadImageData(const std::string& filePath) const;
 

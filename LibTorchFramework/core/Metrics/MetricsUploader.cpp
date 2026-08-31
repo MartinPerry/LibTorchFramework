@@ -20,7 +20,8 @@ std::string MetricsUploader::API_URL = "";
 std::string MetricsUploader::UPLOAD_TOKEN = "";
 
 MetricsUploader::MetricsUploader() : 
-    runId(std::to_string(time(0)))
+    runId(std::to_string(time(0))),
+    imgUploadEnabled(false)
 {
     DownloadManager::Init();
 }
@@ -33,6 +34,11 @@ MetricsUploader::~MetricsUploader()
 void MetricsUploader::SetRunId(const std::string& id)
 {
     this->runId = id;
+}
+
+void MetricsUploader::SetImageUploadEnabled(bool val)
+{
+    this->imgUploadEnabled = val;
 }
 
 
@@ -175,6 +181,11 @@ std::vector<char> MetricsUploader::LoadImageData(const std::string& filePath) co
 void MetricsUploader::UploadImage(int imageIndex, const std::string& imagePath, 
     const MetricsDefault::SaveInfo& si)
 {
+    if (this->imgUploadEnabled == false)
+    {
+        return;
+    }
+
     auto dl = DownloadManager::GetInstance();
     if (dl == nullptr)
     {

@@ -83,6 +83,7 @@ namespace CustomScenarios::exPreCastTraining
 			
 			dashboard = std::make_shared<MetricsUploader>();
 			dashboard->SetRunId("exprecast_" + std::to_string(time(0)));
+			dashboard->SetImageUploadEnabled(settings.dashboard.enableImageUpload);
 		}
 		
 
