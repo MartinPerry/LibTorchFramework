@@ -8,6 +8,8 @@
 
 #include "../../Utils/TorchImageUtils.h"
 
+#include "./MetricsUploader.h"
+
 MetricsImage::MetricsImage() :
     MetricsImage(MetricsType::UNKNOWN)
 {
@@ -209,9 +211,9 @@ std::string MetricsImage::BuildPath(const std::string& path,
     return finalPath.string();
 }
 
-void MetricsImage::Save(const std::string& filePath) const
+void MetricsImage::Save(const SaveInfo& si) const
 {
-    MetricsDefault::Save(filePath);
+    MetricsDefault::Save(si);
 
     
     // make a local copy of images (because we will modify shapes)
@@ -254,8 +256,13 @@ void MetricsImage::Save(const std::string& filePath) const
         sets.intervalMapping = this->intervalMapping;
 
         auto img = TorchImageUtils::TensorsToImage(rows, sets);
-        std::string imgPath = this->BuildPath(filePath, static_cast<int>(i), "jpg", false);
+        std::string imgPath = this->BuildPath(si.jsonFilePath, static_cast<int>(i), "jpg", false);
         img.Save(imgPath.c_str());
+
+        if (dashboard != nullptr)
+        {
+            dashboard->UploadImage(i, imgPath, si);
+        }
     }
    
 

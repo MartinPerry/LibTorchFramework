@@ -14,9 +14,9 @@ MetricsVideo::MetricsVideo() :
 {
 }
 
-void MetricsVideo::Save(const std::string& filePath) const
+void MetricsVideo::Save(const SaveInfo& si) const
 {
-    MetricsImage::Save(filePath);
+    MetricsImage::Save(si);
 
 
     // make a local copy of images (because we will modify shapes)
@@ -59,7 +59,7 @@ void MetricsVideo::Save(const std::string& filePath) const
         sets.intervalMapping = this->intervalMapping;
 
         auto imgs = TorchImageUtils::TensorsToImages(rows, sets);
-        std::string imgPath = this->BuildPath(filePath, static_cast<int>(i), "gif", false);
+        std::string imgPath = this->BuildPath(si.jsonFilePath, static_cast<int>(i), "gif", false);
 
         auto w = imgs[0].GetWidth();
         auto h = imgs[0].GetHeight() * rows.size();

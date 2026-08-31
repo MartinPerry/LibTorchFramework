@@ -14,13 +14,10 @@ class MetricsVideo : public MetricsImage
 {
 public:
 	
-
 	MetricsVideo();	
 	~MetricsVideo() = default;
 	
-	void Save(const std::string& filePath) const override;
-
-
+	void Save(const SaveInfo& si) const override;
 
 protected:
 	void CsiThresholds(torch::Tensor p, torch::Tensor t) override;

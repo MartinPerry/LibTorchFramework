@@ -79,6 +79,11 @@ std::string MetricsUploader::BuildRequestBody(const std::string& runId, const st
             body << ',';
         }
         first = false;
+        if (std::isnan(value))
+        {
+            value = std::numeric_limits<float>::max();
+        }
+
         body << '"' << escapeJson(key) << "\":\"" << escapeJson(std::to_string(value)) << '"';
     }
     body << "}}";
@@ -93,7 +98,8 @@ static size_t receiveResponse(char* contents, size_t size, size_t count, void* u
     return byteCount;
 }
 
-void MetricsUploader::UploadMetrics(const std::unordered_map<std::string, float>& metrics)
+void MetricsUploader::UploadMetrics(const std::unordered_map<std::string, float>& metrics, 
+    const MetricsDefault::SaveInfo& si)
 {        
     auto dl = DownloadManager::GetInstance();
     if (dl == nullptr)
@@ -102,7 +108,7 @@ void MetricsUploader::UploadMetrics(const std::unordered_map<std::string, float>
         return;
     }
 
-    const std::string requestBody = this->BuildRequestBody(runId, metrics);
+    const std::string requestBody = this->BuildRequestBody(this->runId, metrics);
 
     const std::string tokenHeader = "X-Upload-Token: " + MetricsUploader::UPLOAD_TOKEN;
 
@@ -115,7 +121,7 @@ void MetricsUploader::UploadMetrics(const std::unordered_map<std::string, float>
 
     s.url = MetricsUploader::API_URL;
     s.dataType = DownloadJobSettings::DATA_TYPE::TEXT;
-    s.expertSettings.postFields.try_emplace("", requestBody);
+    s.expertSettings.SetRawPostData(requestBody);
 
     s.onFinish = [](std::shared_ptr<DownloadJob> job) {
         auto& v = job->GetData();
@@ -133,6 +139,101 @@ void MetricsUploader::UploadMetrics(const std::unordered_map<std::string, float>
     //job->WaitToFinish();
 
     //printf("x");
+}
+
+std::vector<char> MetricsUploader::LoadImageData(const std::string& filePath) const
+{
+    FILE* imageFile = fopen(filePath.c_str(), "rb");
+    if (imageFile == nullptr)
+    {
+        return {};
+    }
+
+    fseek(imageFile, 0, SEEK_END);
+    const long fileSize = ftell(imageFile);
+    fseek(imageFile, 0, SEEK_SET);
+
+    if (fileSize <= 0)
+    {
+        fclose(imageFile);
+        return {};
+    }
+
+    std::vector<char> buf(fileSize);
+    
+    const size_t bytesRead = fread(buf.data(), 1, buf.size(), imageFile);
+    fclose(imageFile);
+
+    if (bytesRead != buf.size())
+    {
+        return {};
+    }
+
+    return buf;
+}
+
+void MetricsUploader::UploadImage(int imageIndex, const std::string& imagePath, 
+    const MetricsDefault::SaveInfo& si)
+{
+    auto dl = DownloadManager::GetInstance();
+    if (dl == nullptr)
+    {
+        MY_LOG_ERROR("Web manager not inited");
+        return;
+    }
+    
+    auto imgData = this->LoadImageData(imagePath);
+    if (imgData.size() == 0)
+    {
+        MY_LOG_ERROR("Failed to load image %s", imagePath.c_str());
+        return;
+    }
+   
+    std::string tmp(imgData.data(), imgData.size());
+    
+    std::string url = MetricsUploader::API_URL;
+    url += "?action=image&run_id=" + this->runId;
+    url += "&img_index=" + std::to_string(imageIndex);
+    url += "&run_type=";
+    if (si.runMode == RunMode::TRAIN)
+    {
+        url += "train";
+    }
+    else if (si.runMode == RunMode::TEST)
+    {
+        url += "test";
+    }
+    else if (si.runMode == RunMode::VALID)
+    {
+        url += "valid";
+    }
+    url += "&run_index=" + std::to_string(si.epochId);
+
+    const std::string tokenHeader = "X-Upload-Token: " + MetricsUploader::UPLOAD_TOKEN;
+
+    DownloadJobSettings s;
+    s.additionalHttpHeaders.push_back("Content-Type: application/octet-stream");
+    s.additionalHttpHeaders.push_back("Accept: application/json");
+    s.additionalHttpHeaders.push_back(tokenHeader);
+    
+    s.dataType = DownloadJobSettings::DATA_TYPE::TEXT;
+    s.expertSettings.SetRawPostData(tmp);
+    
+    s.url = url;
+    s.dataType = DownloadJobSettings::DATA_TYPE::TEXT;    
+
+    s.onFinish = [](std::shared_ptr<DownloadJob> job) {
+        auto& v = job->GetData();
+
+        std::string buf(v.data(), v.size());
+        if (buf.find("true") == std::string::npos)
+        {
+            MY_LOG_ERROR("MetricsUploader: %s", buf.c_str());
+        }
+        };
+
+    auto job = dl->AddDownload(s, false);
+
 }
 
 

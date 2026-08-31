@@ -59,7 +59,7 @@ std::unordered_map<std::string, float> MetricsDefault::GetResultExtended() const
 	return res;
 }
 
-void MetricsDefault::Save(const std::string& filePath) const
+void MetricsDefault::Save(const SaveInfo& si) const
 {
 	std::unordered_map<std::string, float> res = this->GetResultExtended();
 
@@ -72,7 +72,7 @@ void MetricsDefault::Save(const std::string& filePath) const
 	
 	char* json_str = cJSON_Print(root);
 
-	TextFileWriter tf(filePath.c_str());
+	TextFileWriter tf(si.jsonFilePath.c_str());
 	tf.Write(json_str);
 
 	tf.Close();
@@ -82,7 +82,7 @@ void MetricsDefault::Save(const std::string& filePath) const
 
 	if (dashboard != nullptr)
 	{
-		dashboard->UploadMetrics(res);
+		dashboard->UploadMetrics(res, si);
 	}	
 
 }

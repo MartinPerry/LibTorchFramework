@@ -83,10 +83,7 @@ void TrainingHelper::Run(std::shared_ptr<InputLoadersWrapper> loaders)
     auto dlTrain = this->BuildDataLoader<DatasetType>(RunMode::TRAIN, loaders, bacthesCountTrain);
     auto dlValid = this->BuildDataLoader<DatasetType>(RunMode::VALID, loaders, bacthesCountValid);
     auto dlTest = this->BuildDataLoader<DatasetType>(RunMode::TEST, loaders, bacthesCountTest);
-      
-    Runner runnerValid(RunMode::VALID, sets, model);
-    Runner runnerTest(RunMode::TEST, sets, model);
-
+          
 #ifdef LIBTORCH_FRAMEWORK_HAS_NCCL           
     std::shared_ptr<Runner> train = nullptr;
     if (gpuCount > 1)
@@ -97,11 +94,16 @@ void TrainingHelper::Run(std::shared_ptr<InputLoadersWrapper> loaders)
             models.emplace_back(modelIniter(i));
         }
 
-
+        model = models.front();
         train = std::make_shared<NcclTrainer>(sets, models);
     }
     else
     {
+        if (model == nullptr)
+        {
+            model = modelIniter(0);
+        }
+
         train = std::make_shared<Trainer>(sets, model);
     }
 #else
@@ -109,8 +111,18 @@ void TrainingHelper::Run(std::shared_ptr<InputLoadersWrapper> loaders)
     {
         MY_LOG_ERROR("NCCL is not available. Will use single GPU training.");
     }
+
+    if (model == nullptr)
+    {
+        model = modelIniter(0);
+    }
+
     std::shared_ptr<Runner> train = std::make_shared<Trainer>(sets, model);
 #endif
+
+
+    Runner runnerValid(RunMode::VALID, sets, model);
+    Runner runnerTest(RunMode::TEST, sets, model);
 
     for (int i = 0; i < sets.epochCount; i++)
     {

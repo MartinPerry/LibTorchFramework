@@ -37,7 +37,8 @@ struct SnapshotSettings
 struct DashboardSettings
 {
     std::string url;
-    std::string token;    
+    std::string token;  
+    bool enableImageUpload = false;
 };
 
 struct ModelSettings

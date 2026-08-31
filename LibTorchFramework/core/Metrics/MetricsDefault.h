@@ -10,9 +10,18 @@ class MetricsUploader;
 
 #include <torch/torch.h>
 
+#include "../Structures.h"
+
 class MetricsDefault
 {
 public:
+	struct SaveInfo
+	{
+		std::string jsonFilePath;
+		int epochId;
+		RunMode runMode;
+	};
+
 	static inline size_t PROCESS_EVERY_NTH_INPUT = 1;
 
 	MetricsDefault();
@@ -26,7 +35,7 @@ public:
 	virtual bool IsBetterThan(std::shared_ptr<MetricsDefault> other) const;
 
 	virtual std::unordered_map<std::string, float> GetResultExtended() const;
-	virtual void Save(const std::string& filePath) const;
+	virtual void Save(const SaveInfo& si) const;
 
 	void UpdateProcessCounter();
 	bool CanProcess() const;

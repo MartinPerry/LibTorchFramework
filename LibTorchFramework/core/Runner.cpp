@@ -152,7 +152,12 @@ void Runner::OnEpochEnd()
             this->activeEpochId, 
             runType);
 
-        this->metrics->Save(path);
+        MetricsDefault::SaveInfo si;
+        si.jsonFilePath = path;
+        si.epochId = this->activeEpochId;
+        si.runMode = type;
+
+        this->metrics->Save(si);
     }
 
     this->pBar->Finish();

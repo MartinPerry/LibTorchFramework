@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string>
 
+#include "./MetricsDefault.h"
 
 class MetricsUploader
 {
@@ -18,12 +19,17 @@ public:
 
 	void SetRunId(const std::string& id);
 
-	void UploadMetrics(const std::unordered_map<std::string, float>& metrics);
+	void UploadMetrics(const std::unordered_map<std::string, float>& metrics, 
+		const MetricsDefault::SaveInfo& si);
 
+	void UploadImage(int imageIndex, const std::string& imagePath, 
+		const MetricsDefault::SaveInfo& si);
 	
 
 protected:
 	std::string runId;
+
+	std::vector<char> LoadImageData(const std::string& filePath) const;
 
 	std::string BuildRequestBody(const std::string& runId, const std::unordered_map<std::string, float>& metrics) const;
 };

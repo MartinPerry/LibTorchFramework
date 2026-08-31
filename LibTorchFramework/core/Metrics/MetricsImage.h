@@ -32,7 +32,7 @@ public:
 	void SetCsiThresholds(const std::vector<float>& csiThresholds);
 
 	std::unordered_map<std::string, float> GetResultExtended() const override;
-	void Save(const std::string& filePath) const override;
+	void Save(const SaveInfo& si) const override;
 
 	void Reset() override;
 
