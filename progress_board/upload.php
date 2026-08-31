@@ -16,6 +16,8 @@ function uploadResponse($payload, $statusCode)
         header('HTTP/1.1 401 Unauthorized');
     } elseif ($statusCode === 405) {
         header('HTTP/1.1 405 Method Not Allowed');
+    } elseif ($statusCode === 409) {
+        header('HTTP/1.1 409 Conflict');
     } elseif ($statusCode === 413) {
         header('HTTP/1.1 413 Payload Too Large');
     } elseif ($statusCode !== 200) {
@@ -109,6 +111,36 @@ function nextCheckpointId($runDirectory)
     return $maximum + 1;
 }
 
+function validRunId($runId)
+{
+    return is_string($runId) && preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/', $runId);
+}
+
+function ensureRunDirectory($runId)
+{
+    $dataRoot = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'data';
+    $runDirectory = $dataRoot . DIRECTORY_SEPARATOR . $runId;
+    if (!is_dir($dataRoot) && !@mkdir($dataRoot, 0775, true)) {
+        return false;
+    }
+    if (!is_dir($runDirectory) && !@mkdir($runDirectory, 0775, true)) {
+        return false;
+    }
+    return $runDirectory;
+}
+
+function imageExtension($bytes)
+{
+    if (strlen($bytes) >= 3 && substr($bytes, 0, 3) === "\xFF\xD8\xFF") {
+        return 'jpg';
+    }
+    $signature = substr($bytes, 0, 6);
+    if ($signature === 'GIF87a' || $signature === 'GIF89a') {
+        return 'gif';
+    }
+    return '';
+}
+
 if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Allow: POST');
     uploadResponse(array('ok' => false, 'error' => 'Use POST with a JSON request body'), 405);
@@ -120,6 +152,81 @@ if ($expectedToken === '' || $expectedToken === 'CHANGE_THIS_TO_A_LONG_RANDOM_SE
 }
 if (!secureTokenEquals($expectedToken, requestUploadToken())) {
     uploadResponse(array('ok' => false, 'error' => 'Invalid upload token'), 401);
+}
+
+$action = isset($_GET['action']) ? (string) $_GET['action'] : 'metrics';
+if ($action === 'image') {
+    $imageContentLength = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
+    if ($imageContentLength <= 0) {
+        uploadResponse(array('ok' => false, 'error' => 'Image request body is empty'), 400);
+    }
+    if ($imageContentLength > 26214400) {
+        uploadResponse(array('ok' => false, 'error' => 'Image exceeds 25 MiB'), 413);
+    }
+
+    $imageRunId = isset($_GET['run_id']) ? (string) $_GET['run_id'] : '';
+    $imageType = isset($_GET['run_type']) ? strtolower((string) $_GET['run_type']) : '';
+    $imageIndexText = isset($_GET['img_index']) ? (string) $_GET['img_index'] : '';
+    $runIndexText = isset($_GET['run_index']) ? (string) $_GET['run_index'] : '';
+    if (!validRunId($imageRunId)) {
+        uploadResponse(array('ok' => false, 'error' => 'run_id contains invalid characters'), 400);
+    }
+    if ($imageType !== 'train' && $imageType !== 'test' && $imageType !== 'valid') {
+        uploadResponse(array('ok' => false, 'error' => 'run_type must be train, test, or valid'), 400);
+    }
+    if (!preg_match('/^\d{1,10}$/', $imageIndexText) || !preg_match('/^\d{1,10}$/', $runIndexText)) {
+        uploadResponse(array('ok' => false, 'error' => 'img_index and run_index must be non-negative integers'), 400);
+    }
+
+    $imageBytes = file_get_contents('php://input');
+    if ($imageBytes === false || $imageBytes === '') {
+        uploadResponse(array('ok' => false, 'error' => 'Could not read image body'), 400);
+    }
+    $extension = imageExtension($imageBytes);
+    if ($extension === '') {
+        uploadResponse(array('ok' => false, 'error' => 'Only valid JPG and GIF image data is accepted'), 400);
+    }
+    if (function_exists('getimagesizefromstring') && @getimagesizefromstring($imageBytes) === false) {
+        uploadResponse(array('ok' => false, 'error' => 'Image data is corrupt'), 400);
+    }
+
+    $imageRunDirectory = ensureRunDirectory($imageRunId);
+    if ($imageRunDirectory === false) {
+        uploadResponse(array('ok' => false, 'error' => 'Could not create run directory'), 500);
+    }
+    $imageDirectory = $imageRunDirectory . DIRECTORY_SEPARATOR . 'img';
+    if (!is_dir($imageDirectory) && !@mkdir($imageDirectory, 0775, true)) {
+        uploadResponse(array('ok' => false, 'error' => 'Could not create image directory'), 500);
+    }
+    $imageFileName = (int) $imageIndexText . '_' . $imageType . '_' . (int) $runIndexText . '.' . $extension;
+    $imageFinalPath = $imageDirectory . DIRECTORY_SEPARATOR . $imageFileName;
+    if (is_file($imageFinalPath)) {
+        uploadResponse(array('ok' => false, 'error' => 'Image already exists'), 409);
+    }
+    $imageTemporaryPath = @tempnam($imageDirectory, '.image-');
+    if ($imageTemporaryPath === false || @file_put_contents($imageTemporaryPath, $imageBytes, LOCK_EX) === false) {
+        if ($imageTemporaryPath !== false) {
+            @unlink($imageTemporaryPath);
+        }
+        uploadResponse(array('ok' => false, 'error' => 'Could not write image file'), 500);
+    }
+    if (!@rename($imageTemporaryPath, $imageFinalPath)) {
+        @unlink($imageTemporaryPath);
+        uploadResponse(array('ok' => false, 'error' => 'Could not finalize image file'), 500);
+    }
+    @chmod($imageFinalPath, 0664);
+    uploadResponse(array(
+        'ok' => true,
+        'run_id' => $imageRunId,
+        'image_index' => (int) $imageIndexText,
+        'run_type' => $imageType,
+        'run_index' => (int) $runIndexText,
+        'file' => 'data/' . $imageRunId . '/img/' . $imageFileName
+    ), 201);
+}
+
+if ($action !== 'metrics') {
+    uploadResponse(array('ok' => false, 'error' => 'Unknown upload action'), 400);
 }
 
 $contentLength = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
@@ -140,7 +247,7 @@ if (!isset($request->run_id) || !is_string($request->run_id)) {
 }
 
 $runId = $request->run_id;
-if (!preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/', $runId)) {
+if (!validRunId($runId)) {
     uploadResponse(array('ok' => false, 'error' => 'run_id contains invalid characters'), 400);
 }
 if (!isset($request->data) || !is_object($request->data)) {

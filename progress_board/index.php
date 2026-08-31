@@ -236,7 +236,7 @@
       margin-bottom: 14px;
     }
 
-    .stat, .chart-card, .table-card {
+    .stat, .chart-card, .table-card, .image-card {
       border: 1px solid var(--border);
       background: var(--panel);
       box-shadow: var(--shadow);
@@ -305,6 +305,17 @@
     tbody tr:hover { background: rgba(96, 165, 250, 0.06); }
     .file-cell { max-width: 290px; overflow: hidden; text-overflow: ellipsis; }
 
+    .image-card { margin-top: 14px; padding: 18px; border-radius: 18px; }
+    .image-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+    .image-heading h2 { margin: 0; font-size: 1rem; }
+    .image-heading p { margin: 4px 0 0; color: var(--muted); font-size: 0.78rem; }
+    .image-heading .field { min-width: 150px; }
+    .image-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+    .image-item { display: block; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; color: var(--text); background: #10192b; text-decoration: none; }
+    .image-item:hover { border-color: var(--accent-2); }
+    .image-item img { display: block; width: 100%; height: 220px; object-fit: contain; background: #080d18; }
+    .image-caption { display: block; padding: 9px 11px; color: var(--muted); font-size: 0.76rem; }
+
     @media (max-width: 900px) {
       header { align-items: flex-start; flex-direction: column; }
       .source-grid { grid-template-columns: 1fr; }
@@ -351,7 +362,7 @@
           <span>Select or drag a folder / multiple .json files</span>
         </div>
         <label class="button" for="folderInput">Choose folder</label>
-        <input id="folderInput" type="file" accept=".json,application/json" webkitdirectory directory multiple>
+        <input id="folderInput" type="file" accept=".json,.jpg,.jpeg,.gif,application/json,image/jpeg,image/gif" webkitdirectory directory multiple>
       </section>
     </section>
     <p class="status" id="status" role="status">Choose a server run or load a folder from this PC.</p>
@@ -405,6 +416,17 @@
         </article>
       </div>
 
+      <article class="image-card" id="imageCard" hidden>
+        <div class="image-heading">
+          <div><h2>Generated images</h2><p>JPG/GIF outputs matching the selected run type.</p></div>
+          <div class="field">
+            <label for="imageRunSelect">Checkpoint</label>
+            <select id="imageRunSelect"></select>
+          </div>
+        </div>
+        <div class="image-gallery" id="imageGallery"></div>
+      </article>
+
       <article class="table-card">
         <h2>Recent checkpoints</h2>
         <div class="table-scroll">
@@ -435,7 +457,7 @@
       { id: "class", canvas: "classChart", legend: "classLegend", fixedRange: [0, 1], fields: [{ key: "acc", label: "Accuracy" }, { key: "mcr", label: "MCR" }] }
     ];
 
-    const state = { records: [], filtered: [], charts: new Map(), activeSource: "" };
+    const state = { records: [], images: [], filtered: [], charts: new Map(), activeSource: "", localImageUrls: [] };
     function el(id) { return document.getElementById(id); }
 
     function parseFilename(fileName) {
@@ -465,15 +487,37 @@
       return { ...meta, metrics, fileName, path, runGroup };
     }
 
+    function normalizeImage(fileName, url, runGroup) {
+      const match = fileName.match(/^(\d+)_(train|test|valid)_(\d+)\.(jpe?g|gif)$/i);
+      if (!match) return null;
+      return {
+        name: fileName,
+        url,
+        runGroup,
+        imageIndex: Number(match[1]),
+        type: match[2].toLowerCase(),
+        runIndex: Number(match[3])
+      };
+    }
+
+    function clearLocalImageUrls() {
+      state.localImageUrls.forEach(function revokeLocalImageUrl(url) { URL.revokeObjectURL(url); });
+      state.localImageUrls = [];
+    }
+
     async function readFiles(fileList) {
-      const files = [...fileList].filter(function isJsonFile(file) {
+      const selectedFiles = [...fileList];
+      const files = selectedFiles.filter(function isJsonFile(file) {
         return file.name.toLowerCase().endsWith(".json");
+      });
+      const imageFiles = selectedFiles.filter(function isImageFile(file) {
+        return /\.(jpe?g|gif)$/i.test(file.name);
       });
       if (!files.length) return setStatus("No .json files were found.", true);
       setStatus(`Reading ${files.length} JSON file${files.length === 1 ? "" : "s"}…`);
       const records = [];
       const failures = [];
-      const localGroup = files[0]?.webkitRelativePath?.split(/[\\/]/)[0] || "PC selection";
+      const localGroup = selectedFiles[0]?.webkitRelativePath?.split(/[\\/]/)[0] || "PC selection";
       await Promise.all(files.map(async function readJsonFile(file) {
         try {
           const data = JSON.parse(await file.text());
@@ -483,13 +527,24 @@
         }
       }));
       if (!records.length) return setStatus(`Could not load the files. ${failures[0] || ""}`, true);
-      activateRecords(records, `This PC / ${localGroup}`);
+      const images = [];
+      imageFiles.forEach(function prepareLocalImage(file) {
+        const objectUrl = URL.createObjectURL(file);
+        const image = normalizeImage(file.name, objectUrl, localGroup);
+        if (image) {
+          images.push(image);
+        } else {
+          URL.revokeObjectURL(objectUrl);
+        }
+      });
+      activateRecords(records, `This PC / ${localGroup}`, images, true);
       clearRunSelection();
       const unmatched = records.filter(function hasUnmatchedFilename(record) {
         return !record.matched;
       }).length;
       const notes = [
         `Loaded ${records.length} checkpoint${records.length === 1 ? "" : "s"}`,
+        images.length ? `${images.length} image${images.length === 1 ? "" : "s"}` : "",
         failures.length ? `${failures.length} invalid file${failures.length === 1 ? "" : "s"} skipped` : "",
         unmatched ? `${unmatched} filename${unmatched === 1 ? "" : "s"} did not match the expected pattern` : ""
       ].filter(Boolean);
@@ -551,8 +606,13 @@
       el("activeSourceLabel").textContent = state.activeSource;
     }
 
-    function activateRecords(records, sourceLabel) {
+    function activateRecords(records, sourceLabel, images = [], localImages = false) {
+      clearLocalImageUrls();
       state.records = records;
+      state.images = images;
+      if (localImages) {
+        state.localImageUrls = images.map(function getLocalImageUrl(image) { return image.url; });
+      }
       state.activeSource = sourceLabel;
       populateFilters();
       applyFilters();
@@ -769,6 +829,56 @@
       }).join("");
     }
 
+    function imageSort(a, b) {
+      if (a.runIndex !== b.runIndex) return a.runIndex - b.runIndex;
+      return a.imageIndex - b.imageIndex;
+    }
+
+    function imagesForSelectedType() {
+      const selectedType = el("typeSelect").value.toLowerCase();
+      return state.images.filter(function imageMatchesType(image) {
+        return image.type === selectedType;
+      }).sort(imageSort);
+    }
+
+    function renderImageGallery() {
+      const selectedRun = Number(el("imageRunSelect").value);
+      const images = imagesForSelectedType().filter(function imageMatchesRun(image) {
+        return image.runIndex === selectedRun;
+      });
+      el("imageGallery").innerHTML = images.map(function renderImage(image) {
+        return `<a class="image-item" href="${escapeHtml(image.url)}" target="_blank" rel="noopener">
+          <img src="${escapeHtml(image.url)}" alt="Image ${image.imageIndex}, ${image.type}, checkpoint ${image.runIndex}" loading="lazy">
+          <span class="image-caption">Image ${image.imageIndex} · ${image.type} · checkpoint ${image.runIndex}</span>
+        </a>`;
+      }).join("");
+    }
+
+    function renderImages() {
+      const images = imagesForSelectedType();
+      const card = el("imageCard");
+      card.hidden = images.length === 0;
+      if (!images.length) {
+        el("imageGallery").innerHTML = "";
+        return;
+      }
+
+      const previous = el("imageRunSelect").value;
+      const runIndices = [...new Set(images.map(function getImageRunIndex(image) { return image.runIndex; }))];
+      runIndices.sort(function descendingRunIndex(a, b) { return b - a; });
+      el("imageRunSelect").innerHTML = "";
+      runIndices.forEach(function addImageRunOption(runIndex) {
+        const option = document.createElement("option");
+        option.value = String(runIndex);
+        option.textContent = `Checkpoint ${runIndex}`;
+        el("imageRunSelect").append(option);
+      });
+      if (runIndices.map(String).includes(previous)) {
+        el("imageRunSelect").value = previous;
+      }
+      renderImageGallery();
+    }
+
     function escapeHtml(value) {
       return String(value).replace(/[&<>'"]/g, function replaceUnsafeCharacter(character) {
         return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character];
@@ -781,6 +891,7 @@
       el("toolbarSummary").textContent = `${state.filtered.length} checkpoint${state.filtered.length === 1 ? "" : "s"}${rangeText ? ` · ${rangeText}` : ""}`;
       renderStats();
       chartDefinitions.forEach(createChart);
+      renderImages();
       renderTable();
     }
 
@@ -849,9 +960,10 @@
       }
       runList.innerHTML = runs.map(function renderRunCard(run) {
         const modified = run.modifiedAt ? ` · updated ${new Date(run.modifiedAt).toLocaleString()}` : "";
-        return `<button class="run-card" type="button" data-run-id="${escapeHtml(run.id)}" ${run.fileCount ? "" : "disabled"}>
+        const imageCount = Number(run.imageCount) || 0;
+        return `<button class="run-card" type="button" data-run-id="${escapeHtml(run.id)}" ${run.fileCount || imageCount ? "" : "disabled"}>
           <strong title="${escapeHtml(run.label)}">${escapeHtml(run.label)}</strong>
-          <span class="run-card-meta">${run.fileCount} JSON file${run.fileCount === 1 ? "" : "s"}${escapeHtml(modified)}</span>
+          <span class="run-card-meta">${run.fileCount} JSON · ${imageCount} image${imageCount === 1 ? "" : "s"}${escapeHtml(modified)}</span>
         </button>`;
       }).join("");
       runList.querySelectorAll(".run-card").forEach(function bindRunCard(button) {
@@ -908,10 +1020,12 @@
           }
         }
         if (!records.length) throw new Error("this run has no valid metric JSON files");
-        activateRecords(records, `Server / ${run.label}`);
+        const images = Array.isArray(payload.images) ? payload.images : [];
+        activateRecords(records, `Server / ${run.label}`, images);
         clearRunSelection();
         button.classList.add("active");
         const notes = [`Loaded ${records.length} checkpoint${records.length === 1 ? "" : "s"} from ${run.label}`];
+        if (images.length) notes.push(`${images.length} image${images.length === 1 ? "" : "s"}`);
         if (failures.length) notes.push(`${failures.length} invalid file${failures.length === 1 ? "" : "s"} skipped`);
         setStatus(notes.join(" · "), failures.length > 0);
       } catch (error) {
@@ -926,6 +1040,7 @@
     el("folderInput").addEventListener("change", onFolderInputChange);
     el("modelSelect").addEventListener("change", onModelChange);
     el("typeSelect").addEventListener("change", applyFilters);
+    el("imageRunSelect").addEventListener("change", renderImageGallery);
     el("demoButton").addEventListener("click", loadDemo);
     el("refreshRunsButton").addEventListener("click", loadServerRuns);
 

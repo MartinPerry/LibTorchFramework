@@ -62,11 +62,14 @@ function findRunSources($dataRoot)
     }
     natcasesort($directories);
     foreach ($directories as $directory) {
+        if (strtolower(basename($directory)) === 'img') {
+            continue;
+        }
         $sources[basename($directory)] = $directory;
     }
 
     $rootFiles = @glob($dataRoot . DIRECTORY_SEPARATOR . '*.json');
-    if ($rootFiles !== false && count($rootFiles) > 0) {
+    if (($rootFiles !== false && count($rootFiles) > 0) || count(imageFilesIn($dataRoot)) > 0) {
         $sources['__data_root__'] = $dataRoot;
     }
     return $sources;
@@ -82,14 +85,65 @@ function jsonFilesIn($directory)
     return array_values($files);
 }
 
+function imageFilesIn($directory)
+{
+    $directory = $directory . DIRECTORY_SEPARATOR . 'img';
+    if (!is_dir($directory)) {
+        return array();
+    }
+    $patterns = array('*.jpg', '*.jpeg', '*.gif', '*.JPG', '*.JPEG', '*.GIF');
+    $files = array();
+    foreach ($patterns as $pattern) {
+        $matches = @glob($directory . DIRECTORY_SEPARATOR . $pattern);
+        if ($matches !== false) {
+            foreach ($matches as $match) {
+                $files[$match] = $match;
+            }
+        }
+    }
+    $files = array_values($files);
+    natcasesort($files);
+    return array_values($files);
+}
+
+function publicFileUrl($path)
+{
+    $relative = substr($path, strlen(dirname(__FILE__)) + 1);
+    $relative = str_replace('\\', '/', $relative);
+    $parts = explode('/', $relative);
+    $encoded = array();
+    foreach ($parts as $part) {
+        $encoded[] = rawurlencode($part);
+    }
+    return implode('/', $encoded);
+}
+
+function loadImageFile($path, $runLabel, &$images)
+{
+    $matches = array();
+    if (!preg_match('/^(\d+)_(train|test|valid)_(\d+)\.(jpe?g|gif)$/i', basename($path), $matches)) {
+        return;
+    }
+    $images[] = array(
+        'name' => basename($path),
+        'url' => publicFileUrl($path),
+        'runGroup' => $runLabel,
+        'imageIndex' => (int) $matches[1],
+        'type' => strtolower($matches[2]),
+        'runIndex' => (int) $matches[3]
+    );
+}
+
 function listRuns($sources)
 {
     $runs = array();
     foreach ($sources as $id => $directory) {
         $jsonFiles = jsonFilesIn($directory);
+        $imageFiles = imageFilesIn($directory);
         $latestModified = 0;
-        foreach ($jsonFiles as $jsonFile) {
-            $modified = @filemtime($jsonFile);
+        $allFiles = array_merge($jsonFiles, $imageFiles);
+        foreach ($allFiles as $listedFile) {
+            $modified = @filemtime($listedFile);
             if ($modified !== false && $modified > $latestModified) {
                 $latestModified = $modified;
             }
@@ -98,6 +152,7 @@ function listRuns($sources)
             'id' => $id,
             'label' => $id === '__data_root__' ? '(data root)' : $id,
             'fileCount' => count($jsonFiles),
+            'imageCount' => count($imageFiles),
             'modifiedAt' => $latestModified > 0 ? date('c', $latestModified) : null
         );
     }
@@ -159,13 +214,18 @@ if ($action === 'metrics') {
     }
 
     $files = array();
+    $images = array();
     $errors = array();
     $runLabel = $requestedRun === '__data_root__' ? '(data root)' : $requestedRun;
     $jsonFiles = jsonFilesIn($sources[$requestedRun]);
     foreach ($jsonFiles as $jsonFile) {
         loadMetricFile($jsonFile, $runLabel, $files, $errors);
     }
-    sendJson(array('files' => $files, 'errors' => $errors), 200);
+    $imageFiles = imageFilesIn($sources[$requestedRun]);
+    foreach ($imageFiles as $imageFile) {
+        loadImageFile($imageFile, $runLabel, $images);
+    }
+    sendJson(array('files' => $files, 'images' => $images, 'errors' => $errors), 200);
 }
 
 sendJson(array('error' => 'Unknown API action'), 400);

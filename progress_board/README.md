@@ -17,7 +17,9 @@ dashboard/
 └── data/
     ├── run_001/
     │   ├── model_2026_08_27_12_00_train_0.json
-    │   └── model_2026_08_27_12_10_train_1.json
+    │   ├── model_2026_08_27_12_10_train_1.json
+    │   └── img/
+    │       └── 0_train_1.jpg
     └── run_002/
         └── model_2026_08_28_09_00_train_0.json
 ```
@@ -72,6 +74,27 @@ The endpoint validates the request, creates `data/<run_id>/` when needed, assign
 data/run_001/metrics_2026_08_28_17_07_train_42.json
 ```
 
+### Upload generated images
+
+JPG and GIF outputs use this filename convention:
+
+```text
+<img_index>_<train|test|valid>_<run_index>.jpg
+<img_index>_<train|test|valid>_<run_index>.gif
+```
+
+The C++ client uploads the binary image to the run's `img` subfolder:
+
+```bash
+./metrics_uploader image \
+  https://example.com/dashboard/upload.php \
+  YOUR_UPLOAD_TOKEN \
+  run_001 \
+  0 train 42 prediction.jpg
+```
+
+This creates `data/run_001/img/0_train_42.jpg`. The server creates the `img` subfolder automatically, verifies the image signature, accepts files up to 25 MiB, and refuses to overwrite an existing image. The dashboard shows available images for the selected run type and provides a checkpoint selector. Clicking an image opens the full-size file.
+
 ## C++ uploader
 
 [`metrics_uploader.cpp`](metrics_uploader.cpp) contains the reusable `uploadMetrics` function and a command-line example. It requires libcurl and C++11. The client explicitly forces HTTP/1.1 to avoid HTTP/3/QUIC connection-reset errors.
@@ -112,6 +135,22 @@ bool uploaded = uploadMetrics(
     "YOUR_UPLOAD_TOKEN",
     "run_001",
     metrics,
+    response,
+    httpStatus
+);
+```
+
+Upload an image from training code with:
+
+```cpp
+bool imageUploaded = uploadImage(
+    "https://example.com/dashboard/upload.php",
+    "YOUR_UPLOAD_TOKEN",
+    "run_001",
+    0,              // img_index
+    "train",
+    42,             // run_index / checkpoint
+    "prediction.jpg",
     response,
     httpStatus
 );
