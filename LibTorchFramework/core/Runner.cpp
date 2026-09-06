@@ -90,7 +90,7 @@ torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch,
     const std::shared_ptr<AbstractModel>& activeModel, torch::Tensor* prediction)
 {
     ScopedAutocast autocast(sets);
-    auto result = this->model->RunForward(batch);
+    auto result = activeModel->RunForward(batch);
   
     torch::Tensor loss;
 

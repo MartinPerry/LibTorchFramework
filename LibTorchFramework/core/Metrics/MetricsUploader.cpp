@@ -125,7 +125,24 @@ void MetricsUploader::UploadMetrics(const std::unordered_map<std::string, float>
     s.additionalHttpHeaders.push_back("Accept: application/json");
     s.additionalHttpHeaders.push_back(tokenHeader);
 
-    s.url = MetricsUploader::API_URL;
+    std::string url = MetricsUploader::API_URL;    
+    url += "?action=metrics&run_id=" + this->runId;    
+    url += "&run_type=";
+    if (si.runMode == RunMode::TRAIN)
+    {
+        url += "train";
+    }
+    else if (si.runMode == RunMode::TEST)
+    {
+        url += "test";
+    }
+    else if (si.runMode == RunMode::VALID)
+    {
+        url += "valid";
+    }
+    url += "&run_index=" + std::to_string(si.epochId);
+
+    s.url = url;
     s.dataType = DownloadJobSettings::DATA_TYPE::TEXT;
     s.expertSettings.SetRawPostData(requestBody);
 

@@ -67,7 +67,12 @@ void MetricsVideo::Save(const SaveInfo& si) const
         std::vector<Image2d<uint8_t>> newImgs;
 
         int delay = 20;
-        GifWriter g;
+        GifWriter g = {
+            .f = nullptr,
+            .oldImage = nullptr,
+            .firstFrame = true,
+            .padding = {0}
+        };
         GifBegin(&g, imgPath.c_str(), w, h, delay);
         
         size_t seqLen = rows[0].size();
