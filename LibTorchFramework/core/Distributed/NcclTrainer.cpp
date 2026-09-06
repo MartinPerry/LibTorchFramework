@@ -20,24 +20,17 @@
 #include "../CudaGraphHelper.h"
 
 #include "./NcclTrainerContext.h"
+#include "./ReplicaWorkers.h"
 
 #include <cuda_runtime_api.h>
+#include <c10/cuda/CUDAGuard.h>
+#include <c10/cuda/CUDAStream.h>
 
-#include <cstdlib>
-#include <string_view>
 #include <utility>
 
 
-//debug with single GPU
-bool IsSingleGpuNcclTestEnabled()
-{
-    return true;    
-}
-
-
 NcclTrainer::NcclTrainer(const Settings& sets, std::vector<std::shared_ptr<AbstractModel>> models) :
-    Runner(RunMode::TRAIN, sets, models.front()),
-    cudaGraph(nullptr),
+    Runner(RunMode::TRAIN, sets, models.front()),    
     replicaModels(std::move(models)),
     bestMetrics(nullptr),
     nccl(nullptr),
@@ -54,20 +47,13 @@ NcclTrainer::NcclTrainer(const Settings& sets, std::vector<std::shared_ptr<Abstr
         }
     }
 
-    const bool singleGpuNcclTest = (replicaModels.size() == 1) && IsSingleGpuNcclTestEnabled();
-    if ((replicaModels.size() > 1) || singleGpuNcclTest)
-    {
-        TORCH_CHECK(sets.device == torch::kCUDA, "NCCL training requires a CUDA device");
-        nccl = std::make_shared<NcclTrainerContext>(replicaModels.size());
-        if (singleGpuNcclTest)
-        {
-            MY_LOG_INFO("NCCL single-GPU smoke mode enabled; collectives use one rank");
-        }
-    }
+    TORCH_CHECK(sets.device == torch::kCUDA, "NCCL training requires a CUDA device");
+    nccl = std::make_shared<NcclTrainerContext>(replicaModels.size());
 
     scalers.reserve(replicaModels.size());
     for (size_t i = 0; i < replicaModels.size(); i++)
     {
+        const c10::cuda::CUDAGuard deviceGuard(static_cast<c10::DeviceIndex>(i));
         if (sets.perf.enableAutoCast)
         {
             scalers.push_back(std::make_shared<torch::amp::GradScaler>());
@@ -78,22 +64,37 @@ NcclTrainer::NcclTrainer(const Settings& sets, std::vector<std::shared_ptr<Abstr
         }
     }
 
-    //cudaGraph = std::make_shared<CudaGraphHelper>(this, 1, true, true);
+    workers = std::make_unique<ReplicaWorkers>(replicaModels.size());
+    
 }
 
 NcclTrainer::~NcclTrainer()
 {
 }
 
-void NcclTrainer::SelectCudaDevice(size_t device)
+void NcclTrainer::RunOnReplicas(const std::function<void(size_t)>& fn)
 {
-    const auto result = cudaSetDevice(static_cast<int>(device));
-    TORCH_CHECK(result == cudaSuccess, "cudaSetDevice failed: ", cudaGetErrorString(result));
+    std::vector<c10::cuda::CUDAStream> streams;
+    streams.reserve(replicaModels.size());
+    for (size_t device = 0; device < replicaModels.size(); ++device)
+    {
+        streams.push_back(c10::cuda::getCurrentCUDAStream(
+            static_cast<c10::DeviceIndex>(device)));
+    }
+
+    workers->Run([&](size_t device)
+    {
+        // Use the same stream as copies and NCCL on the coordinator. Waiting
+        // for host tasks ensures submission order; CUDA orders the GPU work.
+        // Also inherit source-device streams for cross-device tensor copies.
+        const c10::cuda::CUDAMultiStreamGuard streamGuards(streams);
+        const c10::cuda::CUDAGuard deviceGuard(static_cast<c10::DeviceIndex>(device));
+        const torch::autograd::AutoGradMode gradMode(true);
+        fn(device);
+    });
 }
 
-void NcclTrainer::CheckLoss(
-    at::Tensor loss,
-    const std::shared_ptr<AbstractModel>& activeModel)
+void NcclTrainer::CheckLoss(at::Tensor loss, const std::shared_ptr<AbstractModel>& activeModel)
 {
     TORCH_CHECK(loss.defined(), "Loss is not defined (autocast)");
     TORCH_CHECK(loss.grad_fn() != nullptr, "Loss has no grad_fn (autocast)");
@@ -159,15 +160,11 @@ std::vector<DataLoaderData> NcclTrainer::BuildReplicaBatches(DataLoaderData& bat
         );
 
         DataLoaderData replicaBatch(std::move(indices));
-        const torch::Device targetDevice(torch::kCUDA, static_cast<int8_t>(device));
-
         replicaBatch.input = batch.input
-            .slice(0, static_cast<int64_t>(offset), static_cast<int64_t>(end))
-            .to(targetDevice, batch.input.dtype(), sets.perf.useNonBlockingTransfers);
+            .slice(0, static_cast<int64_t>(offset), static_cast<int64_t>(end));
 
         replicaBatch.target = batch.target
-            .slice(0, static_cast<int64_t>(offset), static_cast<int64_t>(end))
-            .to(targetDevice, batch.target.dtype(), sets.perf.useNonBlockingTransfers);
+            .slice(0, static_cast<int64_t>(offset), static_cast<int64_t>(end));
 
         for (const auto& [name, value] : batch.additionalData)
         {
@@ -178,7 +175,6 @@ std::vector<DataLoaderData> NcclTrainer::BuildReplicaBatches(DataLoaderData& bat
             replicaBatch.additionalData.emplace(
                 name,
                 value.slice(0, static_cast<int64_t>(offset), static_cast<int64_t>(end))
-                    .to(targetDevice, value.dtype(), sets.perf.useNonBlockingTransfers)
             );
         }
 
@@ -190,14 +186,14 @@ std::vector<DataLoaderData> NcclTrainer::BuildReplicaBatches(DataLoaderData& bat
 
 void NcclTrainer::RunTrainStepsFull(std::vector<torch::Tensor>& losses, bool canUpdate)
 {
-    for (size_t device = 0; device < losses.size(); device++)
+    TORCH_CHECK(losses.size() == replicaModels.size(), "Expected one loss per replica");
+    RunOnReplicas([&](size_t device)
     {
 #ifdef _DEBUG
         CheckLoss(losses[device], replicaModels[device]);
 #endif
-        SelectCudaDevice(device);
         losses[device].backward();
-    }
+    });
 
     if (canUpdate)
     {
@@ -210,30 +206,29 @@ void NcclTrainer::RunOptimizerFull()
     nccl->AllReduceGradients(ParametersByDevice());
     
 
-    for (size_t device = 0; device < replicaModels.size(); device++)
+    RunOnReplicas([&](size_t device)
     {
         auto optimizer = replicaModels[device]->optimizer;
         TORCH_CHECK(optimizer != nullptr, "Model replica ", device, " has no optimizer");
-        SelectCudaDevice(device);
         if (sets.clippingFn)
         {
             sets.clippingFn(replicaModels[device]->parameters());
         }
         optimizer->step();
         optimizer->zero_grad();
-    }
+    });
 }
 
 void NcclTrainer::RunTrainStepsAutocast(std::vector<torch::Tensor>& losses, bool canUpdate)
 {
-    for (size_t device = 0; device < losses.size(); device++)
+    TORCH_CHECK(losses.size() == replicaModels.size(), "Expected one loss per replica");
+    RunOnReplicas([&](size_t device)
     {
 #ifdef _DEBUG
         CheckLoss(losses[device], replicaModels[device]);
 #endif
-        SelectCudaDevice(device);
         scalers[device]->scale(losses[device]).backward();
-    }
+    });
 
     if (canUpdate)
     {
@@ -250,22 +245,22 @@ void NcclTrainer::RunOptimizerAutoCast()
         nccl->MarkGradientsNonFinite(ParametersByDevice());
     }
 
-    for (size_t device = 0; device < replicaModels.size(); device++)
+    RunOnReplicas([&](size_t device)
     {
-        SelectCudaDevice(device);
+        TORCH_CHECK(replicaModels[device]->optimizer != nullptr,
+            "Model replica ", device, " has no optimizer");
         scalers[device]->unscale_(*replicaModels[device]->optimizer);
-    }
+    });
 
     if (!globalNonFinite)
     {
         nccl->AllReduceGradients(ParametersByDevice());
     }
     
-    for (size_t device = 0; device < replicaModels.size(); device++)
+    RunOnReplicas([&](size_t device)
     {
         auto optimizer = replicaModels[device]->optimizer;
         TORCH_CHECK(optimizer != nullptr, "Model replica ", device, " has no optimizer");
-        SelectCudaDevice(device);
 
         if (sets.clippingFn && !globalNonFinite)
         {            
@@ -275,45 +270,52 @@ void NcclTrainer::RunOptimizerAutoCast()
         scalers[device]->step(*optimizer);
         scalers[device]->update();
         optimizer->zero_grad();
-    }
+    });
 }
 
 void NcclTrainer::RunStep(DataLoaderData& batch, bool canUpdate)
 {
     auto replicaBatches = BuildReplicaBatches(batch);
     const size_t totalBatchSize = batch.GetBatchSize();
-    std::vector<torch::Tensor> losses;
-    losses.reserve(replicaModels.size());
+    TORCH_CHECK(totalBatchSize > 0, "Cannot train on an empty dataloader batch");
+    std::vector<torch::Tensor> losses(replicaModels.size());
+    std::vector<torch::Tensor> metricLosses(replicaModels.size());
+    std::vector<torch::Tensor> predictions(replicaModels.size());
 
-    for (size_t device = 0; device < replicaModels.size(); device++)
+    RunOnReplicas([&](size_t device)
     {
-        if (device > 0)
-        {
-            replicaModels[device]->OnBatchStart();
-        }
-        SelectCudaDevice(device);
-       
-        if (replicaBatches[device].GetBatchSize() == 0)
+        auto& replicaBatch = replicaBatches[device];
+        torch::Tensor loss;
+        if (replicaBatch.GetBatchSize() == 0)
         {
             // Keep every communicator participating when a short final batch
             // has fewer samples than GPUs. This rank contributes zero.
 
-            torch::Tensor zeroReplicaLoss = {};
-            
             for (const auto& parameter : replicaModels[device]->parameters())
             {
                 if (parameter.requires_grad() && (parameter.numel() > 0))
                 {
-                    zeroReplicaLoss = parameter.reshape({ -1 }).select(0, 0) * 0.0;                    
+                    // An empty sum stays zero even if the parameter has NaNs.
+                    loss = parameter.reshape({ -1 }).slice(0, 0, 0).sum();
                     break;
                 }
-                TORCH_CHECK(false, "Model replica ", device, " has no trainable parameters");                
             }
-
-            losses.push_back(zeroReplicaLoss);
+            TORCH_CHECK(loss.defined(), "Model replica ", device, " has no trainable parameters");
         }
         else
         {
+            const torch::Device targetDevice(torch::kCUDA, static_cast<c10::DeviceIndex>(device));
+            auto transfer = [&](torch::Tensor& tensor)
+            {
+                tensor = tensor.to(targetDevice, tensor.dtype(), sets.perf.useNonBlockingTransfers);
+            };
+            transfer(replicaBatch.input);
+            transfer(replicaBatch.target);
+            for (auto& entry : replicaBatch.additionalData)
+            {
+                transfer(entry.second);
+            }
+
             // NCCL averages replica gradients. Weight uneven shards so that the
             // result still equals the gradient of the complete input batch.
             const double shardWeight = replicaModels.size() == 1
@@ -322,42 +324,61 @@ void NcclTrainer::RunStep(DataLoaderData& batch, bool canUpdate)
                 static_cast<double>(replicaBatches[device].GetBatchSize()) /
                 static_cast<double>(totalBatchSize);
 
-            auto loss = this->ForwardAndLoss(replicaBatches[device], replicaModels[device]);
-            loss *= shardWeight;            
+            loss = Runner::ForwardAndLoss(replicaBatch, replicaModels[device],
+                metrics ? &predictions[device] : nullptr);
+            TORCH_CHECK(loss.defined(), "NCCL training requires a loss function");
+            metricLosses[device] = loss.detach();
+            loss = loss * shardWeight;
+        }
+
+#ifdef _DEBUG
+        CheckLoss(loss, replicaModels[device]);
+#endif
+        if (sets.perf.enableAutoCast)
+        {
+            scalers[device]->scale(loss).backward();
+        }
+        else
+        {
+            loss.backward();
+        }
+        losses[device] = loss.detach();
+    });
+
+    if (canUpdate)
+    {
+        if (sets.perf.enableAutoCast)
+        {
+            RunOptimizerAutoCast();
+        }
+        else
+        {
+            RunOptimizerFull();
         }
     }
 
-    if (sets.perf.enableAutoCast)
+    // Shared metrics are updated only by the coordinator, after every replica
+    // has submitted backward and optimizer work. Retain no autograd graphs.
+    for (size_t device = 0; device < replicaModels.size(); ++device)
     {
-        RunTrainStepsAutocast(losses, canUpdate);
+        if (metricLosses[device].defined())
+        {
+            const c10::cuda::CUDAGuard deviceGuard(static_cast<c10::DeviceIndex>(device));
+            UpdateMetrics(replicaBatches[device], metricLosses[device], predictions[device]);
+        }
     }
-    else
+
+    // Sampling the displayed loss avoids forcing the CPU to wait every batch.
+    constexpr size_t lossLogInterval = 10;
+    if (batchIndex % lossLogInterval == 0 || batchIndex + 1 == dataLoaderBatchesCount)
     {
-        RunTrainStepsFull(losses, canUpdate);
+        lastProgressLoss = 0.0f;
+        for (const auto& loss : losses)
+        {
+            lastProgressLoss += loss.item<float>() / static_cast<float>(losses.size());
+        }
     }
-
-    float averageLoss = 0.0f;
-    for (const auto& loss : losses)
-    {
-        averageLoss += loss.item().toFloat() / static_cast<float>(losses.size());
-    }
-    ProgressLoss(averageLoss);
-
-    for (size_t device = 1; device < replicaModels.size(); device++)
-    {
-        replicaModels[device]->OnBatchEnd();
-    }
-}
-
-torch::Tensor NcclTrainer::ForwardAndLoss(DataLoaderData& batch, std::shared_ptr<AbstractModel> model)
-{
-    const auto& tmp = this->model;
-
-    this->model = model;
-    auto loss = Runner::ForwardAndLoss(batch);
-    this->model = tmp;
-
-    return loss;
+    ProgressLoss(lastProgressLoss);
 }
 
 void NcclTrainer::ProgressLoss(float loss)
@@ -370,6 +391,7 @@ void NcclTrainer::PrepareBatch(DataLoaderData& batch)
 {
     if (replicaModels.size() == 1)
     {
+        const c10::cuda::CUDAGuard deviceGuard(0);
         Runner::PrepareBatch(batch);
     }
     // Multi-GPU batches remain in pinned host memory and are split before
@@ -378,40 +400,33 @@ void NcclTrainer::PrepareBatch(DataLoaderData& batch)
 
 void NcclTrainer::PrepareModel()
 {
-    if (replicaModels.size() == 1)
+    RunOnReplicas([&](size_t device)
     {
-        Runner::PrepareModel();
-        return;
-    }
-
-    for (size_t device = 0; device < replicaModels.size(); device++)
-    {
-        SelectCudaDevice(device);
         replicaModels[device]->to(
             torch::Device(torch::kCUDA, static_cast<int8_t>(device)));
-    }
+    });
 }
 
 void NcclTrainer::OnEpochStart()
 {
+    const c10::cuda::CUDAGuard deviceGuard(0);
     Runner::OnEpochStart();
+    lastProgressLoss = 0.0f;
 
-    for (size_t device = 0; device < replicaModels.size(); device++)
+    RunOnReplicas([&](size_t device)
     {
-        SelectCudaDevice(device);
         replicaModels[device]->train();
-    }
+    });
 
     torch::autograd::GradMode::set_enabled(true);
 }
 
 void NcclTrainer::OnModelEpochStart()
 {
-    for (size_t device = 1; device < replicaModels.size(); device++)
+    RunOnReplicas([&](size_t device)
     {
-        SelectCudaDevice(device);
         replicaModels[device]->OnEpochStart();
-    }
+    });
 
     if (!distributedParametersSynchronized)
     {
@@ -426,6 +441,26 @@ void NcclTrainer::OnModelEpochStart()
         buffersByDevice.push_back(replica->buffers());
     }
     nccl->Broadcast(buffersByDevice);    
+}
+
+void NcclTrainer::OnModelBatchStart()
+{
+    RunOnReplicas([&](size_t device) { replicaModels[device]->OnBatchStart(); });
+}
+
+void NcclTrainer::OnModelBatchEnd()
+{
+    RunOnReplicas([&](size_t device) { replicaModels[device]->OnBatchEnd(); });
+}
+
+void NcclTrainer::OnModelEpochEnd()
+{
+    RunOnReplicas([&](size_t device)
+    {
+        replicaModels[device]->OnEpochEnd();
+        // Epoch boundaries may hand the primary model to validation or saving.
+        c10::cuda::getCurrentCUDAStream(static_cast<c10::DeviceIndex>(device)).synchronize();
+    });
 }
 
 void NcclTrainer::ProcessBatch(DataLoaderData& batch)
@@ -449,28 +484,13 @@ void NcclTrainer::ProcessBatch(DataLoaderData& batch)
         }
     }
 
-    TORCH_CHECK(
-        !cudaGraph || (replicaModels.size() == 1),
-        "CUDA graph training is not supported with in-process NCCL replicas");
-    if (cudaGraph)
-    {
-#ifdef USE_CUDA
-        cudaGraph->Run(batch, canUpdate ? model->optimizer : nullptr);
-#endif
-    }
-    else
-    {
-        RunStep(batch, canUpdate);
-    }
+    this->RunStep(batch, canUpdate);
+    
 }
 
 void NcclTrainer::OnEpochEnd()
 {
-    for (size_t device = 1; device < replicaModels.size(); device++)
-    {
-        replicaModels[device]->OnEpochEnd();
-    }
-
+    const c10::cuda::CUDAGuard deviceGuard(0);
     Runner::OnEpochEnd();
 
     if ((this->metrics) && (this->metrics->IsBetterThan(this->bestMetrics)))

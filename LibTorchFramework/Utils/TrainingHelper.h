@@ -10,6 +10,7 @@ class ProgressBar;
 #include <functional>
 
 #include <torch/torch.h>
+#include <c10/core/DeviceGuard.h>
 
 #include <Utils/Logger.h>
 
@@ -122,6 +123,14 @@ void TrainingHelper::Run(std::shared_ptr<InputLoadersWrapper> loaders)
         
     if (sets.device == c10::DeviceType::CUDA)
     {
+        // Replica factories may leave the last GPU selected. Validation and test
+        // use the primary replica and must not move it to that last GPU.
+        c10::OptionalDeviceGuard primaryDeviceGuard;
+        if (gpuCount > 1)
+        {
+            primaryDeviceGuard.reset_device(torch::Device(torch::kCUDA, 0));
+        }
+
         MY_LOG_INFO("Running on device: CUDA (gpu count: %d)", gpuCount);
     }
     else
@@ -131,6 +140,7 @@ void TrainingHelper::Run(std::shared_ptr<InputLoadersWrapper> loaders)
         MY_LOG_INFO("Running on device: %s", tmp.c_str());
     }
 
+    
     Runner runnerValid(RunMode::VALID, sets, model);
     Runner runnerTest(RunMode::TEST, sets, model);
 

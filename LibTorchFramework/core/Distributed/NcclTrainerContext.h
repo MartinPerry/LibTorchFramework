@@ -25,6 +25,9 @@ public:
     explicit NcclTrainerContext(size_t deviceCount);
     ~NcclTrainerContext();
 
+    // Collectives enqueue on the caller's current CUDA stream for each device.
+    // Producers/consumers on other host threads must use those same streams,
+    // or explicitly establish CUDA event dependencies and tensor lifetimes.
     void Broadcast(const DeviceTensorList& tensorsByDevice);
     void AllReduceGradients(const DeviceTensorList& parametersByDevice);
     bool HasGlobalNonFiniteGradients(const DeviceTensorList& parametersByDevice);

@@ -12,6 +12,7 @@ struct DataLoaderData;
 
 class CudaGraphHelper;
 class NcclTrainerContext;
+class ReplicaWorkers;
 
 namespace torch {
 	namespace amp {
@@ -20,6 +21,7 @@ namespace torch {
 }
 
 #include <torch/torch.h>
+#include <functional>
 
 #include "../Runner.h"
 
@@ -30,11 +32,8 @@ public:
 	NcclTrainer(const Settings& sets, std::vector<std::shared_ptr<AbstractModel>> models);
 	virtual ~NcclTrainer();
 	
-	friend class CudaGraphHelper;
 
 protected:
-
-	std::shared_ptr<CudaGraphHelper> cudaGraph;
 
 	std::vector<std::shared_ptr<torch::amp::GradScaler>> scalers;
 
@@ -44,8 +43,10 @@ protected:
 
 	std::shared_ptr<NcclTrainerContext> nccl;
 	bool distributedParametersSynchronized;
+	std::unique_ptr<ReplicaWorkers> workers;
+	float lastProgressLoss = 0.0f;
 
-	void SelectCudaDevice(size_t device);
+	void RunOnReplicas(const std::function<void(size_t)>& fn);
 
 	void CheckLoss(at::Tensor loss, const std::shared_ptr<AbstractModel>& activeModel);
 
@@ -60,13 +61,14 @@ protected:
 
 	void RunStep(DataLoaderData& batch, bool canUpdate);
 
-	torch::Tensor ForwardAndLoss(DataLoaderData& batch, std::shared_ptr<AbstractModel> model);
-
 	void ProgressLoss(float loss);
 
 	virtual void PrepareBatch(DataLoaderData& batch) override;
 	virtual void PrepareModel() override;
 	virtual void OnModelEpochStart() override;
+	virtual void OnModelEpochEnd() override;
+	virtual void OnModelBatchStart() override;
+	virtual void OnModelBatchEnd() override;
 	virtual void OnEpochStart() override;
 	virtual void ProcessBatch(DataLoaderData& batch) override;
 	virtual void OnEpochEnd() override;

@@ -13,6 +13,46 @@
 
 #include "../Utils/ProgressBar.h"
 
+namespace
+{
+    /// <summary>
+    /// Scped type will automatically be released when blocks end its lifetime
+    /// </summary>
+    class ScopedAutocast
+    {
+    public:
+        explicit ScopedAutocast(const Settings& sets) :
+            device(sets.device),
+            previousEnabled(at::autocast::is_autocast_enabled(device)),
+            previousType(at::autocast::get_autocast_dtype(device))
+        {
+            at::autocast::set_autocast_enabled(device, sets.perf.enableAutoCast);
+            if (sets.perf.enableAutoCast && sets.perf.autocastType.has_value())
+            {
+                at::autocast::set_autocast_dtype(device, *sets.perf.autocastType);
+            }
+            at::autocast::increment_nesting();
+        }
+
+        ~ScopedAutocast()
+        {
+            if (at::autocast::decrement_nesting() == 0)
+            {
+                at::autocast::clear_cache();
+            }
+            at::autocast::set_autocast_enabled(device, previousEnabled);
+            at::autocast::set_autocast_dtype(device, previousType);
+        }
+
+    private:
+        c10::DeviceType device;
+        bool previousEnabled;
+        at::ScalarType previousType;
+    };
+}
+
+
+
 Runner::Runner(RunMode type, const Settings& sets, std::shared_ptr<AbstractModel> model) :
     type(type),
 	sets(sets),
@@ -30,16 +70,26 @@ Runner::~Runner()
 }
 
 torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch)
-{    
-    
-    if (sets.perf.enableAutoCast)
-    {                        
-        at::autocast::set_autocast_enabled(sets.device, true);
-        if (sets.perf.autocastType.has_value())
-        {
-            at::autocast::set_autocast_dtype(sets.device, *sets.perf.autocastType);
-        }
+{
+    if (this->metrics)
+    {
+        torch::Tensor prediction;
+        auto loss = ForwardAndLoss(batch, model, &prediction);
+
+        this->UpdateMetrics(batch, loss, prediction);
+
+        return loss;
     }
+    else 
+    {
+        return ForwardAndLoss(batch, model, nullptr);
+    }    
+}
+
+torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch,
+    const std::shared_ptr<AbstractModel>& activeModel, torch::Tensor* prediction)
+{
+    ScopedAutocast autocast(sets);
     auto result = this->model->RunForward(batch);
   
     torch::Tensor loss;
@@ -54,27 +104,32 @@ torch::Tensor Runner::ForwardAndLoss(DataLoaderData& batch)
         }
     }
 
-    if (sets.perf.enableAutoCast)
+    if (prediction)
     {
-        at::autocast::clear_cache();
-        at::autocast::set_autocast_enabled(sets.device, false);        
+        *prediction = result[0].detach();
     }
 
-    if (this->metrics)
-    {        
-        this->metrics->UpdateProcessCounter();
-        if (this->metrics->CanProcess())
-        {
-            this->metrics->AddLoss(loss);
-            
-            this->metrics->AddDataIndices(batch.GetDataIndices());
-            this->metrics->AddPredictionTarget(result[0], batch.target);
-        }
-    }
-
-
+    
     return loss;
 }
+
+void Runner::UpdateMetrics(DataLoaderData& batch, torch::Tensor loss, torch::Tensor prediction)
+{
+    if (this->metrics == nullptr)
+    {
+        return;
+    }
+        
+    this->metrics->UpdateProcessCounter();
+    if (this->metrics->CanProcess())
+    {
+        this->metrics->AddLoss(loss);
+
+        this->metrics->AddDataIndices(batch.GetDataIndices());
+        this->metrics->AddPredictionTarget(prediction, batch.target);
+    }    
+}
+
 
 //============================================================
 // Main loop callbacks
@@ -91,6 +146,10 @@ void Runner::OnEpochStart()
     if (sets.metricsInitFn)
     {
         this->metrics = sets.metricsInitFn();
+        if (this->metrics)
+        {
+            this->metrics->Reset();
+        }
     }
 
     model->eval();
@@ -104,6 +163,16 @@ void Runner::OnEpochStart()
 void Runner::OnModelEpochStart()
 {
     model->OnEpochStart();
+}
+
+void Runner::OnModelBatchStart()
+{
+    model->OnBatchStart();
+}
+
+void Runner::OnModelBatchEnd()
+{
+    model->OnBatchEnd();
 }
 
 void Runner::PrepareBatch(DataLoaderData& batch)

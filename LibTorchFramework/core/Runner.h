@@ -46,10 +46,16 @@ protected:
     int activeEpochId;
 
     torch::Tensor ForwardAndLoss(DataLoaderData& batch);    
+    torch::Tensor ForwardAndLoss(DataLoaderData& batch,
+        const std::shared_ptr<AbstractModel>& activeModel, torch::Tensor* prediction);
+
+    void UpdateMetrics(DataLoaderData& batch, torch::Tensor loss, torch::Tensor prediction);
 
     virtual void PrepareModel();
     virtual void OnEpochStart();
     virtual void OnModelEpochStart();
+    virtual void OnModelBatchStart();
+    virtual void OnModelBatchEnd();
     virtual void PrepareBatch(DataLoaderData& batch);
     virtual void ProcessBatch(DataLoaderData& batch);
     virtual void OnModelEpochEnd();
@@ -93,13 +99,13 @@ void Runner::RunEpoch(DataLoaderType& dl, int epochId, int batchesCount)
     
     for (auto& batch : *dl)
     {
-        model->OnBatchStart();
+        this->OnModelBatchStart();
 
         this->PrepareBatch(batch);
 
         this->ProcessBatch(batch);
 
-        model->OnBatchEnd();
+        this->OnModelBatchEnd();
 
         batchIndex++;
     }

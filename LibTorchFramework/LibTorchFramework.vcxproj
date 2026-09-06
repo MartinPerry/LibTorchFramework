@@ -227,6 +227,7 @@
     <ClInclude Include="core\CudaGraphHelper.h" />
     <ClInclude Include="core\Distributed\NcclTrainer.h" />
     <ClInclude Include="core\Distributed\NcclTrainerContext.h" />
+    <ClInclude Include="core\Distributed\ReplicaWorkers.h" />
     <ClInclude Include="core\Metrics\MetricsDefault.h" />
     <ClInclude Include="core\Metrics\MetricsImage.h" />
     <ClInclude Include="core\Metrics\MetricsUploader.h" />

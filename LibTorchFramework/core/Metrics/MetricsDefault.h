@@ -7,6 +7,7 @@ class MetricsUploader;
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include <chrono>
 
 #include <torch/torch.h>
 
@@ -58,7 +59,9 @@ protected:
 	std::vector<int64_t> dataIndices;
 
 	std::shared_ptr<PredictionEvaluator> predEval;
-		
+	
+	std::chrono::steady_clock::time_point startTime;
+
 	virtual void Evaluate(torch::Tensor pred, torch::Tensor target);
 };
 

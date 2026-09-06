@@ -12,7 +12,8 @@ MetricsDefault::MetricsDefault() :
 	processCounter(0),
 	dashboard(nullptr),
 	meanLoss(std::nullopt),
-	predEval(nullptr)
+	predEval(nullptr),
+	startTime(std::chrono::steady_clock::now())
 {
 }
 
@@ -39,6 +40,8 @@ void MetricsDefault::Reset()
 	meanLoss = std::nullopt;
 
 	dataIndices.clear();
+
+	startTime = std::chrono::steady_clock::now();
 }
 
 bool MetricsDefault::IsBetterThan(std::shared_ptr<MetricsDefault> other) const
@@ -61,7 +64,12 @@ std::unordered_map<std::string, float> MetricsDefault::GetResultExtended() const
 
 void MetricsDefault::Save(const SaveInfo& si) const
 {
+	auto end = std::chrono::steady_clock::now();
+	auto ms = std::chrono::duration_cast<std::chrono::seconds>(end - this->startTime).count();
+
+
 	std::unordered_map<std::string, float> res = this->GetResultExtended();
+	res.try_emplace("time_s", ms);
 
 	cJSON* root = cJSON_CreateObject();
 

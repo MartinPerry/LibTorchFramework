@@ -971,6 +971,9 @@
     <ClInclude Include="core\Distributed\NcclTrainerContext.h">
       <Filter>Header Files\core\Distributed</Filter>
     </ClInclude>
+    <ClInclude Include="core\Distributed\ReplicaWorkers.h">
+      <Filter>Header Files\core\Distributed</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Libtorch.natvis">

@@ -3,6 +3,7 @@
 #ifdef LIBTORCH_FRAMEWORK_HAS_NCCL
 
 #include <c10/cuda/CUDAStream.h>
+#include <c10/cuda/CUDAGuard.h>
 
 
 #include <nccl.h>
@@ -35,6 +36,7 @@ static void printErr(int c, const char* err, const char* stmt, const char* fname
             if ((cudaError_t)c != cudaSuccess) { \
                 const char* err = cudaGetErrorString(c); \
                 printErr(c, err, #stmt, __FILE__, __LINE__); \
+                TORCH_CHECK(false, "CUDA call failed: ", #stmt, ": ", err); \
             } \
         } while (0);
 #else
@@ -47,11 +49,13 @@ static void printErr(int c, const char* err, const char* stmt, const char* fname
             if ((ncclResult_t)c != ncclSuccess) { \
                 const char* err = ncclGetErrorString(c); \
                 printErr(c, err, #stmt, __FILE__, __LINE__); \
+                TORCH_CHECK(false, "NCCL call failed: ", #stmt, ": ", err); \
             } \
         } while (0);
 #else
 #	define NCCL_CHECK(stmt) stmt
 #endif
+
 
 void NcclTrainerContext::ValidateTensorGroups(const DeviceTensorList& tensorsByDevice, const char* kind) const
 {
@@ -138,6 +142,7 @@ NcclTrainerContext::NcclTrainerContext(size_t deviceCount) :
     communicators(deviceCount, nullptr)
 {
     TORCH_CHECK(deviceCount > 0, "NCCL needs at least one model replica");
+    const c10::cuda::CUDAGuard deviceGuard(0);
 
     int visibleDeviceCount = 0;
     CUDA_CHECK(cudaGetDeviceCount(&visibleDeviceCount));
@@ -152,6 +157,8 @@ NcclTrainerContext::NcclTrainerContext(size_t deviceCount) :
 
 NcclTrainerContext::~NcclTrainerContext()
 {
+    int originalDevice = -1;
+    const bool restoreDevice = cudaGetDevice(&originalDevice) == cudaSuccess;
     for (size_t i = 0; i < communicators.size(); i++)
     {
         if (communicators[i] != nullptr)
@@ -160,12 +167,28 @@ NcclTrainerContext::~NcclTrainerContext()
             ncclCommDestroy(communicators[i]);
         }
     }
+    if (restoreDevice)
+    {
+        cudaSetDevice(originalDevice);
+    }
 }
 
 void NcclTrainerContext::Broadcast(const DeviceTensorList& tensorsByDevice)
 {
-    ValidateTensorGroups(tensorsByDevice, "model state");
+    this->ValidateTensorGroups(tensorsByDevice, "model state");
     const auto streams = CurrentStreams();
+    for (const auto& tensors : tensorsByDevice)
+    {
+        for (const auto& tensor : tensors)
+        {
+            TORCH_CHECK(tensor.numel() == 0 || tensor.is_contiguous(),
+                "NCCL model-state broadcast requires contiguous tensors");
+            if (tensor.numel() > 0)
+            {
+                GetNcclDataType(tensor.scalar_type());
+            }
+        }
+    }
 
     NCCL_CHECK(ncclGroupStart());
     for (size_t tensorIndex = 0; tensorIndex < tensorsByDevice[0].size(); tensorIndex++)
@@ -178,7 +201,6 @@ void NcclTrainerContext::Broadcast(const DeviceTensorList& tensorsByDevice)
                 continue;
             }
 
-            TORCH_CHECK(tensor.is_contiguous(), "NCCL model-state broadcast requires contiguous tensors");
             NCCL_CHECK(
                 ncclBroadcast(
                     tensor.data_ptr(),
@@ -187,22 +209,19 @@ void NcclTrainerContext::Broadcast(const DeviceTensorList& tensorsByDevice)
                     GetNcclDataType(tensor.scalar_type()),
                     0,
                     communicators[device],
-                    streams[device]));
+                    streams[device])
+            );
         }
     }
     NCCL_CHECK(ncclGroupEnd());
-
-    for (size_t device = 0; device < deviceIndices.size(); device++)
-    {
-        CUDA_CHECK(cudaSetDevice(deviceIndices[device]));
-        CUDA_CHECK(cudaStreamSynchronize(streams[device]));
-    }
+    // Consumers use these same per-device streams; no host barrier is needed.
 }
 
 void NcclTrainerContext::AllReduceGradients(const DeviceTensorList& parametersByDevice)
 {
-    EnsureGradients(parametersByDevice);
-    ValidateTensorGroups(parametersByDevice, "parameter");
+    this->ValidateTensorGroups(parametersByDevice, "parameter");
+    this->EnsureGradients(parametersByDevice);
+
     const auto streams = CurrentStreams();
 
     struct PendingGradient
@@ -212,7 +231,8 @@ void NcclTrainerContext::AllReduceGradients(const DeviceTensorList& parametersBy
     };
     std::vector<std::vector<PendingGradient>> pending(deviceIndices.size());
 
-    NCCL_CHECK(ncclGroupStart());
+    // Allocate/pack before opening the group. No tensor operation or allocation
+    // should block between collectives that must be launched together.
     for (size_t parameterIndex = 0;
         parameterIndex < parametersByDevice[0].size();
         parameterIndex++)
@@ -224,6 +244,7 @@ void NcclTrainerContext::AllReduceGradients(const DeviceTensorList& parametersBy
 
         for (size_t device = 0; device < deviceIndices.size(); device++)
         {
+            const c10::cuda::CUDAGuard deviceGuard(static_cast<c10::DeviceIndex>(deviceIndices[device]));
             auto gradient = parametersByDevice[device][parameterIndex].grad();
             ValidateCollectiveTensor(gradient, deviceIndices[device], "gradient");
             if (gradient.numel() == 0)
@@ -232,8 +253,19 @@ void NcclTrainerContext::AllReduceGradients(const DeviceTensorList& parametersBy
             }
 
             auto communication = gradient.is_contiguous() ? gradient : gradient.contiguous();
-
+            GetNcclDataType(communication.scalar_type());
+            // Average before summing to avoid overflowing a finite mean.
+            communication.div_(static_cast<double>(deviceIndices.size()));
             pending[device].push_back({ gradient, communication });
+        }
+    }
+
+    NCCL_CHECK(ncclGroupStart());
+    for (size_t gradientIndex = 0; gradientIndex < pending[0].size(); ++gradientIndex)
+    {
+        for (size_t device = 0; device < deviceIndices.size(); ++device)
+        {
+            const auto& communication = pending[device][gradientIndex].communication;
             NCCL_CHECK(
                 ncclAllReduce(
                     communication.data_ptr(),
@@ -242,51 +274,50 @@ void NcclTrainerContext::AllReduceGradients(const DeviceTensorList& parametersBy
                     GetNcclDataType(communication.scalar_type()),
                     ncclSum,
                     communicators[device],
-                    streams[device]));
+                    streams[device])
+            );
         }
     }
     NCCL_CHECK(ncclGroupEnd());
 
     for (size_t device = 0; device < deviceIndices.size(); device++)
     {
-        CUDA_CHECK(cudaSetDevice(deviceIndices[device]));
-        CUDA_CHECK(cudaStreamSynchronize(streams[device]));
+        const c10::cuda::CUDAGuard deviceGuard(static_cast<c10::DeviceIndex>(deviceIndices[device]));
         for (auto& gradient : pending[device])
         {
-            gradient.communication.div_(static_cast<double>(deviceIndices.size()));
             if (!gradient.original.is_contiguous())
             {
                 gradient.original.copy_(gradient.communication);
             }
         }
     }
+    // Packing tensors were allocated and consumed on the same stream. The
+    // caching allocator can safely reuse their storage in that stream's order.
 }
 
 bool NcclTrainerContext::HasGlobalNonFiniteGradients(const DeviceTensorList& parametersByDevice)
 {
-    EnsureGradients(parametersByDevice);
-    ValidateTensorGroups(parametersByDevice, "parameter");
+    this->ValidateTensorGroups(parametersByDevice, "parameter");
+    this->EnsureGradients(parametersByDevice);
+
     const auto streams = CurrentStreams();
     std::vector<torch::Tensor> flags;
     flags.reserve(deviceIndices.size());
 
     for (size_t device = 0; device < deviceIndices.size(); device++)
     {
-        bool localNonFinite = false;
+        const c10::cuda::CUDAGuard deviceGuard(static_cast<c10::DeviceIndex>(deviceIndices[device]));
+        auto localNonFinite = torch::zeros({}, torch::TensorOptions()
+            .dtype(torch::kBool).device(torch::kCUDA, deviceIndices[device]));
         for (auto& parameter : parametersByDevice[device])
         {
-            if (parameter.requires_grad() && !torch::isfinite(parameter.grad()).all().item<bool>())
+            if (parameter.requires_grad())
             {
-                localNonFinite = true;
-                break;
+                localNonFinite.logical_or_(torch::isfinite(parameter.grad()).all().logical_not());
             }
         }
 
-        flags.push_back(torch::full({}, localNonFinite ? 1 : 0,
-            torch::TensorOptions()
-                .dtype(torch::kInt32)
-                .device(torch::kCUDA, deviceIndices[device]))
-        );
+        flags.push_back(localNonFinite.to(torch::kInt32));
     }
 
     NCCL_CHECK(ncclGroupStart());
@@ -303,17 +334,16 @@ bool NcclTrainerContext::HasGlobalNonFiniteGradients(const DeviceTensorList& par
     }
     NCCL_CHECK(ncclGroupEnd());
 
-    for (size_t device = 0; device < deviceIndices.size(); device++)
-    {
-        CUDA_CHECK(cudaSetDevice(deviceIndices[device]));
-        CUDA_CHECK(cudaStreamSynchronize(streams[device]));
-    }
+    // One host read for the global decision, instead of one per parameter.
+    // Each flag's allocation and NCCL use share its device's current stream.
+    const c10::cuda::CUDAGuard deviceGuard(static_cast<c10::DeviceIndex>(deviceIndices[0]));
     return flags[0].item<int>() != 0;
 }
 
 void NcclTrainerContext::MarkGradientsNonFinite(const DeviceTensorList& parametersByDevice)
 {
-    EnsureGradients(parametersByDevice);
+    this->EnsureGradients(parametersByDevice);
+
     for (auto& parameters : parametersByDevice)
     {
         bool marked = false;
@@ -321,10 +351,8 @@ void NcclTrainerContext::MarkGradientsNonFinite(const DeviceTensorList& paramete
         {
             if (parameter.requires_grad() && (parameter.grad().numel() > 0))
             {
-                parameter.mutable_grad()
-                    .reshape({ -1 })
-                    .select(0, 0)
-                    .fill_(std::numeric_limits<float>::infinity());
+                // fill_ also updates noncontiguous gradients; reshape may copy.
+                parameter.mutable_grad().fill_(std::numeric_limits<float>::infinity());
                 marked = true;
                 break;
             }
@@ -339,7 +367,6 @@ std::vector<cudaStream_t> NcclTrainerContext::CurrentStreams() const
     streams.reserve(deviceIndices.size());
     for (const int device : deviceIndices)
     {
-        CUDA_CHECK(cudaSetDevice(device));
         streams.push_back(c10::cuda::getCurrentCUDAStream(device).stream());
     }
     return streams;
@@ -358,8 +385,5 @@ void NcclTrainerContext::EnsureGradients(const DeviceTensorList& parametersByDev
         }
     }
 }
-
-
-
 
 #endif
