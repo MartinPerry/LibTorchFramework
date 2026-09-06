@@ -119,7 +119,17 @@ void TrainingHelper::Run(std::shared_ptr<InputLoadersWrapper> loaders)
 
     std::shared_ptr<Runner> train = std::make_shared<Trainer>(sets, model);
 #endif
+        
+    if (sets.device == c10::DeviceType::CUDA)
+    {
+        MY_LOG_INFO("Running on device: CUDA (gpu count: %d)", gpuCount);
+    }
+    else
+    {
+        auto tmp = c10::DeviceTypeName(sets.device);
 
+        MY_LOG_INFO("Running on device: %s", tmp.c_str());
+    }
 
     Runner runnerValid(RunMode::VALID, sets, model);
     Runner runnerTest(RunMode::TEST, sets, model);

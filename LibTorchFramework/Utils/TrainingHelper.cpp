@@ -16,4 +16,8 @@ TrainingHelper::TrainingHelper(const Settings& sets,
     modelIniter(modelIniter),
     gpuCount(gpuCount)
 {
+    if (this->gpuCount < 1)
+    {
+        this->gpuCount = torch::cuda::device_count();
+    }
 }

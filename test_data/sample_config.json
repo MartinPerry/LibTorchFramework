@@ -5,7 +5,8 @@
     "epoch_count": 100,
     "num_workers": 4,
     "autocast": false,
-    "batch_size": 2
+    "batch_size": 2,
+    "gpu_count": 2
   },
   "dataset": {
     "path_uni": "d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE",
@@ -28,9 +29,10 @@
     "enable_save": true,
     "enable_load": false
   },
-  "dashboard": {
+  "dashboard_": {
     "url": "http://perry.cz/files/dashboard/upload.php",
-    "token": "8796542131654564"
+    "token": "541213465421",
+    "image_upload_enabled": true
   }
   
 }

@@ -12,6 +12,7 @@ struct TrainingSettings
     int numWorkers = 4;
     bool autocast = false;
     int batchSize = 2;
+    int gpuCount = 1;
 };
 
 struct DatasetSettings
@@ -45,6 +46,7 @@ struct ModelSettings
 {
     std::string modelId;
     std::string device;
+
     TrainingSettings training;
     DatasetSettings dataset;
     SnapshotSettings snapshot;

@@ -131,7 +131,9 @@ std::vector<float> MeteonetInputLoader::LoadImage(const std::string& p) const
     }
     std::vector<uint8_t> buf;    
     f.ReadAll(buf);
-   
+    f.Close();
+
+
     Image2d<float> img = Image2d<float>::CreateFromRawMemory(buf.data(), buf.size());
 
     

@@ -57,14 +57,11 @@ NcclTrainer::NcclTrainer(const Settings& sets, std::vector<std::shared_ptr<Abstr
     const bool singleGpuNcclTest = (replicaModels.size() == 1) && IsSingleGpuNcclTestEnabled();
     if ((replicaModels.size() > 1) || singleGpuNcclTest)
     {
-        TORCH_CHECK(
-            sets.device == torch::kCUDA,
-            "NCCL training requires a CUDA device");
+        TORCH_CHECK(sets.device == torch::kCUDA, "NCCL training requires a CUDA device");
         nccl = std::make_shared<NcclTrainerContext>(replicaModels.size());
         if (singleGpuNcclTest)
         {
-            MY_LOG_INFO(
-                "NCCL single-GPU smoke mode enabled; collectives use one rank");
+            MY_LOG_INFO("NCCL single-GPU smoke mode enabled; collectives use one rank");
         }
     }
 
@@ -91,9 +88,7 @@ NcclTrainer::~NcclTrainer()
 void NcclTrainer::SelectCudaDevice(size_t device)
 {
     const auto result = cudaSetDevice(static_cast<int>(device));
-    TORCH_CHECK(
-        result == cudaSuccess,
-        "cudaSetDevice failed: ", cudaGetErrorString(result));
+    TORCH_CHECK(result == cudaSuccess, "cudaSetDevice failed: ", cudaGetErrorString(result));
 }
 
 void NcclTrainer::CheckLoss(
@@ -128,8 +123,7 @@ std::vector<std::vector<torch::Tensor>> NcclTrainer::ParametersByDevice() const
     return result;
 }
 
-std::vector<DataLoaderData> NcclTrainer::BuildReplicaBatches(
-    DataLoaderData& batch) const
+std::vector<DataLoaderData> NcclTrainer::BuildReplicaBatches(DataLoaderData& batch) const
 {
     if (replicaModels.size() == 1)
     {
@@ -137,6 +131,7 @@ std::vector<DataLoaderData> NcclTrainer::BuildReplicaBatches(
     }
 
     const size_t totalBatchSize = batch.GetBatchSize();
+    
     TORCH_CHECK(totalBatchSize > 0, "Cannot train on an empty dataloader batch");
     TORCH_CHECK(
         batch.input.dim() > 0 &&
@@ -193,9 +188,7 @@ std::vector<DataLoaderData> NcclTrainer::BuildReplicaBatches(
     return batches;
 }
 
-void NcclTrainer::RunTrainStepsFull(
-    std::vector<torch::Tensor>& losses,
-    bool canUpdate)
+void NcclTrainer::RunTrainStepsFull(std::vector<torch::Tensor>& losses, bool canUpdate)
 {
     for (size_t device = 0; device < losses.size(); device++)
     {
@@ -231,9 +224,7 @@ void NcclTrainer::RunOptimizerFull()
     }
 }
 
-void NcclTrainer::RunTrainStepsAutocast(
-    std::vector<torch::Tensor>& losses,
-    bool canUpdate)
+void NcclTrainer::RunTrainStepsAutocast(std::vector<torch::Tensor>& losses, bool canUpdate)
 {
     for (size_t device = 0; device < losses.size(); device++)
     {

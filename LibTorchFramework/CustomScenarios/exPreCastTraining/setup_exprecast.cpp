@@ -195,7 +195,8 @@ namespace CustomScenarios::exPreCastTraining
 			return m;
 		};
 
-		TrainingHelper th(sets, modelIniter, 1);
+		
+		TrainingHelper th(sets, modelIniter, settings.training.gpuCount);
 		th.Run(ilw);
 	}
 }

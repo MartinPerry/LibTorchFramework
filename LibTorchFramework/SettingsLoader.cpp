@@ -60,6 +60,7 @@ void SettingsLoader::LoadTraining(const JsonCmdDefaults& json, TrainingSettings&
     settings.numWorkers = json.GetValue<int>("training.num_workers", settings.numWorkers);
     settings.autocast = json.GetValue<bool>("training.autocast", settings.autocast);
     settings.batchSize = json.GetValue<int>("training.batch_size", settings.batchSize);
+    settings.gpuCount = json.GetValue<int>("training.gpu_count", settings.gpuCount);
 }
 
 void SettingsLoader::LoadDataset(const JsonCmdDefaults& json, DatasetSettings& settings)
