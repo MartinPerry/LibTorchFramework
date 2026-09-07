@@ -34,6 +34,10 @@ void MeteonetInputLoader::Load()
         31, 31, 30, 31, 30, 31
     };
 
+    const std::vector<int> maxMonths = {
+        12, 12, 10
+    };
+
     std::vector<std::string> times;
     times.reserve(24 * 12);
 
@@ -52,7 +56,7 @@ void MeteonetInputLoader::Load()
 
     for (int year = yearFrom; year <= yearTo; ++year)
     {
-        for (int month = 1; month <= maxMonth; ++month)
+        for (int month = 1; month <= maxMonths[year - yearFrom]; ++month)
         {
             for (int day = 1; day <= days[month - 1]; ++day)
             {
@@ -168,7 +172,13 @@ void MeteonetInputLoader::SaveSequence(size_t index, const std::string& outputNa
 
     auto gifFileName = outputName + ".gif";
     int delay = 20;
-    GifWriter g;
+    GifWriter g = {
+        .f = nullptr,
+        .oldImage = nullptr,
+        .firstFrame = true,
+        .padding = {0}
+    };
+
     GifBegin(&g, gifFileName.c_str(), w, h, delay);
     for (auto& gimg : imgs)
     {   
