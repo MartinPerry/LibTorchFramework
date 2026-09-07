@@ -1,7 +1,10 @@
 #ifndef  METEONET_INPUT_LOADER_H
 #define  METEONET_INPUT_LOADER_H
 
+struct DatasetSettings;
+
 #include <optional>
+#include <unordered_map>
 
 #include "../../InputProcessing/InputLoaders/VideoSequenceInputLoader.h"
 
@@ -18,7 +21,8 @@ namespace CustomScenarios
             MeteonetInputLoader(RunMode type, std::weak_ptr<InputLoadersWrapper> parent,
                 const std::string& datasetPath,
                 int prevSeqLen,
-                int futureSeqLen);
+                int futureSeqLen,
+                const DatasetSettings& params);
 
             void Load() override;
 
@@ -26,6 +30,9 @@ namespace CustomScenarios
                 std::optional<std::string> colorMappingFileName = std::nullopt);
 
         protected:
+            int yearFrom;
+            int yearTo;
+            int seqOverlap;
 
             void LoadSequenceFiles() override;
 

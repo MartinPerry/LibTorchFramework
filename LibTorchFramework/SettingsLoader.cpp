@@ -1,5 +1,7 @@
 #include "./SettingsLoader.h"
 
+#include <cstring>
+
 #include <Utils/CmdParser.h>
 #include <Utils/Logger.h>
 
@@ -76,8 +78,24 @@ void SettingsLoader::LoadDataset(const JsonCmdDefaults& json, DatasetSettings& s
     settings.channelsCount = json.GetValue<int>("dataset.channels_count", settings.channelsCount);
     settings.width = json.GetValue<int>("dataset.width", settings.width);
     settings.height = json.GetValue<int>("dataset.height", settings.height);
-    settings.prevCount = json.GetValue<int>("dataset.prev_count", settings.prevCount);
-    settings.futureCount = json.GetValue<int>("dataset.future_count", settings.futureCount);
+
+    auto keys = json.GetAllKeysWithPrefix("dataset.custom");
+    size_t prefixLen = strlen("dataset.custom") + 1;
+    for (const auto& k : keys)
+    {
+        if (prefixLen >= k.length())
+        {
+            continue;
+        }
+        auto kName = k.substr(prefixLen);
+        if (kName == "")
+        {
+            continue;
+        }
+        auto v = json.GetValue<std::string>(k);        
+
+        settings.params.try_emplace(kName, v);
+    }   
 }
 
 void SettingsLoader::LoadSnapshot(const JsonCmdDefaults& json, SnapshotSettings& settings)

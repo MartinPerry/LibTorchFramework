@@ -8,6 +8,7 @@
 #include <Utils/Strings/StringUtils.h>
 
 #include "../../Utils/TorchImageUtils.h"
+#include "../../SettingsLoader.h"
 
 using namespace CustomScenarios::exPreCastTraining;
 
@@ -16,19 +17,21 @@ MeteonetInputLoader::MeteonetInputLoader(
     std::weak_ptr<InputLoadersWrapper> parent,
     const std::string& datasetPath,
     int prevSeqLen,
-    int futureSeqLen) :
+    int futureSeqLen,
+    const DatasetSettings& params) :
     VideoSequenceInputLoader(type, parent, datasetPath, prevSeqLen, futureSeqLen)
-{    
+{   
+
+    yearFrom = params.GetParamAs<int>("start_year", 2016);
+    yearTo = params.GetParamAs<int>("end_year", 2018);    
+    seqOverlap = params.GetParamAs<int>("overlap_count", sets.prevSeqLen + sets.futureSeqLen);
 }
 
 
 void MeteonetInputLoader::Load()
-{    
-    int yearFrom = 2016;
-    int yearTo = 2016;
-       
-    int maxMonth = 12;// 12;
-
+{   
+    int seqLen = sets.prevSeqLen + sets.futureSeqLen;
+               
     const std::vector<int> days = {
         31, 28, 31, 30, 31, 30,
         31, 31, 30, 31, 30, 31
@@ -83,7 +86,8 @@ void MeteonetInputLoader::Load()
                     std::string radarFilename = ymdhm.str() + ".tiff";
 
                     auto path = (std::filesystem::path(ymd.str()) / radarFilename);
-
+                    
+                    
                     if (std::filesystem::exists(std::filesystem::path(sets.datasetPath) / path) == false)
                     {
                         MY_LOG_ERROR("File %s not found", path.string().c_str());
@@ -96,16 +100,15 @@ void MeteonetInputLoader::Load()
                     else
                     {
                         allFiles.emplace_back(path.string());
-                    }
+                    }                    
                 }
             }
         }
     }
 
     data.clear();
-
-    int seqLen = sets.prevSeqLen + sets.futureSeqLen;
-    for (size_t i = 0; i < allFiles.size() - seqLen; i += seqLen)
+    
+    for (size_t i = 0; i < allFiles.size() - seqLen; i += seqOverlap)
     {
         auto& d = data.emplace_back(sets.datasetPath);
 

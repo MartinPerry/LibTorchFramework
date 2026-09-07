@@ -6,20 +6,27 @@
     "num_workers": 4,
     "autocast": false,
     "batch_size": 2,
-    "gpu_count": 2
+    "gpu_count": 1
   },
   "dataset": {
-    "path_uni": "d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE",
+    "path": "d:/python/Processing-Radar-Datasets-main/Processing-Radar-Datasets-main/meteonet_256/SE",
     "path_linux": "/data/perry/gp/datasets/meteonet/SE",
-    "path": "e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet_256/SE",
+    "path_": "e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet_256/SE",
     "seed": -1,
     "subset_size": 2,
+
     "channels_count": 1,
     "width": 256,
     "height": 256,
-    "prev_count": 12,
-    "future_count": 12
-  },
+
+    "custom": {
+      "prev_count": 12,
+      "future_count": 12,
+      "start_year": 2016,
+      "end_year": 2018,
+      "overlap_count": 15
+    }
+    },
   "snapshot": {
     "weights": "e:\\Programming\\Cpp\\LibTorchFramework\\pretrained_meteonet.safetensors",
     "wights_linux": "/data/perry/gp/pretrained_meteonet.safetensors",

@@ -125,8 +125,8 @@ namespace CustomScenarios::exPreCastTraining
 		ImageSize imSize(settings.dataset.channelsCount, settings.dataset.width, settings.dataset.height);
 
 
-		int prevCount = settings.dataset.prevCount;
-		int futureCount = settings.dataset.futureCount;
+		int prevCount = settings.dataset.GetParamAs<int>("prev_count");
+		int futureCount = settings.dataset.GetParamAs<int>("future_count");
 
 		InputLoaderSettings loaderSets;
 		loaderSets.subsetSize = settings.dataset.subsetSize;
@@ -134,12 +134,14 @@ namespace CustomScenarios::exPreCastTraining
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);	
 		ilw->SetShuffleSeed(settings.dataset.seed);
 		ilw->SetTrainValTestSplit(0.8, 0.0);
-		ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TRAIN, loaderSets } },
-			settings.dataset.path, prevCount, futureCount);
-		ilw->InitLoaders<MeteonetInputLoader, std::string>({ { RunMode::TEST, loaderSets } },
-			settings.dataset.path, 		
-			prevCount, futureCount);
-
+		ilw->InitLoaders<MeteonetInputLoader, std::string>(
+			{ 
+				{ RunMode::TRAIN, loaderSets }, 
+				{ RunMode::TEST, loaderSets } 
+			}, 
+			settings.dataset.path, prevCount, futureCount, settings.dataset
+		);
+		
 		//-------
 		
 		// test
