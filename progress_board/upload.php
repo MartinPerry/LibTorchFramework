@@ -6,6 +6,10 @@ ini_set('display_errors', '0');
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 
+//==================================================================================================
+// Methods
+//==================================================================================================
+
 function uploadResponse($payload, $statusCode)
 {
     if ($statusCode === 201) {
@@ -20,6 +24,8 @@ function uploadResponse($payload, $statusCode)
         header('HTTP/1.1 409 Conflict');
     } elseif ($statusCode === 413) {
         header('HTTP/1.1 413 Payload Too Large');
+    } elseif ($statusCode === 507) {
+        header('HTTP/1.1 507 Insufficient Storage');
     } elseif ($statusCode !== 200) {
         header('HTTP/1.1 500 Internal Server Error');
     }
@@ -141,6 +147,76 @@ function imageExtension($bytes)
     return '';
 }
 
+function reserveImageUploadSpace($dataRoot, $imageDirectory, $imageSize)
+{
+    // Leave 5 MiB available after saving the incoming image.
+    $requiredSpace = 5 * 1024 * 1024 + $imageSize;
+    $freeSpace = @disk_free_space($imageDirectory);
+    if ($freeSpace === false) {
+        return false;
+    }
+    if ($freeSpace >= $requiredSpace) {
+        return true;
+    }
+
+    $imageDirectories = array($dataRoot . DIRECTORY_SEPARATOR . 'img');
+    $runs = @glob($dataRoot . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR);
+    if ($runs !== false) {
+        foreach ($runs as $run) {
+            if (!is_link($run)) {
+                $imageDirectories[] = $run . DIRECTORY_SEPARATOR . 'img';
+            }
+        }
+    }
+    $images = array();
+    foreach ($imageDirectories as $directory) {
+        if (is_link($directory) || !is_dir($directory)) {
+            continue;
+        }
+        $files = @glob($directory . DIRECTORY_SEPARATOR . '*');
+        if ($files === false) {
+            continue;
+        }
+        foreach ($files as $file) {
+            // Only prune dashboard images; exclude links, metrics and temporary files.
+            if (is_link($file) || !is_file($file) ||
+                !preg_match('/^\d+_(train|test|valid)_\d+\.(jpe?g|gif)$/i', basename($file))) {
+                continue;
+            }
+            $modified = @filemtime($file);
+            if ($modified !== false) {
+                $images[] = array('path' => $file, 'modified' => $modified);
+            }
+        }
+    }
+    usort($images, function ($left, $right) {
+        if ($left['modified'] === $right['modified']) {
+            return strcmp($left['path'], $right['path']);
+        }
+        return $left['modified'] < $right['modified'] ? -1 : 1;
+    });
+
+    foreach ($images as $image) {
+        if (!@unlink($image['path'])) {
+            continue;
+        }
+        clearstatcache();
+        $freeSpace = @disk_free_space($imageDirectory);
+        if ($freeSpace === false) {
+            return false;
+        }
+        if ($freeSpace >= $requiredSpace) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+//==================================================================================================
+// Script main part
+//==================================================================================================
+
 if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Allow: POST');
     uploadResponse(array('ok' => false, 'error' => 'Use POST with a JSON request body'), 405);
@@ -155,6 +231,13 @@ if (!secureTokenEquals($expectedToken, requestUploadToken())) {
 }
 
 $action = isset($_GET['action']) ? (string) $_GET['action'] : 'metrics';
+$runId = isset($_GET['run_id']) ? (string) $_GET['run_id'] : '';
+$runType = isset($_GET['run_type']) ? strtolower((string) $_GET['run_type']) : '';
+$runIndexText = isset($_GET['run_index']) ? (string) $_GET['run_index'] : '';
+
+//==================================================================================================
+// Image
+//==================================================================================================
 if ($action === 'image') {
     $imageContentLength = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
     if ($imageContentLength <= 0) {
@@ -164,14 +247,12 @@ if ($action === 'image') {
         uploadResponse(array('ok' => false, 'error' => 'Image exceeds 25 MiB'), 413);
     }
 
-    $imageRunId = isset($_GET['run_id']) ? (string) $_GET['run_id'] : '';
-    $imageType = isset($_GET['run_type']) ? strtolower((string) $_GET['run_type']) : '';
-    $imageIndexText = isset($_GET['img_index']) ? (string) $_GET['img_index'] : '';
-    $runIndexText = isset($_GET['run_index']) ? (string) $_GET['run_index'] : '';
-    if (!validRunId($imageRunId)) {
+    $imageRunId = isset($_GET['run_id']) ? (string) $_GET['run_id'] : '';    
+    $imageIndexText = isset($_GET['img_index']) ? (string) $_GET['img_index'] : '';    
+    if (!validRunId($runId)) {
         uploadResponse(array('ok' => false, 'error' => 'run_id contains invalid characters'), 400);
     }
-    if ($imageType !== 'train' && $imageType !== 'test' && $imageType !== 'valid') {
+    if ($runType !== 'train' && $runType !== 'test' && $runType !== 'valid') {
         uploadResponse(array('ok' => false, 'error' => 'run_type must be train, test, or valid'), 400);
     }
     if (!preg_match('/^\d{1,10}$/', $imageIndexText) || !preg_match('/^\d{1,10}$/', $runIndexText)) {
@@ -182,6 +263,10 @@ if ($action === 'image') {
     if ($imageBytes === false || $imageBytes === '') {
         uploadResponse(array('ok' => false, 'error' => 'Could not read image body'), 400);
     }
+    $imageSize = strlen($imageBytes);
+    if ($imageSize > 26214400) {
+        uploadResponse(array('ok' => false, 'error' => 'Image exceeds 25 MiB'), 413);
+    }
     $extension = imageExtension($imageBytes);
     if ($extension === '') {
         uploadResponse(array('ok' => false, 'error' => 'Only valid JPG and GIF image data is accepted'), 400);
@@ -190,7 +275,7 @@ if ($action === 'image') {
         uploadResponse(array('ok' => false, 'error' => 'Image data is corrupt'), 400);
     }
 
-    $imageRunDirectory = ensureRunDirectory($imageRunId);
+    $imageRunDirectory = ensureRunDirectory($runId);
     if ($imageRunDirectory === false) {
         uploadResponse(array('ok' => false, 'error' => 'Could not create run directory'), 500);
     }
@@ -198,13 +283,24 @@ if ($action === 'image') {
     if (!is_dir($imageDirectory) && !@mkdir($imageDirectory, 0775, true)) {
         uploadResponse(array('ok' => false, 'error' => 'Could not create image directory'), 500);
     }
-    $imageFileName = (int) $imageIndexText . '_' . $imageType . '_' . (int) $runIndexText . '.' . $extension;
+    $imageFileName = (int) $imageIndexText . '_' . $runType . '_' . (int) $runIndexText . '.' . $extension;
     $imageFinalPath = $imageDirectory . DIRECTORY_SEPARATOR . $imageFileName;
+    // Keep duplicate checks, global pruning and writes in one critical section.
+    // PHP releases this lock when uploadResponse exits, including on errors.
+    $dataRoot = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'data';
+    $imageLock = @fopen($dataRoot . DIRECTORY_SEPARATOR . '.image-upload.lock', 'c');
+    if ($imageLock === false || !flock($imageLock, LOCK_EX)) {
+        uploadResponse(array('ok' => false, 'error' => 'Could not lock image uploads'), 500);
+    }
+    clearstatcache();
     if (is_file($imageFinalPath)) {
         uploadResponse(array('ok' => false, 'error' => 'Image already exists'), 409);
     }
+    if (!reserveImageUploadSpace($dataRoot, $imageDirectory, $imageSize)) {
+        uploadResponse(array('ok' => false, 'error' => 'Could not free enough disk space for image and 5 MiB reserve'), 507);
+    }
     $imageTemporaryPath = @tempnam($imageDirectory, '.image-');
-    if ($imageTemporaryPath === false || @file_put_contents($imageTemporaryPath, $imageBytes, LOCK_EX) === false) {
+    if ($imageTemporaryPath === false || @file_put_contents($imageTemporaryPath, $imageBytes, LOCK_EX) !== $imageSize) {
         if ($imageTemporaryPath !== false) {
             @unlink($imageTemporaryPath);
         }
@@ -217,13 +313,15 @@ if ($action === 'image') {
     @chmod($imageFinalPath, 0664);
     uploadResponse(array(
         'ok' => true,
-        'run_id' => $imageRunId,
+        'run_id' => $runId,
         'image_index' => (int) $imageIndexText,
-        'run_type' => $imageType,
+        'run_type' => $runType,
         'run_index' => (int) $runIndexText,
-        'file' => 'data/' . $imageRunId . '/img/' . $imageFileName
+        'file' => 'data/' . $runId . '/img/' . $imageFileName
     ), 201);
 }
+
+//==================================================================================================
 
 if ($action !== 'metrics') {
     uploadResponse(array('ok' => false, 'error' => 'Unknown upload action'), 400);
@@ -246,7 +344,7 @@ if (!isset($request->run_id) || !is_string($request->run_id)) {
     uploadResponse(array('ok' => false, 'error' => 'run_id must be a string'), 400);
 }
 
-$runId = $request->run_id;
+$runId = isset($request->run_id) ? $request->run_id : $runId;
 if (!validRunId($runId)) {
     uploadResponse(array('ok' => false, 'error' => 'run_id contains invalid characters'), 400);
 }
@@ -293,7 +391,6 @@ if ($lock === false || !flock($lock, LOCK_EX)) {
 
 $checkpointId = nextCheckpointId($runDirectory);
 $model = isset($request->model) ? safeFilePart($request->model, 'metrics') : 'metrics';
-$runType = isset($request->run_type) ? safeFilePart($request->run_type, 'train') : 'train';
 $timestamp = date('Y_m_d_H_i');
 $fileName = $model . '_' . $timestamp . '_' . $runType . '_' . $checkpointId . '.json';
 $finalPath = $runDirectory . DIRECTORY_SEPARATOR . $fileName;
