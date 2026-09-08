@@ -5,6 +5,7 @@ struct Settings;
 class MetricsDefault;
 class AbstractModel;
 struct DataLoaderData;
+class AbstractScheduler;
 
 class CudaGraphHelper;
 
@@ -28,6 +29,13 @@ public:
 	friend class CudaGraphHelper;
 
 protected:
+	
+	struct StepInfo
+	{
+		at::Tensor loss;
+		std::shared_ptr<torch::optim::Optimizer> optimizer;
+		std::shared_ptr<AbstractScheduler> scheduler;
+	};
 
 	std::shared_ptr<CudaGraphHelper> cudaGraph;
 
@@ -37,13 +45,13 @@ protected:
 
 	void CheckLoss(at::Tensor loss);
 
-	void RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer);
-	void RunTrainStepsAutocast(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer);
+	void RunTrainStepsFull(StepInfo& si);
+	void RunTrainStepsAutocast(StepInfo& si);
 
-	void RunOptimizerFull(std::shared_ptr<torch::optim::Optimizer> optimizer);
-	void RunOptimizerAutoCast(std::shared_ptr<torch::optim::Optimizer> optimizer);
+	void RunOptimizerFull(StepInfo& si);
+	void RunOptimizerAutoCast(StepInfo& si);
 
-	void RunStep(DataLoaderData& batch, std::shared_ptr<torch::optim::Optimizer> optimizer);
+	void RunStep(DataLoaderData& batch, StepInfo& si);
 
 	void ProgressLoss(float loss);
 

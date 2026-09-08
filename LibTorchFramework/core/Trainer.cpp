@@ -11,6 +11,8 @@
 
 #include "./Metrics/MetricsDefault.h"
 
+#include "./Schedulers/AbstractScheduler.h"
+
 #include "./Snapshot/SnapshotSaver.h"
 
 #include "./Modules/gradscaler.hpp"
@@ -65,19 +67,19 @@ void Trainer::CheckLoss(at::Tensor loss)
 // Full
 //============================================================================================
 
-void Trainer::RunTrainStepsFull(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer)
+void Trainer::RunTrainStepsFull(StepInfo& si)
 {
 #ifdef _DEBUG
-    this->CheckLoss(loss);
+    this->CheckLoss(si.loss);
 #endif
-    loss.backward();
+    si.loss.backward();
 
-    this->RunOptimizerFull(optimizer);
+    this->RunOptimizerFull(si);
 }
 
-void Trainer::RunOptimizerFull(std::shared_ptr<torch::optim::Optimizer> optimizer)
+void Trainer::RunOptimizerFull(StepInfo& si)
 {
-    if (optimizer == nullptr)
+    if (si.optimizer == nullptr)
     {
         return;
     }
@@ -92,8 +94,13 @@ void Trainer::RunOptimizerFull(std::shared_ptr<torch::optim::Optimizer> optimize
     //auto before = p.detach().clone();
 #endif
 
-    optimizer->step();
-    optimizer->zero_grad();    
+    si.optimizer->step();
+    if (si.scheduler)
+    {
+        si.scheduler->Step();
+    }
+
+    si.optimizer->zero_grad();    
 
 #ifdef _DEBUG
     //MY_LOG_INFO("grad norm: %f", p.grad().norm().item<float>());
@@ -105,28 +112,28 @@ void Trainer::RunOptimizerFull(std::shared_ptr<torch::optim::Optimizer> optimize
 // Autocast
 //============================================================================================
 
-void Trainer::RunTrainStepsAutocast(at::Tensor loss, std::shared_ptr<torch::optim::Optimizer> optimizer)
+void Trainer::RunTrainStepsAutocast(StepInfo& si)
 {
 #ifdef _DEBUG
-    this->CheckLoss(loss);
+    this->CheckLoss(si.loss);
 #endif
 
-    auto scaledLoss = scaler->scale(loss);
+    auto scaledLoss = scaler->scale(si.loss);
     scaledLoss.backward();
    
-    this->RunOptimizerAutoCast(optimizer);
+    this->RunOptimizerAutoCast(si);
 }
 
-void Trainer::RunOptimizerAutoCast(std::shared_ptr<torch::optim::Optimizer> optimizer)
+void Trainer::RunOptimizerAutoCast(StepInfo& si)
 {
-    if (optimizer == nullptr)
+    if (si.optimizer == nullptr)
     {
         return;
     }
 
     if (sets.clippingFn)
     {
-        scaler->unscale_(*optimizer);
+        scaler->unscale_(*si.optimizer);
         
         sets.clippingFn(model->parameters());
     }
@@ -137,10 +144,15 @@ void Trainer::RunOptimizerAutoCast(std::shared_ptr<torch::optim::Optimizer> opti
     //auto before = p.detach().clone();
 #endif
 
-    scaler->step(*optimizer);
+    scaler->step(*si.optimizer);
     scaler->update();
 
-    optimizer->zero_grad();    
+    if (si.scheduler)
+    {
+        si.scheduler->Step();
+    }
+
+    si.optimizer->zero_grad();    
 
 #ifdef _DEBUG
     //MY_LOG_INFO("grad norm: %f", p.grad().norm().item<float>());
@@ -152,20 +164,20 @@ void Trainer::RunOptimizerAutoCast(std::shared_ptr<torch::optim::Optimizer> opti
 // Steps
 //============================================================
 
-void Trainer::RunStep(DataLoaderData& batch, std::shared_ptr<torch::optim::Optimizer> optimizer)
+void Trainer::RunStep(DataLoaderData& batch, StepInfo& si)
 {
-    auto loss = this->ForwardAndLoss(batch);
+    si.loss = this->ForwardAndLoss(batch);
 
     if (sets.perf.enableAutoCast)
     {
-        this->RunTrainStepsAutocast(loss, optimizer);
+        this->RunTrainStepsAutocast(si);
     }
     else
     {
-        this->RunTrainStepsFull(loss, optimizer);
+        this->RunTrainStepsFull(si);
     }
 
-    this->ProgressLoss(loss.item().toFloat());
+    this->ProgressLoss(si.loss.item().toFloat());
 }
 
 void Trainer::ProgressLoss(float loss)
@@ -206,15 +218,22 @@ void Trainer::ProcessBatch(DataLoaderData& batch)
         MY_LOG_WARNING("No optimizer is set. Model wont train");
     }
 
+    StepInfo si{
+        .loss = {},
+        .optimizer = optimizer,
+        .scheduler = (optimizer) ? this->model->scheduler : nullptr
+    };
+
+
     if (cudaGraph)
     {
 #ifdef USE_CUDA
-        cudaGraph->Run(batch, optimizer);
+        cudaGraph->Run(batch, si);
 #endif
     }
     else
-    {
-        this->RunStep(batch, optimizer);
+    {        
+        this->RunStep(batch, si);
     }
 }
 

@@ -17,6 +17,8 @@
 
 #include "../Modules/gradscaler.hpp"
 
+#include "../Schedulers/AbstractScheduler.h"
+
 #include "../CudaGraphHelper.h"
 
 #include "./NcclTrainerContext.h"
@@ -208,13 +210,20 @@ void NcclTrainer::RunOptimizerFull()
 
     RunOnReplicas([&](size_t device)
     {
-        auto optimizer = replicaModels[device]->optimizer;
-        TORCH_CHECK(optimizer != nullptr, "Model replica ", device, " has no optimizer");
+        auto& model = replicaModels[device];
+
+        auto& optimizer = model->optimizer;
+        
         if (sets.clippingFn)
         {
-            sets.clippingFn(replicaModels[device]->parameters());
+            sets.clippingFn(model->parameters());
         }
         optimizer->step();
+        if (model->scheduler)
+        {
+            model->scheduler->Step();
+        }
+
         optimizer->zero_grad();
     });
 }
@@ -246,9 +255,7 @@ void NcclTrainer::RunOptimizerAutoCast()
     }
 
     RunOnReplicas([&](size_t device)
-    {
-        TORCH_CHECK(replicaModels[device]->optimizer != nullptr,
-            "Model replica ", device, " has no optimizer");
+    {        
         scalers[device]->unscale_(*replicaModels[device]->optimizer);
     });
 
@@ -259,16 +266,23 @@ void NcclTrainer::RunOptimizerAutoCast()
     
     RunOnReplicas([&](size_t device)
     {
-        auto optimizer = replicaModels[device]->optimizer;
-        TORCH_CHECK(optimizer != nullptr, "Model replica ", device, " has no optimizer");
+        auto& model = replicaModels[device];
 
+        auto& optimizer = model->optimizer;
+        
         if (sets.clippingFn && !globalNonFinite)
         {            
-            sets.clippingFn(replicaModels[device]->parameters());
+            sets.clippingFn(model->parameters());
         }
 
         scalers[device]->step(*optimizer);
         scalers[device]->update();
+
+        if (model->scheduler)
+        {
+            model->scheduler->Step();
+        }
+
         optimizer->zero_grad();
     });
 }

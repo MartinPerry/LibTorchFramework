@@ -5,6 +5,7 @@ class FreezeInfo;
 struct DataLoaderData;
 class Trainer;
 class NcclTrainer;
+class AbstractScheduler;
 
 #include <vector>
 
@@ -46,8 +47,10 @@ public:
 protected:
 
 	std::shared_ptr<torch::optim::Optimizer> optimizer;
-	std::shared_ptr<torch::optim::LRScheduler> scheduler;
+	std::shared_ptr<AbstractScheduler> scheduler;
 };
+
+//============================================================================================
 
 template <typename OptimType, typename Options>
 void AbstractModel::CreateOptimizer(const Options& options, bool onlyGradientParams)

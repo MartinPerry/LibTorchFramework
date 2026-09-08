@@ -3,36 +3,23 @@
 
 #include <torch/torch.h>
 
-class WarmupCosineScheduler
+#include "./AbstractScheduler.h"
+
+class WarmupCosineScheduler : public AbstractScheduler
 {
 public:
     WarmupCosineScheduler(
-        torch::optim::Optimizer& optimizer,
-        int64_t totalSteps,
+        std::shared_ptr<torch::optim::Optimizer> optimizer,
+        int totalSteps,
         double baseLr,
         double warmupPercentage = 0.2,
         double minLrRatio = 1.0e-3,
         double warmupMinLrRatio = 0.0);
 
-    void Step();
+    void Step() override;
 
-    torch::optim::LRScheduler& GetScheduler();
-
-private:
-    torch::optim::Optimizer& optimizer;
-
-    int64_t totalSteps;
-    int64_t warmupSteps;
-
-    double baseLr;
-    double minLrRatio;
-    double warmupMinLrRatio;
-
-    // Stub:
-    // LibTorch does not provide a direct equivalent of Python's
-    // SequentialLR + LambdaLR combination with an arbitrary lambda.
-    // Implement the scheduling logic directly in Step().
-    int64_t currentStep;
+protected:
+    
 };
 
 #endif

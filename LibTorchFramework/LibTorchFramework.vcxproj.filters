@@ -618,6 +618,9 @@
     <ClCompile Include="core\Schedulers\WarmupCosineScheduler.cpp">
       <Filter>Source Files\core\Schedulers</Filter>
     </ClCompile>
+    <ClCompile Include="core\Schedulers\AbstractScheduler.cpp">
+      <Filter>Source Files\core\Schedulers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InputProcessing\DefaultDataset.h">
@@ -984,6 +987,9 @@
       <Filter>Header Files\core\Distributed</Filter>
     </ClInclude>
     <ClInclude Include="core\Schedulers\WarmupCosineScheduler.h">
+      <Filter>Header Files\core\Schedulers</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Schedulers\AbstractScheduler.h">
       <Filter>Header Files\core\Schedulers</Filter>
     </ClInclude>
   </ItemGroup>

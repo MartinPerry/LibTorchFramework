@@ -10,7 +10,6 @@
 
 
 #include "./Modules/gradscaler.hpp"
-#include "./Trainer.h"
 
 #include <c10/cuda/CUDAGuard.h>
 #include <ATen/cuda/CUDAContext.h>
@@ -120,9 +119,9 @@ bool CudaGraphHelper::CopyBatchToStatic(DataLoaderData& src, DataLoaderData& dst
 }
 
 
-void CudaGraphHelper::Run(DataLoaderData& batch, std::shared_ptr<torch::optim::Optimizer> optimizer)
+void CudaGraphHelper::Run(DataLoaderData& batch, Trainer::StepInfo& si)
 {
-    if (optimizer != nullptr)
+    if (si.optimizer != nullptr)
     {
         if ((trainer->sets.perf.enableAutoCast) &&
             (state.captureOptimizerStep == false) &&
@@ -137,7 +136,7 @@ void CudaGraphHelper::Run(DataLoaderData& batch, std::shared_ptr<torch::optim::O
                 state.warnedDynamicScalerGraph = true;
             }
             
-            trainer->RunStep(batch, optimizer);
+            trainer->RunStep(batch, si);
             return;
         }
         
@@ -155,17 +154,17 @@ void CudaGraphHelper::Run(DataLoaderData& batch, std::shared_ptr<torch::optim::O
         {
             if (this->CheckNeedCapture(batch))
             {
-                this->RunCapture(batch, optimizer);
+                this->RunCapture(batch, si);
             }
             else
             {
-                this->RunReplay(optimizer);
+                this->RunReplay(si);
                 return;
             }
         }
     }
 
-    trainer->RunStep(batch, optimizer);
+    trainer->RunStep(batch, si);
 }
 
 bool CudaGraphHelper::CheckNeedCapture(DataLoaderData& batch)
@@ -179,8 +178,7 @@ bool CudaGraphHelper::CheckNeedCapture(DataLoaderData& batch)
     return needsCapture;
 }
 
-void CudaGraphHelper::RunCapture(DataLoaderData& batch,
-    std::shared_ptr<torch::optim::Optimizer> optimizer)
+void CudaGraphHelper::RunCapture(DataLoaderData& batch, Trainer::StepInfo& si)
 {
     bool needsWarmup = (state.warmupStepsRemaining > 0) || state.captured;
     if (needsWarmup)
@@ -201,7 +199,7 @@ void CudaGraphHelper::RunCapture(DataLoaderData& batch,
         state.graph.reset();
         state.staticBatch.reset();
         
-        trainer->RunStep(batch, optimizer);
+        trainer->RunStep(batch, si);
 
         return;
     }
@@ -219,28 +217,28 @@ void CudaGraphHelper::RunCapture(DataLoaderData& batch,
             state.graph = std::make_unique<at::cuda::CUDAGraph>();            
             state.graph->capture_begin();
 
-            state.staticLoss = trainer->ForwardAndLoss(*state.staticBatch);
+            si.loss = trainer->ForwardAndLoss(*state.staticBatch);
             if (state.captureOptimizerStep)
             {
                 if (trainer->sets.perf.enableAutoCast)
                 {
-                    trainer->RunTrainStepsAutocast(state.staticLoss, optimizer);
+                    trainer->RunTrainStepsAutocast(si);
                 }
                 else
                 {
-                    trainer->RunTrainStepsFull(state.staticLoss, optimizer);
+                    trainer->RunTrainStepsFull(si);
                 }
             }
             else
             {
                 if (trainer->sets.perf.enableAutoCast)
                 {                    
-                    auto scaledLoss = trainer->scaler->scale(state.staticLoss);
+                    auto scaledLoss = trainer->scaler->scale(si.loss);
                     scaledLoss.backward();
                 }
                 else
                 {
-                    state.staticLoss.backward();
+                    si.loss.backward();
                 }
             }
 
@@ -250,14 +248,14 @@ void CudaGraphHelper::RunCapture(DataLoaderData& batch,
             {
                 if (trainer->sets.perf.enableAutoCast)
                 {
-                    trainer->RunOptimizerAutoCast(optimizer);
+                    trainer->RunOptimizerAutoCast(si);
                 }
                 else 
                 {
-                    trainer->RunOptimizerFull(optimizer);
+                    trainer->RunOptimizerFull(si);
                 }                
             }            
-            trainer->ProgressLoss(state.staticLoss.item().toFloat());
+            trainer->ProgressLoss(si.loss.item().toFloat());
             return;
         }
         catch (const std::exception& ex)
@@ -281,22 +279,22 @@ void CudaGraphHelper::RunCapture(DataLoaderData& batch,
     }
 }
 
-void CudaGraphHelper::RunReplay(std::shared_ptr<torch::optim::Optimizer> optimizer)
+void CudaGraphHelper::RunReplay(Trainer::StepInfo& si)
 {
     state.graph->replay();
     if (state.captureOptimizerStep == false)
     {
         if (trainer->sets.perf.enableAutoCast)
         {
-            trainer->RunOptimizerAutoCast(optimizer);
+            trainer->RunOptimizerAutoCast(si);
         }
         else
         {
-            trainer->RunOptimizerFull(optimizer);
+            trainer->RunOptimizerFull(si);
         }
     }
 
-    trainer->ProgressLoss(state.staticLoss.item().toFloat());    
+    trainer->ProgressLoss(si.loss.item().toFloat());
 }
 
 #endif

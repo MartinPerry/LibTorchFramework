@@ -13,6 +13,8 @@ class Trainer;
 
 #include "../InputProcessing/DataLoaderData.h"
 
+#include "./Trainer.h"
+
 class CudaGraphHelper
 {
 public:
@@ -27,8 +29,7 @@ public:
         bool warnedUnsupportedBatch = false;
         bool warnedCaptureFailure = false;
         bool warnedWarmup = false;
-        std::optional<DataLoaderData> staticBatch = std::nullopt;
-        at::Tensor staticLoss;
+        std::optional<DataLoaderData> staticBatch = std::nullopt;        
         std::unique_ptr<at::cuda::CUDAGraph> graph;
     };
 
@@ -38,9 +39,9 @@ public:
 
     CudaGraphTrainState& GetCudaGraphState();
 
-    void Run(DataLoaderData& batch, std::shared_ptr<torch::optim::Optimizer> optimizer);
-    void RunCapture(DataLoaderData& batch, std::shared_ptr<torch::optim::Optimizer> optimizer);
-    void RunReplay(std::shared_ptr<torch::optim::Optimizer> optimizer);
+    void Run(DataLoaderData& batch, Trainer::StepInfo& si);
+    void RunCapture(DataLoaderData& batch, Trainer::StepInfo& si);
+    void RunReplay(Trainer::StepInfo& si);
 
     
 protected:

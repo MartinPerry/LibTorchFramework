@@ -5,42 +5,20 @@
 #include <stdexcept>
 
 WarmupCosineScheduler::WarmupCosineScheduler(
-    torch::optim::Optimizer& optimizer,
-    int64_t totalSteps,
+    std::shared_ptr<torch::optim::Optimizer> optimizer,
+    int totalSteps,
     double baseLr,
     double warmupPercentage,
     double minLrRatio,
     double warmupMinLrRatio) :
-    optimizer(optimizer),
-    totalSteps(totalSteps),
-    warmupSteps(static_cast<int64_t>(warmupPercentage* totalSteps)),
-    baseLr(baseLr),
-    minLrRatio(minLrRatio),
-    warmupMinLrRatio(warmupMinLrRatio),
-    currentStep(0)
+    AbstractScheduler(optimizer, totalSteps, baseLr, warmupPercentage, minLrRatio, warmupMinLrRatio)
 {
-    if (totalSteps <= 0)
-    {
-        throw std::invalid_argument("totalSteps must be greater than zero.");
-    }
-
-    if (warmupSteps <= 0)
-    {
-        throw std::invalid_argument("warmupSteps must be greater than zero.");
-    }
-
-    // Set the initial learning rate to the warmup minimum.
-    const double initialLr = baseLr * warmupMinLrRatio;
-
-    for (auto& group : optimizer.param_groups())
-    {        
-        group.options().set_lr(initialLr);
-    }
+   
 }
 
 void WarmupCosineScheduler::Step()
 {
-    ++currentStep;
+    currentStep++;
 
     double lr = baseLr;
 
@@ -76,7 +54,7 @@ void WarmupCosineScheduler::Step()
         lr = etaMin + (baseLr - etaMin) * (1.0 + std::cos(M_PI * progress)) / 2.0;
     }
 
-    for (auto& group : optimizer.param_groups())
+    for (auto& group : optimizer->param_groups())
     {
         group.options().set_lr(lr);        
     }
