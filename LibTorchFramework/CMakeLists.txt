@@ -166,6 +166,8 @@ set(LIBTORCH_FRAMEWORK_SOURCES
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Optimizers/AdamW8bit.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Optimizers/FusedAdamW8bit.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Optimizers/LAMB.cpp    
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Schedulers/AbstractScheduler.cpp    
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Schedulers/WarmupCosineScheduler.cpp    
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Snapshot/PretrainedManager.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Snapshot/SafeTensorLoader.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/core/Snapshot/safetensors.cpp
