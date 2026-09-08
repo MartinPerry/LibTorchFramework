@@ -26,6 +26,8 @@
 #include "../../core/Modules/LossFunctions/MultiBceLoss.h"
 #include "../../core/Modules/LossFunctions/FACL.h"
 
+#include "../../core/Schedulers/WarmupCosineScheduler.h"
+
 #include "../../core/Snapshot/PretrainedManager.h"
 #include "../../core/Snapshot/SnapshotSaver.h"
 #include "../../core/Snapshot/SnapshotLoader.h"
@@ -178,6 +180,8 @@ namespace CustomScenarios::exPreCastTraining
 			//expected output/gt shape: [4, 12, 256, 256]
 
 			m->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(1e-3).weight_decay(0.0));
+			
+			//m->CreateScheduler<WarmupCosineScheduler>(settings.training.epochCount, 1e-3);
 
 			sets.pretrainedManager = std::make_shared<PretrainedManager>(settings.snapshot.path);
 			sets.pretrainedManager->EnableTrainingSnapshot(true);

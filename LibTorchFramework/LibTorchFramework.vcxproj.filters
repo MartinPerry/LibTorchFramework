@@ -247,6 +247,12 @@
     <Filter Include="Source Files\core\Distributed">
       <UniqueIdentifier>{e74f4176-97e0-473e-ab6b-c470cc0eb9bc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\core\Schedulers">
+      <UniqueIdentifier>{036deeb4-fcd8-491e-b214-e14c51bb57a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\Schedulers">
+      <UniqueIdentifier>{d7b65d48-207d-4e80-b76e-cbd56def4147}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -608,6 +614,9 @@
     </ClCompile>
     <ClCompile Include="core\Distributed\NcclTrainerContext.cpp">
       <Filter>Source Files\core\Distributed</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Schedulers\WarmupCosineScheduler.cpp">
+      <Filter>Source Files\core\Schedulers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -973,6 +982,9 @@
     </ClInclude>
     <ClInclude Include="core\Distributed\ReplicaWorkers.h">
       <Filter>Header Files\core\Distributed</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Schedulers\WarmupCosineScheduler.h">
+      <Filter>Header Files\core\Schedulers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

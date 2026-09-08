@@ -164,6 +164,7 @@
     <ClCompile Include="core\Optimizers\FusedAdamW8bit.cpp" />
     <ClCompile Include="core\Optimizers\LAMB.cpp" />
     <ClCompile Include="core\Runner.cpp" />
+    <ClCompile Include="core\Schedulers\WarmupCosineScheduler.cpp" />
     <ClCompile Include="core\Snapshot\PretrainedManager.cpp" />
     <ClCompile Include="core\Snapshot\SafeTensorLoader.cpp" />
     <ClCompile Include="core\Snapshot\safetensors.cpp" />
@@ -282,6 +283,7 @@
     <ClInclude Include="core\Optimizers\FusedAdamW8bit_cuda.h" />
     <ClInclude Include="core\Optimizers\LAMB.h" />
     <ClInclude Include="core\Runner.h" />
+    <ClInclude Include="core\Schedulers\WarmupCosineScheduler.h" />
     <ClInclude Include="core\Snapshot\FreezeInfo.h" />
     <ClInclude Include="core\Snapshot\PretrainedManager.h" />
     <ClInclude Include="core\Snapshot\SafeTensorLoader.h" />

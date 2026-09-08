@@ -3,7 +3,8 @@
 #include "./Snapshot/FreezeInfo.h"
 
 AbstractModel::AbstractModel() : 
-	optimizer(nullptr)
+	optimizer(nullptr),
+    scheduler(nullptr)
 {
 }
 
@@ -15,6 +16,11 @@ AbstractModel::~AbstractModel()
 void AbstractModel::RemoveOptimizer()
 {	
 	this->optimizer = nullptr;
+}
+
+void AbstractModel::RemoveScheduler()
+{
+    this->scheduler = nullptr;
 }
 
 void AbstractModel::SetFrozen(std::shared_ptr<FreezeInfo> freezeInfo) const

@@ -10,6 +10,8 @@ class NcclTrainer;
 
 #include <torch/torch.h>
 
+#include <Utils/Logger.h>
+
 class AbstractModel : public torch::nn::Module
 {
 public:
@@ -21,8 +23,12 @@ public:
 		
 	template <typename OptimType, typename Options>
 	void CreateOptimizer(const Options& options = {}, bool onlyGradientParams = true);
+
+	template <typename SchedulerType, typename... Params>
+	void CreateScheduler(const Params&... p);
 	
 	void RemoveOptimizer();
+	void RemoveScheduler();
 
 	void SetFrozen(std::shared_ptr<FreezeInfo> freezeInfo) const;
 
@@ -40,6 +46,7 @@ public:
 protected:
 
 	std::shared_ptr<torch::optim::Optimizer> optimizer;
+	std::shared_ptr<torch::optim::LRScheduler> scheduler;
 };
 
 template <typename OptimType, typename Options>
@@ -66,5 +73,16 @@ void AbstractModel::CreateOptimizer(const Options& options, bool onlyGradientPar
 	
 }
 
+template <typename SchedulerType, typename... Params>
+void AbstractModel::CreateScheduler(const Params&... p)
+{
+	if (this->optimizer == nullptr)
+	{
+		MY_LOG_ERROR("Scheduler can be created only after optimizer is inited");
+		return;
+	}
+
+	this->scheduler = std::make_shared<SchedulerType>(this->optimizer, p...);
+}
 
 #endif
