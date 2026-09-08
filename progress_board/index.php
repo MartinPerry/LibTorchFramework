@@ -31,7 +31,7 @@
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    button, select { font: inherit; }
+    button, select, input { font: inherit; }
 
     .shell {
       width: min(1440px, calc(100% - 32px));
@@ -41,33 +41,17 @@
 
     header {
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: space-between;
-      gap: 24px;
-      margin-bottom: 24px;
-    }
-
-    .eyebrow {
-      margin: 0 0 8px;
-      color: var(--accent);
-      font-size: 0.76rem;
-      font-weight: 800;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
+      gap: 16px;
+      margin-bottom: 18px;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(2rem, 4vw, 3.7rem);
-      line-height: 0.98;
-      letter-spacing: -0.05em;
-    }
-
-    .subtitle {
-      max-width: 650px;
-      margin: 13px 0 0;
-      color: var(--muted);
-      line-height: 1.6;
+      font-size: 1.25rem;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
     }
 
     .button {
@@ -94,13 +78,6 @@
     }
 
     #folderInput { display: none; }
-
-    .source-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
-      gap: 14px;
-      align-items: stretch;
-    }
 
     .server-panel {
       padding: 18px 20px;
@@ -149,18 +126,17 @@
     .run-empty { padding: 11px 2px; color: var(--muted); font-size: 0.84rem; }
 
     .drop-zone {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
+      display: flex;
       align-items: center;
-      gap: 18px;
-      padding: 18px 20px;
+      gap: 9px;
+      padding: 6px 7px 6px 11px;
       border: 1px dashed #52658d;
-      border-radius: 18px;
+      border-radius: 11px;
       background: rgba(18, 27, 48, 0.72);
       transition: 160ms ease;
     }
 
-    .source-grid .drop-zone { height: 100%; }
+    .drop-zone .button { min-height: 32px; padding: 0 11px; border-radius: 8px; font-size: 0.75rem; }
 
     .drop-zone.dragging {
       border-color: var(--accent);
@@ -169,18 +145,11 @@
     }
 
     .drop-icon {
-      display: grid;
-      place-items: center;
-      width: 46px;
-      height: 46px;
-      border-radius: 14px;
-      color: var(--accent);
-      background: rgba(110, 231, 183, 0.1);
-      font-size: 1.35rem;
+      display: none;
     }
 
-    .drop-copy strong { display: block; margin-bottom: 4px; }
-    .drop-copy span { color: var(--muted); font-size: 0.9rem; }
+    .drop-copy strong { display: block; font-size: 0.78rem; }
+    .drop-copy span { display: none; }
 
     .status {
       min-height: 22px;
@@ -215,7 +184,7 @@
       text-transform: uppercase;
     }
 
-    select {
+    select, input[type="number"] {
       height: 40px;
       padding: 0 36px 0 12px;
       border: 1px solid var(--border);
@@ -226,6 +195,10 @@
     }
 
     select:focus { border-color: var(--accent-2); }
+    input[type="number"]:focus { border-color: var(--accent-2); }
+    .range-field { min-width: 120px; width: 130px; }
+    .range-field input { width: 100%; padding-right: 8px; }
+    .toolbar .button { min-height: 40px; }
     .toolbar-summary { margin-left: auto; color: var(--muted); font-size: 0.88rem; }
     .source-label { color: var(--accent); font-size: 0.82rem; font-weight: 750; }
 
@@ -317,16 +290,14 @@
     .image-caption { display: block; padding: 9px 11px; color: var(--muted); font-size: 0.76rem; }
 
     @media (max-width: 900px) {
-      header { align-items: flex-start; flex-direction: column; }
-      .source-grid { grid-template-columns: 1fr; }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .toolbar-summary { width: 100%; margin-left: 0; }
     }
 
     @media (max-width: 560px) {
       .shell { width: min(100% - 20px, 1440px); padding-top: 24px; }
-      .drop-zone { grid-template-columns: auto 1fr; }
-      .drop-zone .button { grid-column: 1 / -1; }
+      header { align-items: flex-start; }
+      .drop-copy { display: none; }
       .stats { grid-template-columns: 1fr 1fr; gap: 9px; }
       .stat { padding: 14px; }
       .stat-value { font-size: 1.25rem; }
@@ -338,33 +309,25 @@
 <body>
   <main class="shell">
     <header>
-      <div>
-        <p class="eyebrow">Experiment dashboard</p>
-        <h1>Training progress</h1>
-        <p class="subtitle">Inspect model convergence, image quality, and segmentation skill from checkpoint JSON files. Your files stay in this browser.</p>
-      </div>
-      <button class="button secondary" id="demoButton" type="button">Load demo data</button>
-    </header>
-
-    <section class="source-grid" aria-label="Metric data sources">
-      <article class="server-panel">
-        <div class="source-heading">
-          <div><h2>Runs on this server</h2><p>Select a folder from data/&lt;run_id&gt;/</p></div>
-          <button class="button secondary" id="refreshRunsButton" type="button">Refresh list</button>
-        </div>
-        <div class="run-list" id="runList"><div class="run-empty">Checking server run folders…</div></div>
-      </article>
-
+      <h1>Dashboard</h1>
       <section class="drop-zone" id="dropZone" aria-label="Local JSON folder uploader">
         <div class="drop-icon" aria-hidden="true">↥</div>
         <div class="drop-copy">
           <strong>Load from this PC</strong>
-          <span>Select or drag a folder / multiple .json files</span>
+          <span>Select or drag a folder / multiple files</span>
         </div>
-        <label class="button" for="folderInput">Choose folder</label>
+        <label class="button secondary" for="folderInput">Choose folder</label>
         <input id="folderInput" type="file" accept=".json,.jpg,.jpeg,.gif,application/json,image/jpeg,image/gif" webkitdirectory directory multiple>
       </section>
-    </section>
+    </header>
+
+    <article class="server-panel">
+      <div class="source-heading">
+        <div><h2>Runs on this server</h2><p>Select a folder from data/&lt;run_id&gt;/</p></div>
+        <button class="button secondary" id="refreshRunsButton" type="button">Refresh list</button>
+      </div>
+      <div class="run-list" id="runList"><div class="run-empty">Checking server run folders…</div></div>
+    </article>
     <p class="status" id="status" role="status">Choose a server run or load a folder from this PC.</p>
 
     <section class="dashboard" id="dashboard">
@@ -378,6 +341,15 @@
           <label for="typeSelect">Run type</label>
           <select id="typeSelect"></select>
         </div>
+        <div class="field range-field">
+          <label for="runMinInput">Run ID from</label>
+          <input id="runMinInput" type="number" step="1" inputmode="numeric">
+        </div>
+        <div class="field range-field">
+          <label for="runMaxInput">Run ID to</label>
+          <input id="runMaxInput" type="number" step="1" inputmode="numeric">
+        </div>
+        <button class="button secondary" id="resetRangeButton" type="button">All runs</button>
         <div class="toolbar-summary" id="toolbarSummary"></div>
       </div>
 
@@ -602,6 +574,7 @@
       fillSelect(el("modelSelect"), models);
       if (models.includes(previous)) el("modelSelect").value = previous;
       updateTypeFilter();
+      updateRunRangeBounds();
       el("dashboard").classList.add("visible");
       el("activeSourceLabel").textContent = state.activeSource;
     }
@@ -614,7 +587,50 @@
         state.localImageUrls = images.map(function getLocalImageUrl(image) { return image.url; });
       }
       state.activeSource = sourceLabel;
+      el("runMinInput").value = "";
+      el("runMaxInput").value = "";
       populateFilters();
+      applyFilters();
+    }
+
+    function updateRunRangeBounds() {
+      const runIds = state.records
+        .filter(function hasNumericRunId(record) { return Number.isFinite(record.runId); })
+        .map(function getNumericRunId(record) { return record.runId; });
+      const minimum = runIds.length ? Math.min(...runIds) : "";
+      const maximum = runIds.length ? Math.max(...runIds) : "";
+      const disabled = runIds.length === 0;
+      el("runMinInput").disabled = disabled;
+      el("runMaxInput").disabled = disabled;
+      el("resetRangeButton").disabled = disabled;
+      el("runMinInput").min = minimum;
+      el("runMinInput").max = maximum;
+      el("runMaxInput").min = minimum;
+      el("runMaxInput").max = maximum;
+      el("runMinInput").placeholder = minimum === "" ? "—" : String(minimum);
+      el("runMaxInput").placeholder = maximum === "" ? "—" : String(maximum);
+    }
+
+    function selectedRunRange() {
+      const minimumText = el("runMinInput").value.trim();
+      const maximumText = el("runMaxInput").value.trim();
+      return {
+        minimum: minimumText === "" ? null : Number(minimumText),
+        maximum: maximumText === "" ? null : Number(maximumText)
+      };
+    }
+
+    function runIdIsVisible(runId) {
+      const range = selectedRunRange();
+      if (runId == null) return range.minimum == null && range.maximum == null;
+      if (range.minimum != null && runId < range.minimum) return false;
+      if (range.maximum != null && runId > range.maximum) return false;
+      return true;
+    }
+
+    function resetRunRange() {
+      el("runMinInput").value = "";
+      el("runMaxInput").value = "";
       applyFilters();
     }
 
@@ -638,7 +654,7 @@
       const model = el("modelSelect").value;
       const type = el("typeSelect").value;
       const matching = state.records.filter(function matchesFilters(record) {
-        return record.model === model && record.type === type;
+        return record.model === model && record.type === type && runIdIsVisible(record.runId);
       });
       const newestByRun = new Map();
       const unnumbered = [];
@@ -837,7 +853,7 @@
     function imagesForSelectedType() {
       const selectedType = el("typeSelect").value.toLowerCase();
       return state.images.filter(function imageMatchesType(image) {
-        return image.type === selectedType;
+        return image.type === selectedType && runIdIsVisible(image.runIndex);
       }).sort(imageSort);
     }
 
@@ -916,34 +932,6 @@
       const tipWidth = tooltip.offsetWidth, tipHeight = tooltip.offsetHeight;
       tooltip.style.left = `${Math.min(window.innerWidth - tipWidth - 8, event.clientX + 14)}px`;
       tooltip.style.top = `${Math.max(8, Math.min(window.innerHeight - tipHeight - 8, event.clientY + 14))}px`;
-    }
-
-    function loadDemo() {
-      const base = { loss: .48, csi: .055, psnr: 22.9, rmse: .073, mae: .037, mse: .0053, acc: .9962, mcr: .0038, jaccard_positive: .055, jaccard_macro: .526, jaccard_inverted: .996, csi_mean_pool1: .33, csi_mean_pool4: .36, csi_mean_pool16: .42 };
-      const records = Array.from({ length: 18 }, function createDemoRecord(unused, index) {
-        const run = index + 1, progress = index / 17, wobble = Math.sin(index * 1.7) * .008;
-        const metrics = {
-          loss: base.loss * Math.exp(-progress * 1.25) + wobble,
-          rmse: base.rmse - progress * .019 + wobble / 5,
-          mae: base.mae - progress * .012 + wobble / 7,
-          mse: base.mse - progress * .0023 + wobble / 18,
-          psnr: base.psnr + progress * 4.1 - wobble * 15,
-          csi: base.csi + progress * .19 + wobble,
-          csi_mean_pool1: base.csi_mean_pool1 + progress * .17 + wobble,
-          csi_mean_pool4: base.csi_mean_pool4 + progress * .20 + wobble,
-          csi_mean_pool16: base.csi_mean_pool16 + progress * .21 + wobble,
-          jaccard_positive: base.jaccard_positive + progress * .19 + wobble,
-          jaccard_macro: base.jaccard_macro + progress * .095 + wobble / 2,
-          jaccard_inverted: base.jaccard_inverted + progress * .002,
-          acc: base.acc + progress * .0022,
-          mcr: base.mcr - progress * .0022
-        };
-        const fileName = `exPreCastModel_2026_08_27_20_${String(index + 1).padStart(2, "0")}_train_${run}.json`;
-        return normalizeRecord(metrics, fileName, fileName, "Demo run");
-      });
-      activateRecords(records, "Demo data");
-      clearRunSelection();
-      setStatus("Demo data loaded · choose a server run or PC folder to replace it");
     }
 
     function clearRunSelection() {
@@ -1037,11 +1025,14 @@
 
     function onFolderInputChange(event) { readFiles(event.target.files); }
     function onModelChange() { updateTypeFilter(); applyFilters(); }
+    function onRunRangeInput() { applyFilters(); }
     el("folderInput").addEventListener("change", onFolderInputChange);
     el("modelSelect").addEventListener("change", onModelChange);
     el("typeSelect").addEventListener("change", applyFilters);
+    el("runMinInput").addEventListener("input", onRunRangeInput);
+    el("runMaxInput").addEventListener("input", onRunRangeInput);
+    el("resetRangeButton").addEventListener("click", resetRunRange);
     el("imageRunSelect").addEventListener("change", renderImageGallery);
-    el("demoButton").addEventListener("click", loadDemo);
     el("refreshRunsButton").addEventListener("click", loadServerRuns);
 
     const dropZone = el("dropZone");
