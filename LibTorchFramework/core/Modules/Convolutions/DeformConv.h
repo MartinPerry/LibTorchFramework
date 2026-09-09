@@ -88,8 +88,7 @@ public:
         std::array<int64_t, 3> kernelSizes = { 3, 3, 3 },
         std::array<int64_t, 3> strides = { 1, 1, 1 },
         std::array<int64_t, 3> paddings = { 1, 1, 1 },
-        std::array<int64_t, 3> dilations = { 1, 1, 1 },
-        bool useBias = true,    
+        std::array<int64_t, 3> dilations = { 1, 1, 1 },        
         bool useMask = false,
         bool useAutoOffset = true
     );
@@ -122,6 +121,7 @@ private:
     int64_t groups;
     int64_t groupsOffset;
     
+    std::array<int64_t, 3> CalcOutputSize(torch::Tensor x) const;
 };
 
 TORCH_MODULE(DeformConv3d);

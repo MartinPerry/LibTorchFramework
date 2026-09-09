@@ -172,11 +172,10 @@ torch::Tensor DeformConv2dImpl::forward(torch::Tensor x)
 DeformConv3dImpl::DeformConv3dImpl(
     int64_t in_channels,
     int64_t out_channels,
-    std::array<int64_t, 3> kernelSizes,
-    std::array<int64_t, 3> strides,
-    std::array<int64_t, 3> paddings,
-    std::array<int64_t, 3> dilations,
-    bool useBias,    
+    std::array<int64_t, 3> kernelSizes, //w, h, d
+    std::array<int64_t, 3> strides,   //w, h, d
+    std::array<int64_t, 3> paddings,  //w, h, d
+    std::array<int64_t, 3> dilations, //w, h, d     
     bool useMask,
     bool useAutoOffset) :
     in_channels(in_channels),
@@ -205,14 +204,8 @@ DeformConv3dImpl::DeformConv3dImpl(
         })
     );
 
-    if (useBias)
-    {
-        bias = register_parameter("bias", torch::empty(out_channels));
-    }
-    else
-    {
-        bias = torch::Tensor();
-    }
+    bias = register_parameter("bias", torch::empty(out_channels));
+    
 
     this->reset_parameters();
 
@@ -228,7 +221,7 @@ DeformConv3dImpl::DeformConv3dImpl(
             .padding_mode(torch::kReplicate)
             .bias(true)
         );
-        register_module("convOffsetFromX", convOffsetFromX);
+        convOffsetFromX = register_module("convOffsetFromX", convOffsetFromX);
     }
     else
     {
@@ -240,7 +233,7 @@ DeformConv3dImpl::DeformConv3dImpl(
             .padding_mode(torch::kReplicate)
             .bias(true)
         );
-        register_module("convDirs", convDirs);
+        convDirs = register_module("convDirs", convDirs);
     }
 
     if (useMask)
@@ -252,10 +245,11 @@ DeformConv3dImpl::DeformConv3dImpl(
             .dilation(dilation)
             .bias(true)
         );
+        maskConv = register_module("maskConv", maskConv);
+
         // Xavier init equivalent
         torch::nn::init::xavier_uniform_(maskConv->weight);
-        torch::nn::init::zeros_(maskConv->bias);
-        register_module("maskConv", maskConv);
+        torch::nn::init::zeros_(maskConv->bias);        
     }
 
 
@@ -265,21 +259,31 @@ void DeformConv3dImpl::reset_parameters()
 {
     torch::nn::init::kaiming_uniform_(weight, std::sqrt(5));
 
-    if (bias.defined())
-    {
-        auto fan_in = in_channels * kernelSize[0] * kernelSize[1] * kernelSize[2];
-        auto bound = 1.0 / std::sqrt(fan_in);
-        torch::nn::init::uniform_(bias, -bound, bound);
-    }
+    auto fan_in = in_channels * kernelSize[0] * kernelSize[1] * kernelSize[2];
+    auto bound = 1.0 / std::sqrt(fan_in);
+    torch::nn::init::uniform_(bias, -bound, bound);
+    
 }
 
+std::array<int64_t, 3> DeformConv3dImpl::CalcOutputSize(torch::Tensor x) const
+{
+    //x => [D, H, W]
+
+    int d = (x.size(2) + 2 * padding[2] - dilation[2] * (kernelSize[2] - 1) - 1) / stride[2] + 1;
+    int h = (x.size(3) + 2 * padding[1] - dilation[1] * (kernelSize[1] - 1) - 1) / stride[1] + 1;
+    int w = (x.size(4) + 2 * padding[0] - dilation[0] * (kernelSize[0] - 1) - 1) / stride[0] + 1;
+
+    return { w, h, d };
+}
 
 torch::Tensor DeformConv3dImpl::forward(
     torch::Tensor x,
     std::optional<torch::Tensor> baseOffset,
     std::optional<torch::Tensor> mask)
 {
-    std::optional<torch::Tensor> offset = std::nullopt;
+    //x.size(1) => channels
+
+    torch::Tensor offset;
 
     if ((convDirs.is_empty() == false) && (baseOffset.has_value()))
     {
@@ -288,7 +292,15 @@ torch::Tensor DeformConv3dImpl::forward(
     else if (convOffsetFromX.is_empty() == false)
     {
         offset = convOffsetFromX->forward(x);
-    }    
+    }   
+    else
+    {
+        // Fallback
+        int N = x.size(0);
+        int64_t ks = kernelSize[0] * kernelSize[1] * kernelSize[2];
+        auto [w, h, d] = this->CalcOutputSize(x);
+        offset = torch::zeros({ N, 3 * ks, d, h, w });
+    }
 
     if (mask.has_value() == false)
     {
@@ -296,9 +308,19 @@ torch::Tensor DeformConv3dImpl::forward(
         {
             mask = maskConv->forward(x);
             mask = torch::sigmoid(*mask);
-        }        
+        }     
+        else
+        {
+            // Fallback
+            int N = x.size(0);
+            int64_t ks = kernelSize[0] * kernelSize[1] * kernelSize[2];
+            auto [w, h, d] = this->CalcOutputSize(x);
+            mask = torch::zeros({ N, ks, d, h, w }, x.options());
+        }
     }
     
+    //it crashes in backward if offset, mask and/or bias is nullopt
+
     torch::Tensor out = tvdcn::ops::deform_conv3d(
         x, weight, offset, mask, bias,
         stride,

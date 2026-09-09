@@ -201,6 +201,70 @@ int main(int argc, char** argv)
     log->Enable(MyUtils::Logger::LogType::Info, MyUtils::Logger::LogOutput::StdOut);
 
     /*
+    {
+        auto device = torch::kCPU;
+
+        int N = 1, C_in = 3, C_out = 2;
+        int H = 8, W = 8, D = 8;
+
+        int kH = 3, kW = 3, kD = 3;
+        int stride_h = 1, stride_w = 1, stride_d = 1;
+        int pad_h = 1, pad_w = 1, pad_d = 1;
+        int dilation_h = 1, dilation_w = 1, dilation_d = 1;
+        int groups = 1, offset_groups = 1;
+        bool use_mask = true;
+
+        // Output size formula
+        int out_h = (H + 2 * pad_h - dilation_h * (kH - 1) - 1) / stride_h + 1;
+        int out_w = (W + 2 * pad_w - dilation_w * (kW - 1) - 1) / stride_w + 1;
+        int out_d = (D + 2 * pad_d - dilation_d * (kD - 1) - 1) / stride_d + 1;
+
+        torch::Tensor x = torch::rand({ N, C_in, H, W }, device).requires_grad_(true);
+        torch::Tensor weight = torch::rand({ C_out, C_in, kH, kW }, device).requires_grad_(true);
+        torch::Tensor offset = torch::rand({ N, 2 * kH * kW, out_h, out_w }, device).requires_grad_(true);
+        torch::Tensor mask = torch::rand({ N, kH * kW, out_h, out_w }, device).requires_grad_(true);
+        torch::Tensor bias = torch::rand({ C_out }, device).requires_grad_(true);
+
+        offset = torch::Tensor(); // torch::zeros_like(x);
+        mask = torch::Tensor();// torch::zeros_like(x);
+
+                      
+        auto out = tvdcn::ops::deform_conv2d(
+            x,
+            weight,
+            offset,
+            mask,
+            //std::nullopt,
+            bias,            
+            //std::nullopt, 
+            { 1, 1 },
+            { 1, 1 },
+            { 1, 1 },
+            1
+        );
+
+        std::cout << "out = " << out.sizes() << "\n";
+        std::cout << "requires_grad = " << out.requires_grad() << "\n";
+
+        auto loss = out.sum();
+
+        std::cout << "loss requires_grad = "
+            << loss.requires_grad() << "\n";
+
+        try {
+            loss.backward();
+        }
+        catch (const c10::Error& e) {
+            std::cerr << "LibTorch Exception: " << e.what() << "\n";
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Standard Exception: " << e.what() << "\n";
+        }
+        printf("x");
+    }
+    */
+
+    /*
 #ifdef LIBTORCH_FRAMEWORK_HAS_NCCL
     MY_LOG_INFO("NCCL supported");
 
