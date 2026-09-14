@@ -38,7 +38,7 @@ void MeteonetInputLoader::Load()
     };
 
     const std::vector<int> maxMonths = {
-        12, 12, 10
+        1, 12, 10
     };
 
     std::vector<std::string> times;
@@ -168,7 +168,7 @@ void MeteonetInputLoader::SaveSequence(size_t index, const std::string& outputNa
     auto img = TorchImageUtils::TensorsToImage(seq, sets);    
     img.Save(outputName.c_str());
 
-    auto imgs = TorchImageUtils::TensorsToImages(seq, sets);
+    auto imgs = TorchImageUtils::TensorsToImages<uint8_t>(seq, sets);
 
     auto w = imgs[0].GetWidth();
     auto h = imgs[0].GetHeight();

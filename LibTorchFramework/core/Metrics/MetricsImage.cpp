@@ -255,7 +255,7 @@ void MetricsImage::Save(const SaveInfo& si) const
         sets.colorMappingFileName = this->colorMapping;
         sets.intervalMapping = this->intervalMapping;
 
-        auto img = TorchImageUtils::TensorsToImage(rows, sets);
+        auto img = TorchImageUtils::TensorsToImage<uint8_t>(rows, sets);
         std::string imgPath = this->BuildPath(si.jsonFilePath, static_cast<int>(i), "jpg", false);
         img.Save(imgPath.c_str());
 

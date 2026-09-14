@@ -103,7 +103,8 @@ public:
 		const Image2d<T>& v,
 		const MappingRange<T>& range);
 
-	static Image2d<uint8_t> TensorToImage(at::Tensor t,
+	template <typename T>
+	static Image2d<T> TensorToImage(at::Tensor t,
 		int chanCount = -1,
 		int w = -1,
 		int h = -1,
@@ -112,13 +113,16 @@ public:
 	static Image2d<uint8_t> TensorsToImage(at::Tensor t, 
 		const TensorsToImageSettings& sets = DEFAULT_TENSOR_TO_IMAGE);
 
-	static std::vector<Image2d<uint8_t>> TensorsToImages(at::Tensor t,
+	template <typename T>
+	static std::vector<Image2d<T>> TensorsToImages(at::Tensor t,
 		const TensorsToImageSettings& sets = DEFAULT_TENSOR_TO_IMAGE);
 
-	static Image2d<uint8_t> TensorsToImage(const std::vector<std::vector<torch::Tensor>>& t,
+	template <typename T>
+	static Image2d<T> TensorsToImage(const std::vector<std::vector<torch::Tensor>>& t,
 		const TensorsToImageSettings& sets = DEFAULT_TENSOR_TO_IMAGE);
 
-	static std::vector<Image2d<uint8_t>> TensorsToImages(const std::vector<std::vector<torch::Tensor>>& t,
+	template <typename T>
+	static std::vector<Image2d<T>> TensorsToImages(const std::vector<std::vector<torch::Tensor>>& t,
 		const TensorsToImageSettings& sets = DEFAULT_TENSOR_TO_IMAGE);
 
 	static std::vector<std::vector<torch::Tensor>> MergeTensorsToRows(

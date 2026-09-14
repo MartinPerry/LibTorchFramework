@@ -265,7 +265,8 @@ std::vector<float> TorchImageUtils::ImageToVector_CHW(
 /// <param name="h"></param>
 /// <param name="intervalMapping"></param>
 /// <returns></returns>
-Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
+template <typename T>
+Image2d<T> TorchImageUtils::TensorToImage(at::Tensor t,
 	int chanCount,
 	int w,
 	int h,
@@ -388,44 +389,83 @@ Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
 		}
 	}
 	
-	// scale to 0..255 and convert to uint8_t
-	// We'll prepare per-channel single-channel Image2d<uint8_t> and then combine with CreateFromChannels
-	std::vector<Image2d<uint8_t>> channels;
-	channels.reserve(chanCount);
-
-	for (int c = 0; c < chanCount; ++c)
+	if constexpr (std::is_same<T, uint8_t>::value)
 	{
-		std::vector<uint8_t> chData;
-		chData.resize(w * h);
+		// scale to 0..255 and convert to uint8_t
+		// We'll prepare per-channel single-channel Image2d<uint8_t> and then combine with CreateFromChannels
+		std::vector<Image2d<uint8_t>> channels;
+		channels.reserve(chanCount);
 
-		float* channelData = &flatCHW[static_cast<size_t>(c) * w * h];
-
-		for (size_t i = 0; i < chData.size(); i++)
+		for (int c = 0; c < chanCount; ++c)
 		{
-			float fv = channelData[i];
-						
-			//fv is in (0,1)
+			std::vector<uint8_t> chData;
+			chData.resize(w * h);
 
-			float scaled = 255.0f * fv + 0.5f;			
-			
-			chData[i] = static_cast<uint8_t>(static_cast<int>(scaled));
+			float* channelData = &flatCHW[static_cast<size_t>(c) * w * h];
+
+			for (size_t i = 0; i < chData.size(); i++)
+			{
+				float fv = channelData[i];
+
+				//fv is in (0,1)
+
+				float scaled = 255.0f * fv + 0.5f;
+
+				chData[i] = static_cast<uint8_t>(static_cast<int>(scaled));
+			}
+
+			// create single-channel Image2d<uint8_t> for this channel				
+			channels.emplace_back(w, h, std::move(chData), ColorSpace::PixelFormat::GRAY);
 		}
 
-		// create single-channel Image2d<uint8_t> for this channel				
-		channels.emplace_back(w, h, std::move(chData), ColorSpace::PixelFormat::GRAY);
-	}
+		// If single channel return that channel image directly
+		if (chanCount == 1)
+		{
+			return channels[0];
+		}
+		else
+		{
+			// Combine channels into final image
+			Image2d<uint8_t> out = Image2d<uint8_t>::CreateFromChannels(channels);
 
-	// If single channel return that channel image directly
-	if (chanCount == 1)
-	{
-		return channels[0];
+			return out;
+		}
 	}
-	else
+	else 
 	{
-		// Combine channels into final image
-		Image2d<uint8_t> out = Image2d<uint8_t>::CreateFromChannels(channels);
+		// scale to 0..255 and convert to uint8_t
+		// We'll prepare per-channel single-channel Image2d<uint8_t> and then combine with CreateFromChannels
+		std::vector<Image2d<float>> channels;
+		channels.reserve(chanCount);
 
-		return out;
+		for (int c = 0; c < chanCount; ++c)
+		{
+			std::vector<float> chData;
+			chData.resize(w * h);
+
+			float* channelData = &flatCHW[static_cast<size_t>(c) * w * h];
+
+			for (size_t i = 0; i < chData.size(); i++)
+			{				
+				chData[i] = channelData[i];
+			}
+
+			// create single-channel Image2d<uint8_t> for this channel				
+			channels.emplace_back(w, h, std::move(chData), ColorSpace::PixelFormat::GRAY);
+		}
+
+		// If single channel return that channel image directly
+		if (chanCount == 1)
+		{
+			return channels[0];
+		}
+		else
+		{
+			// Combine channels into final image
+			Image2d<float> out = Image2d<float>::CreateFromChannels(channels);
+
+			return out;
+		}
 	}
 }
 
@@ -442,7 +482,7 @@ Image2d<uint8_t> TorchImageUtils::TensorsToImage(at::Tensor t,
 			MY_LOG_ERROR("Color pallete mapping can be used only for single channel images");
 		}
 
-		auto img = TorchImageUtils::TensorToImage(t, sets.chanCount, sets.w, sets.h, sets.intervalMapping);
+		auto img = TorchImageUtils::TensorToImage<uint8_t>(t, sets.chanCount, sets.w, sets.h, sets.intervalMapping);
 
 		return img;
 	}
@@ -483,11 +523,11 @@ Image2d<uint8_t> TorchImageUtils::TensorsToImage(at::Tensor t,
 		}		
 	}
 
-	return TorchImageUtils::TensorsToImage(tmpBatch, sets);		
+	return TorchImageUtils::TensorsToImage<uint8_t>(tmpBatch, sets);
 }
 
-std::vector<Image2d<uint8_t>> TorchImageUtils::TensorsToImages(at::Tensor t,
-	const TensorsToImageSettings& sets)
+template <typename T>
+std::vector<Image2d<T>> TorchImageUtils::TensorsToImages(at::Tensor t, const TensorsToImageSettings& sets)
 {
 	if (t.dim() == 3)
 	{
@@ -496,7 +536,7 @@ std::vector<Image2d<uint8_t>> TorchImageUtils::TensorsToImages(at::Tensor t,
 			MY_LOG_ERROR("Color pallete mapping can be used only for single channel images");
 		}
 
-		auto img = TorchImageUtils::TensorToImage(t, sets.chanCount, sets.w, sets.h, sets.intervalMapping);
+		auto img = TorchImageUtils::TensorToImage<T>(t, sets.chanCount, sets.w, sets.h, sets.intervalMapping);
 
 		return { img };
 	}
@@ -537,10 +577,11 @@ std::vector<Image2d<uint8_t>> TorchImageUtils::TensorsToImages(at::Tensor t,
 		}
 	}
 
-	return TorchImageUtils::TensorsToImages(tmpBatch, sets);
+	return TorchImageUtils::TensorsToImages<T>(tmpBatch, sets);
 }
 
-Image2d<uint8_t> TorchImageUtils::TensorsToImage(const std::vector<std::vector<torch::Tensor>>& t,
+template <typename T>
+Image2d<T> TorchImageUtils::TensorsToImage(const std::vector<std::vector<torch::Tensor>>& t,
 	const TensorsToImageSettings& sets)
 {		
 	const int chanCount = std::max<int>(t[0][0].size(0), sets.chanCount);
@@ -562,27 +603,43 @@ Image2d<uint8_t> TorchImageUtils::TensorsToImage(const std::vector<std::vector<t
 	const int outputW = maxW;
 	const int outputH = (h + sets.borderSize) * t.size() + sets.borderSize;
 
-
-	Image2d<uint8_t> pallete;
-	if (sets.colorMappingFileName.has_value())
-	{
-		if (chanCount > 1)
-		{
-			MY_LOG_ERROR("Color pallete mapping can be used only for single channel images");
-		}
-		else
-		{
-			pallete = Image2d<uint8_t>(sets.colorMappingFileName->c_str());
-			outputChanCount = pallete.GetChannelsCount();
-		}
-	}
-
-	const std::vector<uint8_t> defValues = std::vector<uint8_t>(outputChanCount, sets.backgroundValue);
-
+			
 	const auto colSpace = (outputChanCount == 1) ? ColorSpace::PixelFormat::GRAY :
 		((outputChanCount == 3) ? ColorSpace::PixelFormat::RGB : ColorSpace::PixelFormat::RGBA);
 
-	Image2d<uint8_t> newImage = Image2d<uint8_t>::CreateWithSingleValue(outputW, outputH, defValues.data(), colSpace);
+	Image2d<T> pallete;
+
+	Image2d<T> newImage;
+	if constexpr (std::is_same<T, uint8_t>::value)
+	{
+		if (sets.colorMappingFileName.has_value())
+		{
+			if (chanCount > 1)
+			{
+				MY_LOG_ERROR("Color pallete mapping can be used only for single channel images");
+			}
+			else
+			{
+				pallete = Image2d<T>(sets.colorMappingFileName->c_str());
+				outputChanCount = pallete.GetChannelsCount();
+			}
+		}
+
+		const std::vector<uint8_t> defValues = std::vector<uint8_t>(outputChanCount, sets.backgroundValue);
+
+		newImage = Image2d<T>::CreateWithSingleValue(outputW, outputH, defValues.data(), colSpace);
+	}
+	else 
+	{
+		if (sets.colorMappingFileName.has_value())
+		{
+			MY_LOG_ERROR("Color mapping available only fro uint8_t images");
+		}
+
+		const std::vector<float> defValues = std::vector<float>(outputChanCount, sets.backgroundValue / 255.0f);
+
+		newImage = Image2d<T>::CreateWithSingleValue(outputW, outputH, defValues.data(), colSpace);
+	}
 
 	int offsetY = sets.borderSize;
 	int offsetX = sets.borderSize;
@@ -592,11 +649,14 @@ Image2d<uint8_t> TorchImageUtils::TensorsToImage(const std::vector<std::vector<t
 
 		for (size_t s = 0; s < t[b].size(); s++)
 		{
-			auto seqImg = TorchImageUtils::TensorToImage(t[b][s], chanCount, w, h, sets.intervalMapping);
+			auto seqImg = TorchImageUtils::TensorToImage<T>(t[b][s], chanCount, w, h, sets.intervalMapping);
 
-			if (sets.colorMappingFileName.has_value())
+			if constexpr (std::is_same<T, uint8_t>::value)
 			{
-				seqImg = ImageDrawing::ColorMapping(seqImg, pallete);
+				if (sets.colorMappingFileName.has_value())
+				{
+					seqImg = ImageDrawing::ColorMapping(seqImg, pallete);
+				}
 			}
 
 			newImage.SetSubImage(offsetX, offsetY, seqImg);
@@ -609,7 +669,8 @@ Image2d<uint8_t> TorchImageUtils::TensorsToImage(const std::vector<std::vector<t
 	return newImage;
 }
 
-std::vector<Image2d<uint8_t>> TorchImageUtils::TensorsToImages(const std::vector<std::vector<torch::Tensor>>& t,
+template <typename T>
+std::vector<Image2d<T>> TorchImageUtils::TensorsToImages(const std::vector<std::vector<torch::Tensor>>& t,
 	const TensorsToImageSettings& sets)
 {
 	const int chanCount = std::max<int>(t[0][0].size(0), sets.chanCount);
@@ -617,32 +678,45 @@ std::vector<Image2d<uint8_t>> TorchImageUtils::TensorsToImages(const std::vector
 	const int h = std::max<int>(t[0][0].size(2), sets.h);
 
 	
-	Image2d<uint8_t> pallete;
-	if (sets.colorMappingFileName.has_value())
+	Image2d<T> pallete;
+	if constexpr (std::is_same<T, uint8_t>::value)
 	{
-		if (chanCount > 1)
+		if (sets.colorMappingFileName.has_value())
 		{
-			MY_LOG_ERROR("Color pallete mapping can be used only for single channel images");
+			if (chanCount > 1)
+			{
+				MY_LOG_ERROR("Color pallete mapping can be used only for single channel images");
+			}
+			else
+			{
+				pallete = Image2d<uint8_t>(sets.colorMappingFileName->c_str());
+			}
 		}
-		else
+	}
+	else 
+	{
+		if (sets.colorMappingFileName.has_value())
 		{
-			pallete = Image2d<uint8_t>(sets.colorMappingFileName->c_str());			
+			MY_LOG_ERROR("Color mapping available only fro uint8_t images");
 		}
 	}
 
 		
-	std::vector<Image2d<uint8_t>> imgs;
+	std::vector<Image2d<T>> imgs;
 
 		
 	for (size_t b = 0; b < t.size(); b++)
 	{		
 		for (size_t s = 0; s < t[b].size(); s++)
 		{
-			Image2d<uint8_t> seqImg = TorchImageUtils::TensorToImage(t[b][s], chanCount, w, h, sets.intervalMapping);
+			Image2d<T> seqImg = TorchImageUtils::TensorToImage<T>(t[b][s], chanCount, w, h, sets.intervalMapping);
 
-			if (sets.colorMappingFileName.has_value())
+			if constexpr (std::is_same<T, uint8_t>::value)
 			{
-				seqImg = ImageDrawing::ColorMapping(seqImg, pallete);
+				if (sets.colorMappingFileName.has_value())
+				{
+					seqImg = ImageDrawing::ColorMapping(seqImg, pallete);
+				}
 			}
 
 			if (sets.borderSize > 0)
@@ -650,8 +724,15 @@ std::vector<Image2d<uint8_t>> TorchImageUtils::TensorsToImages(const std::vector
 				auto wb = seqImg.GetWidth() + sets.borderSize * 2;
 				auto hb = seqImg.GetHeight() + sets.borderSize * 2;
 				
-				Image2d<uint8_t> tmp(wb, hb, seqImg.GetPixelFormat());
-				tmp.Clear(sets.backgroundValue);
+				Image2d<T> tmp(wb, hb, seqImg.GetPixelFormat());
+				if constexpr (std::is_same<T, uint8_t>::value)
+				{
+					tmp.Clear(sets.backgroundValue);
+				}
+				else
+				{
+					tmp.Clear(sets.backgroundValue / 255.0f);
+				}
 
 				tmp.SetSubImage(sets.borderSize, sets.borderSize, seqImg);
 				
@@ -766,5 +847,33 @@ template std::vector<float> TorchImageUtils::ImageToVector_CHW(
 	const Image2d<float>& v,
 	const MappingRange<float>& range);
 
+template Image2d<uint8_t> TorchImageUtils::TensorToImage(at::Tensor t,
+	int chanCount,
+	int w,
+	int h,
+	IntervalMapping intervalMapping);
+
+template Image2d<float> TorchImageUtils::TensorToImage(at::Tensor t,
+	int chanCount,
+	int w,
+	int h,
+	IntervalMapping intervalMapping);
 
 
+template std::vector<Image2d<uint8_t>> TorchImageUtils::TensorsToImages(at::Tensor t,
+	const TensorsToImageSettings& sets);
+
+template std::vector<Image2d<float>> TorchImageUtils::TensorsToImages(at::Tensor t,
+	const TensorsToImageSettings& sets);
+
+template Image2d<uint8_t> TorchImageUtils::TensorsToImage(const std::vector<std::vector<torch::Tensor>>& t,
+	const TensorsToImageSettings& sets);
+
+template Image2d<float> TorchImageUtils::TensorsToImage(const std::vector<std::vector<torch::Tensor>>& t,
+	const TensorsToImageSettings& sets);
+
+template std::vector<Image2d<uint8_t>> TorchImageUtils::TensorsToImages(const std::vector<std::vector<torch::Tensor>>& t,
+	const TensorsToImageSettings& sets);
+
+template std::vector<Image2d<float>> TorchImageUtils::TensorsToImages(const std::vector<std::vector<torch::Tensor>>& t,
+	const TensorsToImageSettings& sets);

@@ -258,6 +258,11 @@ target_include_directories(LibTorchFramework PRIVATE
 target_compile_definitions(LibTorchFramework PRIVATE
     NOMINMAX
     _CONSOLE
+	MYMATH_NAMESPACE=MyMath
+	USE_SSE
+    HAVE_ZLIB
+    ZLIB_COMPAT
+    ENABLE_SIMD
     $<$<CONFIG:Debug>:_DEBUG>
     $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
     $<$<NOT:$<CONFIG:Debug>>:USE_RELEASE_LOG_INFO>

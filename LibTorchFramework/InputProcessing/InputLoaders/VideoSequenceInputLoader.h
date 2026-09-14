@@ -50,7 +50,7 @@ protected:
         {
         }
 
-        SequenceInfo(SequenceInfo&& si) :
+        SequenceInfo(SequenceInfo&& si) noexcept :
             dirPath(std::exchange(si.dirPath, {})),
             sequenceFiles(std::exchange(si.sequenceFiles, {}))
         {

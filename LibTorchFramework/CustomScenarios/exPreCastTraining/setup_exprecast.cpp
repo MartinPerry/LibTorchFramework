@@ -61,6 +61,9 @@
 #include <Utils/Strings/StringUtils.h>
 #include <Utils/CmdParser.h>
 
+#include <RasterData/OpticalFlow/Trec.h>
+#include <RasterData/OpticalFlow/OpticalFlowBase.h>
+
 //=========================================================
 
 #include "./MeteonetInputLoader.h"
@@ -156,6 +159,40 @@ namespace CustomScenarios::exPreCastTraining
 #else
 			loader->SaveSequence(0, "seq.png", "turbo.png");
 #endif
+
+			Trec::TrecSettings ts;
+			ts.kernelRadius = 10;
+			ts.matchSearchAreaRadius = 100;
+			Trec trec = Trec(ts);
+
+			
+			auto seq0 = loader->GetData(0);
+
+			//TorchImageUtils::TensorsToImageSettings sets;
+			//sets.intervalMapping.enabled = false;
+			//sets.intervalMapping.mapRange = TorchImageUtils::MappingRange<float>();
+
+			auto imgs = TorchImageUtils::TensorsToImages<float>(seq0.input);
+
+			auto tmpStart = imgs[prevCount - 2]; //[2]
+			auto tmpEnd = imgs[prevCount - 1];  //[3]
+
+			float* resData = new float[futureCount * 256 * 256];
+
+			for (int i = 0; i < futureCount; i++)
+			{
+				trec.Run(tmpEnd, tmpStart);
+
+				Image2d<float> trecRec = trec.Warp(tmpEnd);
+
+				int imgOffset = i * 256 * 256;
+				std::copy(trecRec.GetData().begin(), trecRec.GetData().end(), resData + imgOffset);
+
+				tmpStart = std::move(tmpEnd);
+				tmpEnd = std::move(trecRec);
+			}
+
+			printf("");
 		}
 		
 		//-------
