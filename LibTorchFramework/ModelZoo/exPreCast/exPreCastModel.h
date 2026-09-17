@@ -1,8 +1,11 @@
 #ifndef EXPRECAST_MODEL_H
 #define EXPRECAST_MODEL_H
 
+class OpticalFlowBase;
+
 #include <vector>
 #include <array>
+#include <memory>
 
 #include <torch/torch.h>
 
@@ -12,6 +15,90 @@
 #include "./BasicLayerSkip.h"
 #include "./CubicDualUpsample.h"
 #include "./PatchExpanding3D.h"
+
+/// <summary>
+/// ChatGPT 
+/// </summary>
+class DetailAwareFusionImpl : public torch::nn::Module
+{
+public:
+    DetailAwareFusionImpl(int64_t channels, int64_t hiddenChannels = 64)
+    {
+        encoder = register_module("encoder", torch::nn::Sequential(
+            torch::nn::Conv2d(torch::nn::Conv2dOptions(channels * 4, hiddenChannels, 3).padding(1)),
+            torch::nn::GELU(),
+            torch::nn::Conv2d(torch::nn::Conv2dOptions(hiddenChannels, hiddenChannels, 3).padding(1)),
+            torch::nn::GELU()
+        ));
+
+        gate = register_module("gate", torch::nn::Conv2d(torch::nn::Conv2dOptions(hiddenChannels, channels, 1)));
+        correction = register_module("correction", torch::nn::Conv2d(torch::nn::Conv2dOptions(hiddenChannels, channels, 3).padding(1)));
+
+        // Initial behavior:
+        // alpha = 0.5
+        // correction = 0
+        torch::NoGradGuard noGrad;
+
+        gate->weight.zero_();
+        gate->bias.zero_();
+
+        correction->weight.zero_();
+        correction->bias.zero_();
+    }
+
+    torch::Tensor forward(const torch::Tensor& unet, const torch::Tensor& flow)
+    {
+        // Input: [B, SeqLen, C, H, W]
+
+        const int64_t B = unet.size(0);
+        const int64_t S = unet.size(1);
+        const int64_t C = unet.size(2);
+        const int64_t H = unet.size(3);
+        const int64_t W = unet.size(4);
+
+        auto u = unet.reshape({ B * S, C, H, W });
+        auto f = flow.reshape({ B * S, C, H, W });
+
+        auto flowDetail = HighPass(f);
+
+        auto x = torch::cat(
+            {
+                u,
+                f,
+                torch::abs(u - f),
+                flowDetail
+            }, 1);
+
+        auto features = encoder->forward(x);
+
+        auto alpha = torch::sigmoid(gate->forward(features));
+
+        auto out = alpha * u + (1.0f - alpha) * f;
+        out += correction->forward(features);
+
+        return out.reshape({ B, S, C, H, W });
+    }
+
+private:
+    static torch::Tensor HighPass(const torch::Tensor& x)
+    {
+        auto low = torch::avg_pool2d(
+            x,
+            { 3, 3 },
+            { 1, 1 },
+            { 1, 1 }
+        );
+
+        return x - low;
+    }
+
+private:
+    torch::nn::Sequential encoder{ nullptr };
+    torch::nn::Conv2d gate{ nullptr };
+    torch::nn::Conv2d correction{ nullptr };
+};
+
+TORCH_MODULE(DetailAwareFusion);
 
 namespace ModelZoo {
     namespace exPreCast {
@@ -77,7 +164,11 @@ namespace ModelZoo {
 
             PatchExpanding3D patchExpand3D{ nullptr };
 
-            torch::nn::Conv3d timeExtractor{ nullptr };                       
+            torch::nn::Conv3d timeExtractor{ nullptr };       
+
+            std::shared_ptr<OpticalFlowBase> flow;
+
+            DetailAwareFusion fusion{ nullptr };
         };
     }
 }

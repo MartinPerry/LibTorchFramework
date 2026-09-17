@@ -77,6 +77,9 @@ public:
 	static const TensorsToImageSettings DEFAULT_TENSOR_TO_IMAGE;
 
 	template <typename T>
+	static TENSOR_VEC_RET_VAL(T) LoadImageAs(Image2d<float>& img);
+
+	template <typename T>
 	static TENSOR_VEC_RET_VAL(T) LoadImageAs(
 		const std::string& imgPath,
 		int chanCount,
@@ -128,6 +131,9 @@ public:
 	static std::vector<std::vector<torch::Tensor>> MergeTensorsToRows(
 		const std::vector<torch::Tensor>& tensors,
 		int maxRowsCount = 4);
+
+	static void SaveAsGif(const std::string& filePath, 
+		std::vector<Image2d<uint8_t>> imgs);
 };
 
 

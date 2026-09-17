@@ -13,7 +13,7 @@
 class MetricsVideo : public MetricsImage
 {
 public:
-	
+		
 	MetricsVideo();	
 	~MetricsVideo() = default;
 	

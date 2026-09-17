@@ -10,6 +10,8 @@
 #include <string>
 #include <memory>
 
+#include <Compression/3rdParty/gif_write.h>
+
 #include <RasterData/ImageResize.h>
 #include <RasterData/Drawing/ImageDrawing.h>
 #include <RasterData/Colors/ColorSpace.h>
@@ -19,6 +21,16 @@
 #include "./TorchUtils.h"
 
 inline const TorchImageUtils::TensorsToImageSettings TorchImageUtils::DEFAULT_TENSOR_TO_IMAGE{};
+
+template <typename T>
+TENSOR_VEC_RET_VAL(T) TorchImageUtils::LoadImageAs(Image2d<float>& img)
+{
+	return TorchImageUtils::LoadImageAs<T>(img, 
+		img.GetChannelsCount(), 
+		img.GetWidth(), 
+		img.GetHeight()
+	);
+}
 
 /// <summary>
 /// Load image from uin8_t format and convert it to 
@@ -796,9 +808,40 @@ std::vector<std::vector<torch::Tensor>> TorchImageUtils::MergeTensorsToRows(
 	return rows;
 }
 
+void TorchImageUtils::SaveAsGif(const std::string& filePath, std::vector<Image2d<uint8_t>> imgs)
+{
+	auto w = imgs[0].GetWidth();
+	auto h = imgs[0].GetHeight();
+
+	auto gifFileName = filePath;
+	int delay = 20;
+	GifWriter g = {
+		.f = nullptr,
+		.oldImage = nullptr,
+		.firstFrame = true,
+		.padding = {0}
+	};
+
+	GifBegin(&g, gifFileName.c_str(), w, h, delay);
+	for (auto& gimg : imgs)
+	{
+		gimg = ColorSpace::ConvertRgbToRgba(gimg, 255);
+
+		GifWriteFrame(&g, gimg.GetData().data(), w, h, delay);
+	}
+	GifEnd(&g);
+}
+
 //============================================================================================
 //============================================================================================
 //============================================================================================
+
+
+template std::vector<float> TorchImageUtils::LoadImageAs<std::vector<float>>(
+	Image2d<float>& img);
+
+template torch::Tensor TorchImageUtils::LoadImageAs<torch::Tensor>(
+	Image2d<float>& img);
 
 template std::vector<float> TorchImageUtils::LoadImageAs<std::vector<float>>(
 	const std::string& imgPath,

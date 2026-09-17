@@ -106,6 +106,12 @@ void MeteonetInputLoader::Load()
         }
     }
 
+    if (allFiles.size() == 0)
+    {
+        MY_LOG_ERROR("No data loaded");
+        return;
+    }
+
     data.clear();
     
     for (size_t i = 0; i < allFiles.size() - seqLen; i += seqOverlap)

@@ -10,6 +10,10 @@
 #include "../../Utils/TorchUtils.h"
 #include "../../Utils/TorchImageUtils.h"
 
+#include <RasterData/OpticalFlow/Trec.h>
+#include <RasterData/OpticalFlow/LucasKanade.h>
+#include <RasterData/OpticalFlow/OpticalFlowBase.h>
+
 using namespace ModelZoo::exPreCast;
 
 using namespace torch::indexing;
@@ -193,7 +197,12 @@ exPreCastModel::exPreCastModel(
                 .padding({ 1, 1, 0 })
             )
     );
-    
+
+
+    flow = std::make_shared<LucasKanade>(20);
+    flow->SetWarpAlgorithm(OpticalFlowBase::WarpAlgorithm::Bicubic);
+
+    fusion = register_module("fusion", DetailAwareFusion(1));
 }
 
 const char* exPreCastModel::GetName() const
@@ -203,6 +212,43 @@ const char* exPreCastModel::GetName() const
 
 torch::Tensor exPreCastModel::forward(torch::Tensor x)
 {
+    int batchCount = x.size(0);
+
+    torch::Tensor predOptFlow;
+
+    for (int b = 0; b < batchCount; b++)
+    {
+
+        auto prev = x[b][x.size(1) - 2];
+        auto last = x[b][x.size(1) - 1];
+
+        auto tmpStart = TorchImageUtils::TensorToImage<float>(prev);
+        auto tmpEnd = TorchImageUtils::TensorToImage<float>(last);
+        
+        flow->Run(tmpEnd, tmpStart);
+
+        std::vector<torch::Tensor> tmp;
+
+        for (int i = 0; i < outputFrames; i++)
+        {
+            Image2d<float> trecRec = flow->Warp(tmpEnd, -1);
+
+            tmp.emplace_back(TorchImageUtils::LoadImageAs<torch::Tensor>(trecRec).unsqueeze(0));
+        }
+        
+        auto tmpTensor = torch::cat(tmp, 0).unsqueeze(0);
+        if (b == 0)
+        {
+            predOptFlow = tmpTensor;
+        }
+        else
+        {
+            predOptFlow = torch::cat({ predOptFlow, tmpTensor }, 0);
+        }
+    }
+
+    predOptFlow = predOptFlow.to(x.device());
+
     //update loaded shape to match exPrecast input [B, 1, SeqLen, W, H]
     x = x.squeeze(2);
     x = x.unsqueeze(1);
@@ -271,6 +317,8 @@ torch::Tensor exPreCastModel::forward(torch::Tensor x)
     //update result shape back to match input shape
     x = x.squeeze(1);
     x = x.unsqueeze(2);
+
+    x = fusion(x, predOptFlow);
 
     //if (x.isnan().any().item<bool>())
     //{

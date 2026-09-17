@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <format>
 
 //=========================================================
 // Core
@@ -61,7 +62,10 @@
 #include <Utils/Strings/StringUtils.h>
 #include <Utils/CmdParser.h>
 
+#include <RasterData/Colors/ColorUtils.h>
+#include <RasterData/Colors/ColorSpace.h>
 #include <RasterData/OpticalFlow/Trec.h>
+#include <RasterData/OpticalFlow/LucasKanade.h>
 #include <RasterData/OpticalFlow/OpticalFlowBase.h>
 
 //=========================================================
@@ -70,7 +74,24 @@
 
 namespace CustomScenarios::exPreCastTraining
 {
-	
+
+
+	void AppendFromRaw(float* raw, int imgId, std::vector<Image2d<float>>& result)
+	{
+		if (raw == nullptr)
+		{
+			return;
+		}
+
+		auto pf = ColorSpace::GetFormatFromChannelsCount<float>(1);
+
+		int imgOffset = imgId * 256 * 256;
+
+		float* tmp = raw + imgOffset;
+		result.emplace_back(256, 256, tmp, pf);
+
+	}
+
 	void setup(int argc, char** argv)
 	{
 
@@ -160,11 +181,20 @@ namespace CustomScenarios::exPreCastTraining
 			loader->SaveSequence(0, "seq.png", "turbo.png");
 #endif
 
-			Trec::TrecSettings ts;
-			ts.kernelRadius = 10;
-			ts.matchSearchAreaRadius = 100;
-			Trec trec = Trec(ts);
+#ifdef _WIN32
+			std::shared_ptr<OpticalFlowBase> flow;
 
+			flow = std::make_shared<LucasKanade>(20);
+			//LucasKanadePyramid lkp = LucasKanadePyramid(10);
+			//HornSchunck hs;
+
+			Trec::TrecSettings ts;
+			ts.kernelRadius = 5;
+			ts.matchSearchAreaRadius = 100;
+			//flow = std::make_shared<Trec>(ts);
+
+
+			flow->SetWarpAlgorithm(OpticalFlowBase::WarpAlgorithm::Bicubic);
 			
 			auto seq0 = loader->GetData(0);
 
@@ -173,17 +203,37 @@ namespace CustomScenarios::exPreCastTraining
 			//sets.intervalMapping.mapRange = TorchImageUtils::MappingRange<float>();
 
 			auto imgs = TorchImageUtils::TensorsToImages<float>(seq0.input);
+			auto imgsFuture = TorchImageUtils::TensorsToImages<float>(seq0.target);
 
-			auto tmpStart = imgs[prevCount - 2]; //[2]
-			auto tmpEnd = imgs[prevCount - 1];  //[3]
+			auto turboScale = Image2d<uint8_t>("D://turbo.png");
 
+			for (int i = 0; i < imgs.size(); i++)
+			{
+				imgs[i].Save(std::format("{}/forig_{}.png", "D://W//_0//raw", i).c_str());
+
+				auto r = ColorUtils::MapColorScale<float>(imgs[i], 0, 1, turboScale);				
+				r.Save(std::format("{}/orig_{}.png", "D://W//_0", i).c_str());
+			}
+			for (int i = 0; i < imgsFuture.size(); i++)
+			{
+				imgsFuture[i].Save(std::format("{}/forig_{}_f.png", "D://W//_0//raw", imgs.size() + i).c_str());
+
+				auto r = ColorUtils::MapColorScale<float>(imgsFuture[i], 0, 1, turboScale);
+				r.Save(std::format("{}/orig_{}_f.png", "D://W//_0", imgs.size() + i).c_str());
+			}
+
+			auto tmpStart = imgs[imgs.size() - 2];
+			auto tmpEnd = imgs[imgs.size() - 1];
+
+			flow->Run(tmpEnd, tmpStart);
+			
 			float* resData = new float[futureCount * 256 * 256];
 
 			for (int i = 0; i < futureCount; i++)
 			{
-				trec.Run(tmpEnd, tmpStart);
+				//flow->Run(tmpEnd, tmpStart);
 
-				Image2d<float> trecRec = trec.Warp(tmpEnd);
+				Image2d<float> trecRec = flow->Warp(tmpEnd, -1);
 
 				int imgOffset = i * 256 * 256;
 				std::copy(trecRec.GetData().begin(), trecRec.GetData().end(), resData + imgOffset);
@@ -192,7 +242,26 @@ namespace CustomScenarios::exPreCastTraining
 				tmpEnd = std::move(trecRec);
 			}
 
+			std::vector<Image2d<float>> resImages;
+			for (int i = 0; i < futureCount; i++)
+			{				
+				AppendFromRaw(resData, i, resImages);
+			}
+			
+			std::vector<Image2d<uint8_t>> resImagesTurbo;
+
+			for (int i = 0; i < resImages.size(); i++)
+			{				
+				auto r = ColorUtils::MapColorScale<float>(resImages[i], 0, 1, turboScale);
+				resImagesTurbo.push_back(r);
+
+				r.Save(std::format("{}/trec_{}.png", "D://W//_0", i).c_str());
+			}
+
+			TorchImageUtils::SaveAsGif("D://W//_0//anim.gif", resImagesTurbo);
+
 			printf("");
+#endif
 		}
 		
 		//-------
