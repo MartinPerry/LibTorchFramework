@@ -219,6 +219,16 @@ void MeteonetInputLoader::SaveSequence(size_t index, const std::string& outputNa
 
 void MeteonetInputLoader::PrecalcVectorField()
 {
+    std::filesystem::path outputDir = sets.datasetPath;
+    outputDir.append("lucas_kanade");
+
+    std::error_code ec;
+    std::filesystem::create_directories(outputDir, ec);
+
+    Trec::TrecSettings ts;
+    ts.kernelRadius = 5;
+
+    //auto flow = std::make_shared<Trec>(ts);
     auto flow = std::make_shared<LucasKanade>(20);
     flow->SetWarpAlgorithm(OpticalFlowBase::WarpAlgorithm::Bicubic);
 
@@ -229,16 +239,27 @@ void MeteonetInputLoader::PrecalcVectorField()
         const auto& prev = d.sequenceFiles[sets.prevSeqLen - 2];
         const auto& last = d.sequenceFiles[sets.prevSeqLen - 1];
 
-        std::string prevPath = d.dirPath;
-        prevPath += "/";
-        prevPath += prev;
+        std::filesystem::path prevPath = d.dirPath;
+        prevPath.append(prev);
+        
+        std::filesystem::path lastPath = d.dirPath;                
+        lastPath.append(last);
 
-        std::string lastPath = d.dirPath;
-        lastPath += "/";
-        lastPath += last;
+        std::string flowFileName = prevPath.stem().string();
+        flowFileName += "_";
+        flowFileName += lastPath.stem().string();
 
-        auto tmpStart = this->LoadAsImage(prevPath);
-        auto tmpEnd = this->LoadAsImage(lastPath);
+        std::filesystem::path predFileName = outputDir;
+        predFileName.append(flowFileName);
+
+        if (std::filesystem::exists(predFileName))
+        {
+            continue;
+        }
+
+
+        auto tmpStart = this->LoadAsImage(prevPath.string());
+        auto tmpEnd = this->LoadAsImage(lastPath.string());
 
         flow->Run(tmpEnd, tmpStart);
 
@@ -249,20 +270,23 @@ void MeteonetInputLoader::PrecalcVectorField()
         {
             Image2d<float> trecRec = flow->Warp(tmpEnd, -1);
 
-            //trecRec.Save(std::format("D://trec_{}.png", i).c_str());
+            /*
+            trecRec.Save(std::format("D://trec_{}.png", i).c_str());
+
+            std::filesystem::path tmpPath = d.dirPath;
+            tmpPath.append(d.sequenceFiles[sets.prevSeqLen + i]);
+            auto tmp = this->LoadAsImage(tmpPath.string());
+            tmp.Save(std::format("D://gt_{}.png", i).c_str());
+            */
 
             std::copy(trecRec.GetData().begin(), trecRec.GetData().end(), 
                 predData.begin() + i * imgSize);
 
             tmpEnd = std::move(trecRec);
         }
-
-        std::string predFileName = "";
-        predFileName += prev;
-        predFileName += "_";
-        predFileName += last;
-
-        Lz4FileWriter lz4(predFileName.c_str());
+        
+                
+        Lz4FileWriter lz4(predFileName.string().c_str());
         lz4.Write(predData);
         lz4.Close();
     }
