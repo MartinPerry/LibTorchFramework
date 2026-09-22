@@ -181,7 +181,11 @@ namespace CustomScenarios::exPreCastTraining
 			loader->SaveSequence(0, "seq.png", "turbo.png");
 #endif
 
+			loader->PrecalcVectorField();
+
 #ifdef _WIN32
+			
+
 			std::shared_ptr<OpticalFlowBase> flow;
 
 			flow = std::make_shared<LucasKanade>(20);

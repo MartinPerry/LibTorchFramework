@@ -6,6 +6,8 @@ struct DatasetSettings;
 #include <optional>
 #include <unordered_map>
 
+#include <RasterData/Image2d.h>
+
 #include "../../InputProcessing/InputLoaders/VideoSequenceInputLoader.h"
 
 #include "../../core/Structures.h"
@@ -25,9 +27,11 @@ namespace CustomScenarios
                 const DatasetSettings& params);
 
             void Load() override;
-
+            
             void SaveSequence(size_t index, const std::string& outputName,
                 std::optional<std::string> colorMappingFileName = std::nullopt);
+
+            void PrecalcVectorField();
 
         protected:
             int yearFrom;
@@ -36,6 +40,7 @@ namespace CustomScenarios
 
             void LoadSequenceFiles() override;
 
+            Image2d<float> LoadAsImage(const std::string& p) const;
             std::vector<float> LoadImage(const std::string& p) const override;
         };
     }

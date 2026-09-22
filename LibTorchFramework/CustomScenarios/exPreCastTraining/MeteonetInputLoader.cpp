@@ -4,7 +4,6 @@
 
 #include <Compression/3rdParty/gif_write.h>
 #include <FileUtils/Reading/RawFileReader.h>
-#include <RasterData/Image2d.h>
 #include <Utils/Strings/StringUtils.h>
 
 #include "../../Utils/TorchImageUtils.h"
@@ -134,21 +133,31 @@ void MeteonetInputLoader::LoadSequenceFiles()
 {    
 }
 
-std::vector<float> MeteonetInputLoader::LoadImage(const std::string& p) const
+Image2d<float> MeteonetInputLoader::LoadAsImage(const std::string& p) const
 {
-    RawFileReader f(p.c_str());    
+    RawFileReader f(p.c_str());
     if (f.IsOpened() == false)
     {
         MY_LOG_ERROR("File %s not found", p.c_str());
-        return std::vector<float>(sets.imgChannelsCount * sets.imgW * sets.imgH, 0.0f);
+        return Image2d<float>();
     }
-    std::vector<uint8_t> buf;    
+    std::vector<uint8_t> buf;
     f.ReadAll(buf);
     f.Close();
 
 
     Image2d<float> img = Image2d<float>::CreateFromRawMemory(buf.data(), buf.size());
 
+    return img;
+}
+
+std::vector<float> MeteonetInputLoader::LoadImage(const std::string& p) const
+{    
+    Image2d<float> img = this->LoadAsImage(p);
+    if (img.GetData().size() == 0)
+    {
+        return std::vector<float>(sets.imgChannelsCount * sets.imgW * sets.imgH, 0.0f);
+    }
     
     auto v = TorchImageUtils::LoadImageAs<std::vector<float>>(img,
         sets.imgChannelsCount, sets.imgW, sets.imgH);
@@ -197,4 +206,64 @@ void MeteonetInputLoader::SaveSequence(size_t index, const std::string& outputNa
     }
     GifEnd(&g);    
 
+}
+
+
+//=============================================================================================
+
+#include <RasterData/OpticalFlow/Trec.h>
+#include <RasterData/OpticalFlow/LucasKanade.h>
+#include <RasterData/OpticalFlow/OpticalFlowBase.h>
+
+#include <FileUtils/Writing/LZ4FileWriter.h>
+
+void MeteonetInputLoader::PrecalcVectorField()
+{
+    auto flow = std::make_shared<LucasKanade>(20);
+    flow->SetWarpAlgorithm(OpticalFlowBase::WarpAlgorithm::Bicubic);
+
+    
+
+    for (const auto& d : this->data)
+    {        
+        const auto& prev = d.sequenceFiles[sets.prevSeqLen - 2];
+        const auto& last = d.sequenceFiles[sets.prevSeqLen - 1];
+
+        std::string prevPath = d.dirPath;
+        prevPath += "/";
+        prevPath += prev;
+
+        std::string lastPath = d.dirPath;
+        lastPath += "/";
+        lastPath += last;
+
+        auto tmpStart = this->LoadAsImage(prevPath);
+        auto tmpEnd = this->LoadAsImage(lastPath);
+
+        flow->Run(tmpEnd, tmpStart);
+
+        size_t imgSize = tmpStart.GetWidth() * tmpStart.GetHeight();
+        std::vector<float> predData(sets.futureSeqLen * imgSize);
+
+        for (int i = 0; i < sets.futureSeqLen; i++)
+        {
+            Image2d<float> trecRec = flow->Warp(tmpEnd, -1);
+
+            //trecRec.Save(std::format("D://trec_{}.png", i).c_str());
+
+            std::copy(trecRec.GetData().begin(), trecRec.GetData().end(), 
+                predData.begin() + i * imgSize);
+
+            tmpEnd = std::move(trecRec);
+        }
+
+        std::string predFileName = "";
+        predFileName += prev;
+        predFileName += "_";
+        predFileName += last;
+
+        Lz4FileWriter lz4(predFileName.c_str());
+        lz4.Write(predData);
+        lz4.Close();
+    }
 }
