@@ -211,6 +211,7 @@ set(LIBTORCH_FRAMEWORK_SOURCES
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/exPreCast/SwinTransformerBlock3D.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/exPreCast/WindowAttention3D.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/exPreCast/WindowUtils.cpp
+    ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/exPreCast/DetailAwareFusion.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/LLMs/llama.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/LLMs/LLamaSafeTensorLoader.cpp
     ${LIBTORCH_FRAMEWORK_SOURCE_DIR}/ModelZoo/ResNet/ResNetModel.cpp
