@@ -272,9 +272,14 @@ std::pair<torch::Tensor, torch::Tensor> MeteonetInputLoader::LoadSequence(const 
     predFileName.append(flowFileName);
 
     std::vector<float> predData;
-    Lz4FileReader lz4(predFileName.string().c_str());
+    Lz4FileReader lz4(predFileName.string().c_str());    
     lz4.ReadAll(predData);
     lz4.Close();
+
+    if (predData.empty())
+    {
+        predData.resize(prev.size(), 0.0f);
+    }
 
     auto tPrev = TorchUtils::make_tensor(std::move(prev),
         { sets.prevSeqLen, sets.imgChannelsCount, sets.imgH, sets.imgW });

@@ -197,6 +197,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModelZoo\exPreCast\BasicLayerSkip.cpp" />
     <ClCompile Include="ModelZoo\exPreCast\CubicDualUpsample.cpp" />
+    <ClCompile Include="ModelZoo\exPreCast\DetailAwareFusion.cpp" />
     <ClCompile Include="ModelZoo\exPreCast\exPreCastModel.cpp" />
     <ClCompile Include="ModelZoo\exPreCast\PatchEmbed3D.cpp" />
     <ClCompile Include="ModelZoo\exPreCast\PatchExpanding3D.cpp" />
@@ -321,6 +322,7 @@
     <ClInclude Include="InputProcessing\InputLoaders\VideoSequenceInputLoader.h" />
     <ClInclude Include="ModelZoo\exPreCast\BasicLayerSkip.h" />
     <ClInclude Include="ModelZoo\exPreCast\CubicDualUpsample.h" />
+    <ClInclude Include="ModelZoo\exPreCast\DetailAwareFusion.h" />
     <ClInclude Include="ModelZoo\exPreCast\PatchEmbed3D.h" />
     <ClInclude Include="ModelZoo\exPreCast\PatchExpanding3D.h" />
     <ClInclude Include="ModelZoo\exPreCast\PatchMerging.h" />
