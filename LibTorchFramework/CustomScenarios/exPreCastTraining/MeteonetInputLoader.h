@@ -5,6 +5,7 @@ struct DatasetSettings;
 
 #include <optional>
 #include <unordered_map>
+#include <utility>
 
 #include <RasterData/Image2d.h>
 
@@ -42,6 +43,8 @@ namespace CustomScenarios
 
             Image2d<float> LoadAsImage(const std::string& p) const;
             std::vector<float> LoadImage(const std::string& p) const override;
+
+            std::pair<torch::Tensor, torch::Tensor> LoadSequence(const SequenceInfo& si) const override;
         };
     }
 }

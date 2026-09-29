@@ -172,6 +172,7 @@ namespace CustomScenarios::exPreCastTraining
 		
 		// test
 		auto loader = ilw->GetLoader<MeteonetInputLoader>(RunMode::TRAIN);
+		
 		if (loader)
 		{
 			loader->Load();
@@ -267,6 +268,15 @@ namespace CustomScenarios::exPreCastTraining
 			printf("");
 #endif
 		}
+
+		auto loaderTest = ilw->GetLoader<MeteonetInputLoader>(RunMode::TEST);
+		if (loaderTest)
+		{
+			loaderTest->Load();
+			loaderTest->PrecalcVectorField();
+		}
+		
+		//return;
 		
 		//-------
 		

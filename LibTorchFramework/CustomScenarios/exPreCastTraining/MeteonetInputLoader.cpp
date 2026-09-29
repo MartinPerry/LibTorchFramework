@@ -216,6 +216,79 @@ void MeteonetInputLoader::SaveSequence(size_t index, const std::string& outputNa
 #include <RasterData/OpticalFlow/OpticalFlowBase.h>
 
 #include <FileUtils/Writing/LZ4FileWriter.h>
+#include <FileUtils/Reading/LZ4FileReader.h>
+
+
+#include "../../Utils/TorchUtils.h"
+#include "../../Utils/TorchImageUtils.h"
+
+#include "../../Utils/ProgressBar.h"
+
+std::pair<torch::Tensor, torch::Tensor> MeteonetInputLoader::LoadSequence(const SequenceInfo& si) const
+{
+    const size_t imgSize = sets.imgChannelsCount * sets.imgH * sets.imgW;
+
+    std::vector<float> prev = this->CreateEmptySequence(sets.prevSeqLen);
+    std::vector<float> fut = this->CreateEmptySequence(sets.futureSeqLen);
+
+    for (int i = 0; i < static_cast<int>(si.sequenceFiles.size()); i++)
+    {
+        std::string imgPath = si.dirPath;
+        imgPath += "/";
+        imgPath += si.sequenceFiles[i];
+
+        auto img = this->LoadImage(imgPath);
+
+        if (i < sets.prevSeqLen)
+        {
+            std::copy(img.begin(), img.end(), prev.begin() + i * imgSize);
+            //prev.insert(prev.end(),
+            //    std::make_move_iterator(img.begin()),
+            //    std::make_move_iterator(img.end()));
+        }
+        else
+        {
+            std::copy(img.begin(), img.end(), fut.begin() + (i - sets.prevSeqLen) * imgSize);
+            //fut.insert(fut.end(),
+            //    std::make_move_iterator(img.begin()),
+            //    std::make_move_iterator(img.end()));
+        }
+    }
+    
+    std::filesystem::path outputDir = sets.datasetPath;
+    outputDir.append("lucas_kanade");
+
+    std::filesystem::path prevPath = sets.datasetPath;
+    prevPath.append(si.sequenceFiles[sets.prevSeqLen - 2]);
+
+    std::filesystem::path lastPath = sets.datasetPath;
+    lastPath.append(si.sequenceFiles[sets.prevSeqLen - 1]);
+
+    std::string flowFileName = prevPath.stem().string();
+    flowFileName += "_";
+    flowFileName += lastPath.stem().string();
+
+    std::filesystem::path predFileName = outputDir;
+    predFileName.append(flowFileName);
+
+    std::vector<float> predData;
+    Lz4FileReader lz4(predFileName.string().c_str());
+    lz4.ReadAll(predData);
+    lz4.Close();
+
+    auto tPrev = TorchUtils::make_tensor(std::move(prev),
+        { sets.prevSeqLen, sets.imgChannelsCount, sets.imgH, sets.imgW });
+
+    auto tFut = TorchUtils::make_tensor(std::move(fut),
+        { sets.futureSeqLen, sets.imgChannelsCount, sets.imgH, sets.imgW });
+
+    auto tFlow = TorchUtils::make_tensor(std::move(predData),
+        { sets.futureSeqLen, sets.imgChannelsCount, sets.imgH, sets.imgW });
+
+    auto merged = torch::cat({ tPrev, tFlow }, 0);
+
+    return { merged, tFut };
+}
 
 void MeteonetInputLoader::PrecalcVectorField()
 {
@@ -225,69 +298,94 @@ void MeteonetInputLoader::PrecalcVectorField()
     std::error_code ec;
     std::filesystem::create_directories(outputDir, ec);
 
-    Trec::TrecSettings ts;
-    ts.kernelRadius = 5;
+   
+    const unsigned int threadCount = std::max(1u, std::thread::hardware_concurrency());
 
-    //auto flow = std::make_shared<Trec>(ts);
-    auto flow = std::make_shared<LucasKanade>(20);
-    flow->SetWarpAlgorithm(OpticalFlowBase::WarpAlgorithm::Bicubic);
+    ProgressBar pBar(100);
+    pBar.Start(data.size());
 
-    
+    std::atomic_size_t nextIndex = 0;
+    std::mutex progressMutex;
 
-    for (const auto& d : this->data)
-    {        
-        const auto& prev = d.sequenceFiles[sets.prevSeqLen - 2];
-        const auto& last = d.sequenceFiles[sets.prevSeqLen - 1];
+    std::vector<std::thread> workers;
+    workers.reserve(threadCount);
 
-        std::filesystem::path prevPath = d.dirPath;
-        prevPath.append(prev);
-        
-        std::filesystem::path lastPath = d.dirPath;                
-        lastPath.append(last);
+    for (unsigned int t = 0; t < threadCount; ++t)
+    {
+        workers.emplace_back([&, this]() {
 
-        std::string flowFileName = prevPath.stem().string();
-        flowFileName += "_";
-        flowFileName += lastPath.stem().string();
+                Trec::TrecSettings ts;
+                ts.kernelRadius = 5;
 
-        std::filesystem::path predFileName = outputDir;
-        predFileName.append(flowFileName);
+                auto flow = std::make_shared<LucasKanade>(20);
+                flow->SetWarpAlgorithm(OpticalFlowBase::WarpAlgorithm::Bicubic);
 
-        if (std::filesystem::exists(predFileName))
-        {
-            continue;
-        }
+                while (true)
+                {
+                    const size_t index = nextIndex.fetch_add(1, std::memory_order_relaxed);
+                    if (index >= data.size())
+                    {
+                        break;
+                    }
 
+                    const auto& d = data[index];
 
-        auto tmpStart = this->LoadAsImage(prevPath.string());
-        auto tmpEnd = this->LoadAsImage(lastPath.string());
+                    const auto& prev = d.sequenceFiles[sets.prevSeqLen - 2];
+                    const auto& last = d.sequenceFiles[sets.prevSeqLen - 1];
 
-        flow->Run(tmpEnd, tmpStart);
+                    std::filesystem::path prevPath = d.dirPath;
+                    prevPath.append(prev);
 
-        size_t imgSize = tmpStart.GetWidth() * tmpStart.GetHeight();
-        std::vector<float> predData(sets.futureSeqLen * imgSize);
+                    std::filesystem::path lastPath = d.dirPath;
+                    lastPath.append(last);
 
-        for (int i = 0; i < sets.futureSeqLen; i++)
-        {
-            Image2d<float> trecRec = flow->Warp(tmpEnd, -1);
+                    std::string flowFileName = prevPath.stem().string();
+                    flowFileName += "_";
+                    flowFileName += lastPath.stem().string();
 
-            /*
-            trecRec.Save(std::format("D://trec_{}.png", i).c_str());
+                    std::filesystem::path predFileName = outputDir;
+                    predFileName.append(flowFileName);
 
-            std::filesystem::path tmpPath = d.dirPath;
-            tmpPath.append(d.sequenceFiles[sets.prevSeqLen + i]);
-            auto tmp = this->LoadAsImage(tmpPath.string());
-            tmp.Save(std::format("D://gt_{}.png", i).c_str());
-            */
+                    if (!std::filesystem::exists(predFileName))
+                    {
+                        auto tmpStart = LoadAsImage(prevPath.string());
+                        auto tmpEnd = LoadAsImage(lastPath.string());
 
-            std::copy(trecRec.GetData().begin(), trecRec.GetData().end(), 
-                predData.begin() + i * imgSize);
+                        flow->Run(tmpEnd, tmpStart);
 
-            tmpEnd = std::move(trecRec);
-        }
-        
-                
-        Lz4FileWriter lz4(predFileName.string().c_str());
-        lz4.Write(predData);
-        lz4.Close();
+                        const size_t imgSize = tmpStart.GetWidth() * tmpStart.GetHeight();
+                        std::vector<float> predData(sets.futureSeqLen * imgSize);
+
+                        for (int i = 0; i < sets.futureSeqLen; ++i)
+                        {
+                            Image2d<float> trecRec = flow->Warp(tmpEnd, -1);
+
+                            std::copy(
+                                trecRec.GetData().begin(),
+                                trecRec.GetData().end(),
+                                predData.begin() + static_cast<size_t>(i) * imgSize
+                            );
+
+                            tmpEnd = std::move(trecRec);
+                        }
+
+                        Lz4FileWriter lz4(predFileName.string().c_str());
+                        lz4.Write(predData);
+                        lz4.Close();
+                    }
+
+                    {
+                        std::lock_guard lock(progressMutex);
+                        pBar.NextStep();
+                    }
+                }
+            });
     }
+
+    for (auto& worker : workers)
+    {
+        worker.join();
+    }
+
+    pBar.Finish();
 }

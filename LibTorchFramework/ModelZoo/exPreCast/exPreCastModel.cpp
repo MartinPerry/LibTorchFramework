@@ -210,45 +210,15 @@ const char* exPreCastModel::GetName() const
     return "exPreCastModel";
 }
 
-torch::Tensor exPreCastModel::forward(torch::Tensor x)
+torch::Tensor exPreCastModel::forward(torch::Tensor xWithFlow)
 {
-    int batchCount = x.size(0);
+  
+    auto chunks = xWithFlow.chunk(2, 1);
 
-    torch::Tensor predOptFlow;
+    auto x = chunks[0]; // [B, C, 1, H, W]
+    auto predOptFlow = chunks[1]; // [B, C, 1, H, W]
 
-    for (int b = 0; b < batchCount; b++)
-    {
-
-        auto prev = x[b][x.size(1) - 2];
-        auto last = x[b][x.size(1) - 1];
-
-        auto tmpStart = TorchImageUtils::TensorToImage<float>(prev);
-        auto tmpEnd = TorchImageUtils::TensorToImage<float>(last);
-        
-        flow->Run(tmpEnd, tmpStart);
-
-        std::vector<torch::Tensor> tmp;
-
-        for (int i = 0; i < outputFrames; i++)
-        {
-            Image2d<float> trecRec = flow->Warp(tmpEnd, -1);
-
-            tmp.emplace_back(TorchImageUtils::LoadImageAs<torch::Tensor>(trecRec).unsqueeze(0));
-        }
-        
-        auto tmpTensor = torch::cat(tmp, 0).unsqueeze(0);
-        if (b == 0)
-        {
-            predOptFlow = tmpTensor;
-        }
-        else
-        {
-            predOptFlow = torch::cat({ predOptFlow, tmpTensor }, 0);
-        }
-    }
-
-    predOptFlow = predOptFlow.to(x.device());
-
+       
     //update loaded shape to match exPrecast input [B, 1, SeqLen, W, H]
     x = x.squeeze(2);
     x = x.unsqueeze(1);
