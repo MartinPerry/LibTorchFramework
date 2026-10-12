@@ -1,7 +1,7 @@
 #ifndef EXPRECAST_MODEL_H
 #define EXPRECAST_MODEL_H
 
-class OpticalFlowBase;
+
 
 #include <vector>
 #include <array>
@@ -15,7 +15,10 @@ class OpticalFlowBase;
 #include "./BasicLayerSkip.h"
 #include "./CubicDualUpsample.h"
 #include "./PatchExpanding3D.h"
+
 #include "./DetailAwareFusion.h"
+#include "./MotionConditionedFusion.h"
+#include "./OpticalForecastEncoder.h"
 
 namespace ModelZoo {
     namespace exPreCast {
@@ -83,9 +86,10 @@ namespace ModelZoo {
 
             torch::nn::Conv3d timeExtractor{ nullptr };       
 
-            std::shared_ptr<OpticalFlowBase> flow;
-
-            DetailAwareFusion fusion{ nullptr };
+            
+            //DetailAwareFusion fusion{ nullptr };
+            OpticalForecastEncoder opticalEncoder{ nullptr };
+            torch::nn::ModuleList motionFusions{ nullptr };
         };
     }
 }

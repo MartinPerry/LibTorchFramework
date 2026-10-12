@@ -323,6 +323,9 @@
     <ClInclude Include="ModelZoo\exPreCast\BasicLayerSkip.h" />
     <ClInclude Include="ModelZoo\exPreCast\CubicDualUpsample.h" />
     <ClInclude Include="ModelZoo\exPreCast\DetailAwareFusion.h" />
+    <ClInclude Include="ModelZoo\exPreCast\exPreCastModel.h" />
+    <ClInclude Include="ModelZoo\exPreCast\MotionConditionedFusion.h" />
+    <ClInclude Include="ModelZoo\exPreCast\OpticalForecastEncoder.h" />
     <ClInclude Include="ModelZoo\exPreCast\PatchEmbed3D.h" />
     <ClInclude Include="ModelZoo\exPreCast\PatchExpanding3D.h" />
     <ClInclude Include="ModelZoo\exPreCast\PatchMerging.h" />

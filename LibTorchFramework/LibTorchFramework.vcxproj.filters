@@ -998,6 +998,15 @@
     <ClInclude Include="ModelZoo\exPreCast\DetailAwareFusion.h">
       <Filter>Header Files\ModelZoo\exPreCast</Filter>
     </ClInclude>
+    <ClInclude Include="ModelZoo\exPreCast\MotionConditionedFusion.h">
+      <Filter>Header Files\ModelZoo\exPreCast</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelZoo\exPreCast\OpticalForecastEncoder.h">
+      <Filter>Header Files\ModelZoo\exPreCast</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelZoo\exPreCast\exPreCastModel.h">
+      <Filter>Header Files\ModelZoo\exPreCast</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Libtorch.natvis">

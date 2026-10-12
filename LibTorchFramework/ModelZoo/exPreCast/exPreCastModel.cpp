@@ -55,6 +55,13 @@ exPreCastModel::exPreCastModel(
     decoder(register_module("decoder", torch::nn::ModuleList()))
 {
 
+    //fusion = register_module("fusion", DetailAwareFusion(1));
+
+    opticalEncoder = register_module("optical_encoder", OpticalForecastEncoder(1, 32, 64));
+
+    motionFusions = register_module("motion_fusions", torch::nn::ModuleList());
+
+
     //
     // calculate temporal dimensions
     //
@@ -171,6 +178,10 @@ exPreCastModel::exPreCastModel(
             );
 
         decoder->push_back(layer);
+        
+        const int64_t stageChannels = embedDim * (1LL << i);
+
+        motionFusions->push_back(MotionConditionedFusion(stageChannels, 64));
     }
 
 
@@ -198,11 +209,7 @@ exPreCastModel::exPreCastModel(
             )
     );
 
-
-    flow = std::make_shared<LucasKanade>(20);
-    flow->SetWarpAlgorithm(OpticalFlowBase::WarpAlgorithm::Bicubic);
-
-    fusion = register_module("fusion", DetailAwareFusion(1));
+    
 }
 
 const char* exPreCastModel::GetName() const
@@ -223,7 +230,13 @@ torch::Tensor exPreCastModel::forward(torch::Tensor xWithFlow)
     x = x.squeeze(2);
     x = x.unsqueeze(1);
 
-    
+    predOptFlow = predOptFlow.squeeze(2);
+    predOptFlow = predOptFlow.unsqueeze(1);
+
+    // Extract optical forecast features once.
+    auto opticalFeatures = opticalEncoder->forward(predOptFlow);
+
+    // Main exPreCast encoder.
     //[4, 1, 12, 256, 256] => [4, 96, 6, 64, 64]
     x = patchEmbed->forward(x);
 
@@ -249,21 +262,33 @@ torch::Tensor exPreCastModel::forward(torch::Tensor xWithFlow)
         }
     }
 
-
+    // Bottleneck upsampling.
     x = x.permute({ 0, 2, 3, 4, 1 }).contiguous();
     x = bottleneckUpscale->forward(x);
     x = x.permute({ 0, 4, 1, 2, 3}).contiguous();
 
+    // Decoder.
+    const size_t fusionStart = decoder->size() > 2 ? decoder->size() - 2 : 0;
+
     for (size_t i = 0; i < decoder->size(); ++i)
     {        
+        auto skip = skips[skips.size() - i - 1];
+
         if (skipConnection == "add")
         {
-            x = x + skips[skips.size() - i - 1];
+            x = x + skip;
         }
         else 
         {
             //concat
-            x = torch::cat({ x, skips[skips.size() - i - 1] }, 2);
+            x = torch::cat({ x, skip }, 2);
+        }
+
+        // Fuse only at the final two decoder resolutions.
+        // The optical features are resized internally to match x.
+        if (i >= fusionStart)
+        {
+            x = motionFusions[i]->as<MotionConditionedFusionImpl>()->forward(x, opticalFeatures);
         }
 
         auto result = decoder[i]->as<BasicLayerSkipImpl>()->forward(x);
@@ -273,7 +298,7 @@ torch::Tensor exPreCastModel::forward(torch::Tensor xWithFlow)
         x = std::get<0>(result);
     }
 
-
+    // Original output projection.
     x = patchExpand3D->forward(x);
 
 
@@ -288,7 +313,7 @@ torch::Tensor exPreCastModel::forward(torch::Tensor xWithFlow)
     x = x.squeeze(1);
     x = x.unsqueeze(2);
 
-    x = fusion(x, predOptFlow);
+    //x = fusion(x, predOptFlow);
 
     //if (x.isnan().any().item<bool>())
     //{
