@@ -58,7 +58,7 @@ ModelSettings SettingsLoader::Load(JsonCmdDefaults& json)
 
 void SettingsLoader::LoadTraining(const JsonCmdDefaults& json, TrainingSettings& settings)
 {
-    settings.enabled = json.GetValue<int>("training.enabled", settings.enabled);
+    settings.enabled = json.GetValue<bool>("training.enabled", settings.enabled);
     settings.epochCount = json.GetValue<int>("training.epoch_count", settings.epochCount);
     settings.numWorkers = json.GetValue<int>("training.num_workers", settings.numWorkers);
     settings.autocast = json.GetValue<bool>("training.autocast", settings.autocast);

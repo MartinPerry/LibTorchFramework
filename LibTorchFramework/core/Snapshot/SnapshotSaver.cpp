@@ -45,15 +45,38 @@ bool SnapshotSaver::Save(const std::variant<std::string, std::shared_ptr<Pretrai
 
     MY_LOG_INFO("Saving trained model to %s", path.c_str());
 
+    this->SaveParametersInfo(path);
     this->SaveParametersSerialized(path);
 
     
     return true;
 }
 
+void SnapshotSaver::SaveParametersInfo(const std::string& path)
+{
+    std::string data = "";
+
+    for (const auto& p : model->named_parameters())
+    {
+        const auto& t = p.value();
+
+        data += std::format("{}: version={}, mean={}\n",            
+            p.key().c_str(),
+            static_cast<long long>(t._version()),
+            t.detach().to(torch::kCPU, torch::kFloat32).mean().item<double>()
+        );
+    }
+
+    std::string pathInfo = path + ".info";
+    RawFileWriter rf(pathInfo.c_str(), "wb");
+    rf.Write(data.c_str(), sizeof(uint8_t), data.length());
+    rf.Close();
+}
+
 
 void SnapshotSaver::SaveParametersSerialized(const std::string& path)
 {
+    
     torch::serialize::OutputArchive archive;
 
     // Save named parameters   

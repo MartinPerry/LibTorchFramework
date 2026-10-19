@@ -22,9 +22,11 @@ public:
 
 private:
 
+    void SaveParametersInfo(const std::string& path);
+
     void SaveParametersSerialized(const std::string& path);
-    void SaveParametersAsDict(const std::string& path);
-    
+    void SaveParametersAsDict(const std::string& path);        
+
     const AbstractModel* model;
 };
 

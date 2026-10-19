@@ -98,6 +98,10 @@ bool SnapshotLoader::LoadParametersFromSerialized(const std::string& path)
                 torch::NoGradGuard no_grad;
                 p.value().copy_(tmp);
             }
+            else 
+            {
+                MY_LOG_ERROR("Failed to copy loaded tensor %s to model", name.c_str());
+            }
         }
         catch (const c10::Error& e) 
         {

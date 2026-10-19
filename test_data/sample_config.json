@@ -33,9 +33,10 @@
   "snapshot": {
     "weights_": "e:\\Programming\\Cpp\\LibTorchFramework\\pretrained_meteonet.safetensors",
     "wights_linux": "/data/perry/gp/pretrained_meteonet.safetensors",
-    "weights_uni": "d:\\python\\exPreCast-main\\exPreCast-main\\checkpoints\\pretrained_meteonet.safetensors",    
+    "weights_uni": "d:\\python\\exPreCast-main\\exPreCast-main\\checkpoints\\pretrained_meteonet.safetensors",
 
-    "path": "D://CppTorchModels//[date]",        
+    "path": "D://CppTorchModels//[date]",
+    "path_load": "D://CppTorchModels//2026-10-12T14-22",
     "enable_save": true,
     "enable_load": false
   },
