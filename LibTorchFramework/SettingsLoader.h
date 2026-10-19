@@ -56,11 +56,12 @@ namespace
 
 struct TrainingSettings
 {
+    bool enabled = true;
     int epochCount = 100;
     int numWorkers = 4;
     bool autocast = false;
     int batchSize = 2;
-    int gpuCount = 1;
+    int gpuCount = 1;    
 };
 
 struct DatasetSettings
@@ -73,6 +74,9 @@ struct DatasetSettings
     int height = 256;
     //int prevCount = 12;
     //int futureCount = 12;
+
+    double trainRatio = 0.8;
+    double valRatio = 0.0;
 
     std::unordered_map<std::string, std::string> params;
 

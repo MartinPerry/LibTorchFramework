@@ -615,10 +615,7 @@ Image2d<T> TorchImageUtils::TensorsToImage(const std::vector<std::vector<torch::
 	const int outputW = maxW;
 	const int outputH = (h + sets.borderSize) * t.size() + sets.borderSize;
 
-			
-	const auto colSpace = (outputChanCount == 1) ? ColorSpace::PixelFormat::GRAY :
-		((outputChanCount == 3) ? ColorSpace::PixelFormat::RGB : ColorSpace::PixelFormat::RGBA);
-
+				
 	Image2d<T> pallete;
 
 	Image2d<T> newImage;
@@ -637,6 +634,9 @@ Image2d<T> TorchImageUtils::TensorsToImage(const std::vector<std::vector<torch::
 			}
 		}
 
+		const auto colSpace = (outputChanCount == 1) ? ColorSpace::PixelFormat::GRAY :
+			((outputChanCount == 3) ? ColorSpace::PixelFormat::RGB : ColorSpace::PixelFormat::RGBA);
+
 		const std::vector<uint8_t> defValues = std::vector<uint8_t>(outputChanCount, sets.backgroundValue);
 
 		newImage = Image2d<T>::CreateWithSingleValue(outputW, outputH, defValues.data(), colSpace);
@@ -647,6 +647,9 @@ Image2d<T> TorchImageUtils::TensorsToImage(const std::vector<std::vector<torch::
 		{
 			MY_LOG_ERROR("Color mapping available only fro uint8_t images");
 		}
+
+		const auto colSpace = (outputChanCount == 1) ? ColorSpace::PixelFormat::GRAY :
+			((outputChanCount == 3) ? ColorSpace::PixelFormat::RGB : ColorSpace::PixelFormat::RGBA);
 
 		const std::vector<float> defValues = std::vector<float>(outputChanCount, sets.backgroundValue / 255.0f);
 

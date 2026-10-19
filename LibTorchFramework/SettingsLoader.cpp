@@ -58,6 +58,7 @@ ModelSettings SettingsLoader::Load(JsonCmdDefaults& json)
 
 void SettingsLoader::LoadTraining(const JsonCmdDefaults& json, TrainingSettings& settings)
 {
+    settings.enabled = json.GetValue<int>("training.enabled", settings.enabled);
     settings.epochCount = json.GetValue<int>("training.epoch_count", settings.epochCount);
     settings.numWorkers = json.GetValue<int>("training.num_workers", settings.numWorkers);
     settings.autocast = json.GetValue<bool>("training.autocast", settings.autocast);
@@ -78,6 +79,9 @@ void SettingsLoader::LoadDataset(const JsonCmdDefaults& json, DatasetSettings& s
     settings.channelsCount = json.GetValue<int>("dataset.channels_count", settings.channelsCount);
     settings.width = json.GetValue<int>("dataset.width", settings.width);
     settings.height = json.GetValue<int>("dataset.height", settings.height);
+
+    settings.trainRatio = json.GetValue<double>("dataset.train_ratio", settings.trainRatio);
+    settings.valRatio = json.GetValue<double>("dataset.val_ratio", settings.valRatio);
 
     auto keys = json.GetAllKeysWithPrefix("dataset.custom");
     size_t prefixLen = strlen("dataset.custom") + 1;

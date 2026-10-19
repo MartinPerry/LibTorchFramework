@@ -2,6 +2,7 @@
   "model_id": "exprecast",
   "device": "gpu",
   "training": {
+    "enabled": true,
     "epoch_count": 100,
     "num_workers": 4,
     "autocast": false,
@@ -13,6 +14,8 @@
     "path_linux": "/data/perry/gp/datasets/meteonet/SE",
     "path_": "e:/Programming/Python/nowcast/Processing-Radar-Datasets/meteonet_256/SE",
     "seed": -1,
+    "train_ratio": 0.8,
+    "val_ratio": 0.0,
     "subset_size": 2,
 
     "channels_count": 1,
@@ -26,13 +29,13 @@
       "end_year": 2016,
       "overlap_count": 15
     }
-    },
+  },
   "snapshot": {
     "weights_": "e:\\Programming\\Cpp\\LibTorchFramework\\pretrained_meteonet.safetensors",
     "wights_linux": "/data/perry/gp/pretrained_meteonet.safetensors",
-    "weights_uni": "d:\\python\\exPreCast-main\\exPreCast-main\\checkpoints\\pretrained_meteonet.safetensors",
+    "weights_uni": "d:\\python\\exPreCast-main\\exPreCast-main\\checkpoints\\pretrained_meteonet.safetensors",    
 
-    "path": "D://CppTorchModels//[date]",
+    "path": "D://CppTorchModels//[date]",        
     "enable_save": true,
     "enable_load": false
   },

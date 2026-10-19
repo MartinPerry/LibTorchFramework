@@ -63,11 +63,9 @@ PretrainedManager::PretrainedManager(const std::string& directory,
     std::string snapshot, const std::string& prefix) : 
     snapshot(snapshot),
     prefix(prefix),      
-    modelsDir(directory),
+    modelsDir(replaceDate(directory)),
     freezeInfo(nullptr)
-{
-    modelsDir = replaceDate(modelsDir);
-
+{    
     std::error_code e;
     std::filesystem::create_directories(modelsDir, e);
     if (e.value() != 0)
@@ -210,21 +208,19 @@ std::optional<std::string> PretrainedManager::GetPreTrainedWeightsPath(const Abs
     {
         return std::nullopt;
     }
-    std::string wp = "";
 
     std::string fileName = this->GetModelFileName(model);
     std::filesystem::path finalPath = modelsDir / (fileName + ".bin");
 
-    if (snapshot == "latest")
+    std::optional<std::string> wp = (snapshot == "latest") ?
+        this->GetLatestTimeStampFile(finalPath.string()) : finalPath.string();
+    
+    if (wp.has_value() == false)
     {
-        wp = this->GetLatestTimeStampFile(finalPath.string());
-    }
-    else
-    {
-        wp = finalPath.string();
+        return std::nullopt;
     }
 
-    return this->CanLoadFile(wp) ? std::make_optional(wp) : std::nullopt;
+    return this->CanLoadFile(*wp) ? wp : std::nullopt;
 }
 
 std::string PretrainedManager::GetModelFileName(const AbstractModel* model) const
@@ -254,7 +250,7 @@ std::string PretrainedManager::AddTimeStampToFilePath(const std::string& filePat
     return GetTimeStampFile(filePath, std::chrono::system_clock::now());
 }
 
-std::string PretrainedManager::GetLatestTimeStampFile(const std::string& filePath) const 
+std::optional<std::string> PretrainedManager::GetLatestTimeStampFile(const std::string& filePath) const
 {
     std::filesystem::path basePath(filePath);
     std::string stem = basePath.stem().string();
@@ -262,7 +258,7 @@ std::string PretrainedManager::GetLatestTimeStampFile(const std::string& filePat
     std::string patternPrefix = stem + "_";
 
     std::filesystem::path parent = basePath.parent_path();
-    std::string bestFile = filePath;
+    std::optional<std::string> bestFile = std::nullopt;
     std::time_t bestTime = 0;
 
     for (const auto& entry : std::filesystem::directory_iterator(parent)) 

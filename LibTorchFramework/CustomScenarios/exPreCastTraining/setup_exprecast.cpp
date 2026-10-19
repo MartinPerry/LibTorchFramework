@@ -159,14 +159,26 @@ namespace CustomScenarios::exPreCastTraining
 				
 		auto ilw = std::make_shared<InputLoadersWrapper>(imSize);	
 		ilw->SetShuffleSeed(settings.dataset.seed);
-		ilw->SetTrainValTestSplit(0.8, 0.0);
-		ilw->InitLoaders<MeteonetInputLoader, std::string>(
-			{ 
-				{ RunMode::TRAIN, loaderSets }, 
-				{ RunMode::TEST, loaderSets } 
-			}, 
-			settings.dataset.path, prevCount, futureCount, settings.dataset
-		);
+		ilw->SetTrainValTestSplit(settings.dataset.trainRatio, settings.dataset.valRatio);
+		if (settings.training.enabled)
+		{
+			ilw->InitLoaders<MeteonetInputLoader, std::string>(
+				{
+					{ RunMode::TRAIN, loaderSets },
+					{ RunMode::TEST, loaderSets }
+				},
+				settings.dataset.path, prevCount, futureCount, settings.dataset
+			);
+		}
+		else 
+		{
+			ilw->InitLoaders<MeteonetInputLoader, std::string>(
+				{					
+					{ RunMode::TEST, loaderSets }
+				},
+				settings.dataset.path, prevCount, futureCount, settings.dataset
+			);
+		}
 		
 		//-------
 		
@@ -284,7 +296,7 @@ namespace CustomScenarios::exPreCastTraining
 
 			auto m = std::make_shared<ModelZoo::exPreCast::exPreCastModel>();
 
-			if (settings.snapshot.weights != "")
+			if (settings.snapshot.weights.ends_with("safetensors"))
 			{
 				SafeTensorLoader tl;
 				auto loadRes = tl.LoadModel(settings.snapshot.weights,
@@ -312,8 +324,8 @@ namespace CustomScenarios::exPreCastTraining
 			//SnapshotSaver saver(m.get());
 			//saver.Save(sets.pretrainedManager);
 
-			//SnapshotLoader loader(m.get());
-			//loader.Load(sets.pretrainedManager);
+			SnapshotLoader loader(m.get());
+			loader.Load(sets.pretrainedManager);
 
 			//todo - specify device
 			m->to(sets.device);

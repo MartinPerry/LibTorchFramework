@@ -32,17 +32,17 @@ std::optional<int> InputLoadersWrapper::GetShuffleSeed() const
 	return this->shuffleSeed;
 }
 
-float InputLoadersWrapper::GetTrainRatio() const
+double InputLoadersWrapper::GetTrainRatio() const
 {
 	return this->trainRatio;
 }
 
-float InputLoadersWrapper::GetValRatio() const
+double InputLoadersWrapper::GetValRatio() const
 {
 	return this->valRatio;
 }
 
-std::optional<float> InputLoadersWrapper::GetTestRatio() const
+std::optional<double> InputLoadersWrapper::GetTestRatio() const
 {
 	return this->testRatio;
 }
@@ -66,7 +66,7 @@ void InputLoadersWrapper::SetShuffleSeed(std::optional<int> seed)
 /// <param name="trainRatio"></param>
 /// <param name="valRatio"></param>
 /// <param name="testRatio"></param>
-void InputLoadersWrapper::SetTrainValTestSplit(float trainRatio, float valRatio, std::optional<float> testRatio)
+void InputLoadersWrapper::SetTrainValTestSplit(double trainRatio, double valRatio, std::optional<double> testRatio)
 {
 	this->trainRatio = trainRatio;
 	this->valRatio = valRatio;

@@ -26,15 +26,15 @@ public:
 	
 	std::optional<int> GetShuffleSeed() const;
 
-	float GetTrainRatio() const;
-	float GetValRatio() const;
-	std::optional<float> GetTestRatio() const;
+	double GetTrainRatio() const;
+	double GetValRatio() const;
+	std::optional<double> GetTestRatio() const;
 
 	const std::vector<uint16_t>& GetShape() const;
 
 	void SetShuffleSeed(std::optional<int>);
-	void SetTrainValTestSplit(float trainRatio, float valRatio, 
-		std::optional<float> testRatio = std::nullopt);
+	void SetTrainValTestSplit(double trainRatio, double valRatio,
+		std::optional<double> testRatio = std::nullopt);
 
 	template <typename InitedLoaderType>
 	void InitLoaders(std::unordered_set<RunMode> types);
@@ -55,9 +55,9 @@ protected:
 
 	std::optional<int> shuffleSeed;
 
-	float trainRatio;
-	float valRatio;
-	std::optional<float> testRatio;
+	double trainRatio;
+	double valRatio;
+	std::optional<double> testRatio;
 
 	std::vector<uint16_t> shape;
 
