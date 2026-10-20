@@ -44,6 +44,7 @@ protected:
 	std::shared_ptr<MetricsDefault> bestMetrics;
 
 	void CheckLoss(at::Tensor loss);
+	void CheckGradients();
 
 	void RunTrainStepsFull(StepInfo& si);
 	void RunTrainStepsAutocast(StepInfo& si);

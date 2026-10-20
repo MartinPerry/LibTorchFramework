@@ -42,6 +42,7 @@ void Trainer::CheckLoss(at::Tensor loss)
     //TORCH_CHECK(scaler != nullptr, "enableAutoCast is true but scaler is null");
     TORCH_CHECK(loss.defined(), "Loss is not defined (autocast)");
     TORCH_CHECK(loss.grad_fn() != nullptr, "Loss has no grad_fn (autocast)");
+    TORCH_CHECK(loss.requires_grad(), "Loss does not require gradients");
 
     // Optional, but useful: loss should be scalar (0-D) or you must pass grad_outputs
     TORCH_CHECK(loss.sizes().size() == 0, "Loss is not scalar; sizes = ", loss.sizes());
@@ -60,7 +61,43 @@ void Trainer::CheckLoss(at::Tensor loss)
     TORCH_CHECK(loss.dtype() == torch::kFloat32 ||
         loss.dtype() == torch::kFloat16 ||
         loss.dtype() == torch::kBFloat16,
-        "Unexpected loss dtype: ", loss.dtype());
+        "Unexpected loss dtype: ", loss.dtype());     
+}
+
+
+void Trainer::CheckGradients()
+{   
+    int noGrad = 0;
+    int zeroGrad = 0;
+    int nonzeroGrad = 0;
+
+    for (const auto& item : model->named_parameters())
+    {
+        const auto& name = item.key();
+        const auto& p = item.value();
+
+        if (!p.grad().defined())
+        {
+            MY_LOG_WARNING("%s - NO GRADIENT", name.c_str());
+            noGrad++;
+            continue;
+        }
+
+        const double gradNorm =
+            p.grad().detach().norm().item<double>();
+
+        if (gradNorm == 0.0)
+        {
+            zeroGrad++;
+        }
+        else
+        {
+            nonzeroGrad++;
+        }
+    }
+
+    MY_LOG_INFO("Gradients: no grad=%d, zero grad=%d, nonzero grad=%d", 
+        noGrad, zeroGrad, nonzeroGrad);    
 }
 
 //============================================================================================
@@ -73,6 +110,10 @@ void Trainer::RunTrainStepsFull(StepInfo& si)
     this->CheckLoss(si.loss);
 #endif
     si.loss.backward();
+
+#ifdef _DEBUG
+    this->CheckGradients();
+#endif
 
     this->RunOptimizerFull(si);
 }
@@ -121,6 +162,10 @@ void Trainer::RunTrainStepsAutocast(StepInfo& si)
     auto scaledLoss = scaler->scale(si.loss);
     scaledLoss.backward();
    
+#ifdef _DEBUG
+    this->CheckGradients();
+#endif
+
     this->RunOptimizerAutoCast(si);
 }
 

@@ -60,14 +60,22 @@ void SnapshotSaver::SaveParametersInfo(const std::string& path)
     {
         const auto& t = p.value();
 
-        data += std::format("{}: version={}, mean={}\n",            
+        auto tmp = t.detach().to(torch::kCPU, torch::kFloat32);
+
+        data += std::format("{}: version={}, mean={}, std={}, min={}, max={}\n",            
             p.key().c_str(),
             static_cast<long long>(t._version()),
-            t.detach().to(torch::kCPU, torch::kFloat32).mean().item<double>()
+            tmp.mean().item<double>(),
+            tmp.std().item<double>(),
+            tmp.min().item<double>(),
+            tmp.max().item<double>()            
         );
     }
 
     std::string pathInfo = path + ".info";
+
+    MY_LOG_INFO("Saving params info to %s", pathInfo.c_str());
+
     RawFileWriter rf(pathInfo.c_str(), "wb");
     rf.Write(data.c_str(), sizeof(uint8_t), data.length());
     rf.Close();
