@@ -54,7 +54,7 @@ bool SnapshotSaver::Save(const std::variant<std::string, std::shared_ptr<Pretrai
 
 void SnapshotSaver::SaveParametersInfo(const std::string& path)
 {
-    std::string data = "";
+    std::string data = " === parameters === \n";
 
     for (const auto& p : model->named_parameters())
     {
@@ -69,6 +69,24 @@ void SnapshotSaver::SaveParametersInfo(const std::string& path)
             tmp.std().item<double>(),
             tmp.min().item<double>(),
             tmp.max().item<double>()            
+        );
+    }
+
+    data += " === buffers === \n";
+
+    for (const auto& p : model->named_buffers())
+    {
+        const auto& t = p.value();
+
+        auto tmp = t.detach().to(torch::kCPU, torch::kFloat32);
+
+        data += std::format("{}: version={}, mean={}, std={}, min={}, max={}\n",
+            p.key().c_str(),
+            static_cast<long long>(t._version()),
+            tmp.mean().item<double>(),
+            tmp.std().item<double>(),
+            tmp.min().item<double>(),
+            tmp.max().item<double>()
         );
     }
 
@@ -87,10 +105,8 @@ void SnapshotSaver::SaveParametersSerialized(const std::string& path)
     
     torch::serialize::OutputArchive archive;
 
-    // Save named parameters   
-    torch::OrderedDict<std::string, at::Tensor> params = model->named_parameters();
-
-    for (const auto& p : params)
+    // Save named parameters       
+    for (const auto& p : model->named_parameters())
     {
         const std::string name = p.key();        
         
@@ -109,8 +125,7 @@ void SnapshotSaver::SaveParametersSerialized(const std::string& path)
             // continue saving others
         }
     }
-
-    
+       
     // Save named buffers (optional)    
     /*
     //if there are no buffers, program crash on ~OrderedDict

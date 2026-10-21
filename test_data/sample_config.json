@@ -16,7 +16,7 @@
     "seed": -1,
     "train_ratio": 0.8,
     "val_ratio": 0.0,
-    "subset_size": 2,
+    "subset_size": 20,
 
     "channels_count": 1,
     "width": 256,

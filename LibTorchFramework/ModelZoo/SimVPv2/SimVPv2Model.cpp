@@ -64,11 +64,8 @@ BasicConv2dImpl::BasicConv2dImpl(int64_t in_channels, int64_t out_channels,
     
     AUTO_REGISTER_NEW_MODULE(norm, torch::nn::GroupNorm(torch::nn::GroupNormOptions(2, out_channels)));
     AUTO_REGISTER_NEW_MODULE(act, torch::nn::SiLU());
-
-    auto oldVal = TruncatedNormalInit::stdErr;
-    TruncatedNormalInit::stdErr = 0.02;
-    TruncatedNormalInit(*this);
-    TruncatedNormalInit::stdErr = oldVal;
+    
+    TruncatedNormalInit(*this, 0, 0.02);    
 }
 
 torch::Tensor BasicConv2dImpl::forward(const torch::Tensor& x)

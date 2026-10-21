@@ -2,11 +2,6 @@
 
 #include <Utils/Logger.h>
 
-double TruncatedNormalInit::mean = 0.0;
-double TruncatedNormalInit::stdErr = 1.0;
-double TruncatedNormalInit::a = -2.0;
-double TruncatedNormalInit::b = 2.0;
-
 
 double TruncatedNormalInit::norm_cdf(double x)
 {
@@ -27,16 +22,17 @@ void TruncatedNormalInit::trunc_normal(torch::Tensor tensor, double mean, double
 
     tensor.uniform_(2 * cdfA - 1, 2 * cdfB - 1);
     tensor.erfinv_();
-    tensor.mul_(stdErr * std::sqrt(2.0));
+    tensor.mul_(std * std::sqrt(2.0));
     tensor.add_(mean);
     tensor.clamp_(a, b);
 }
 
-void TruncatedNormalInit::weights_init(torch::nn::Module& m)
+void TruncatedNormalInit::weights_init(torch::nn::Module& m,
+    double mean, double std, double a, double b)
 {
     if (auto* conv = dynamic_cast<torch::nn::Conv2dImpl*>(&m))
     {
-        trunc_normal(conv->weight, mean, stdErr, a, b);
+        trunc_normal(conv->weight, mean, std, a, b);
         if (conv->bias.defined())
         {
             torch::nn::init::zeros_(conv->bias);
@@ -44,7 +40,7 @@ void TruncatedNormalInit::weights_init(torch::nn::Module& m)
     }
     else if (auto* linear = dynamic_cast<torch::nn::LinearImpl*>(&m))
     {
-        trunc_normal(linear->weight, mean, stdErr, a, b);
+        trunc_normal(linear->weight, mean, std, a, b);
         if (linear->bias.defined())
         {
             torch::nn::init::zeros_(linear->bias);
@@ -52,9 +48,10 @@ void TruncatedNormalInit::weights_init(torch::nn::Module& m)
     }
 }
 
-TruncatedNormalInit::TruncatedNormalInit(torch::nn::Module& model)
+TruncatedNormalInit::TruncatedNormalInit(torch::nn::Module& model, 
+    double mean, double std, double a, double b)
 {
-    model.apply([](torch::nn::Module& m){
-        TruncatedNormalInit::weights_init(m);
+    model.apply([mean, std, a, b](torch::nn::Module& m){
+        TruncatedNormalInit::weights_init(m, mean, std, a, b);
     });
 }

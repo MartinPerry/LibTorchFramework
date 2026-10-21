@@ -2,19 +2,7 @@
 
 #include <cmath>
 
-namespace
-{
-
-    void truncNormal(
-        torch::Tensor tensor,
-        double std = 0.02)
-    {
-        // TODO: Replace with a true truncated normal implementation if available.
-        torch::NoGradGuard guard;
-        tensor.normal_(0.0, std);
-    }
-
-}
+#include "../../core/Modules/WeightsInit/TruncatedNormalInit.h"
 
 WindowAttention3DImpl::WindowAttention3DImpl(
     int64_t dim,
@@ -91,9 +79,7 @@ WindowAttention3DImpl::WindowAttention3DImpl(
 
     relativePositionIndex = relativeCoords.sum(-1);
 
-    register_buffer(
-        "relative_position_index",
-        relativePositionIndex);
+    relativePositionIndex = register_buffer("relative_position_index", relativePositionIndex);
 
     qkv = register_module(
         "qkv",
@@ -116,7 +102,8 @@ WindowAttention3DImpl::WindowAttention3DImpl(
         "softmax",
         torch::nn::Softmax(-1));
 
-    truncNormal(relativePositionBiasTable, 0.02);
+    TruncatedNormalInit::trunc_normal(relativePositionBiasTable, 0.0, 0.02);
+    //truncNormal(relativePositionBiasTable, 0.02);
 }
 
 torch::Tensor WindowAttention3DImpl::forward(
