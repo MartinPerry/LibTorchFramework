@@ -24,8 +24,8 @@ bool SnapshotSaver::Save(const std::variant<std::string, std::shared_ptr<Pretrai
 
     if (std::holds_alternative<std::shared_ptr<PretrainedManager>>(pathVariant))
     {
-        std::shared_ptr<PretrainedManager> pm = std::get<std::shared_ptr<PretrainedManager>>(pathVariant);
-        if (pm == nullptr)
+        std::shared_ptr<PretrainedManager> pm = std::get<std::shared_ptr<PretrainedManager>>(pathVariant);        
+        if ((pm == nullptr) || (pm->IsSavingEnabled() == false))
         {
             MY_LOG_INFO("No trained model will be saved");
             return false;
@@ -104,7 +104,7 @@ void SnapshotSaver::SaveParametersSerialized(const std::string& path)
 {
     
     torch::serialize::OutputArchive archive;
-
+    
     // Save named parameters       
     for (const auto& p : model->named_parameters())
     {

@@ -22,6 +22,9 @@ public:
     // Config methods
     std::string GetModelDir() const;
     
+    bool IsSavingEnabled() const;
+    bool IsLoadingEnabled() const;
+
     void EnableTrainingSnapshot(bool val);
     void EnableSaving(bool val);
     void EnableLoading(bool val, std::shared_ptr<FreezeInfo> freeze = nullptr);

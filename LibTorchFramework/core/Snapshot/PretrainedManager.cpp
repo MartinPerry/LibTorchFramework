@@ -86,6 +86,16 @@ std::string PretrainedManager::GetModelDir() const
     return modelsDir.string();
 }
 
+bool PretrainedManager::IsSavingEnabled() const
+{
+    return this->saveModelEnabled;
+}
+
+bool PretrainedManager::IsLoadingEnabled() const
+{
+    return this->loadModelEnabled;
+}
+
 void PretrainedManager::EnableTrainingSnapshot(bool val) 
 { 
     trainingSnapshot = val; 
@@ -199,16 +209,11 @@ std::string PretrainedManager::BuildFilePathForSave(const AbstractModel* model,
 
 std::string PretrainedManager::CreatePreTrainedWeightsPath(const AbstractModel* model)
 {
-    return BuildFilePathForSave(model, "", "bin", std::nullopt);
+    return this->BuildFilePathForSave(model, "", "bin", std::nullopt);
 }
 
 std::optional<std::string> PretrainedManager::GetPreTrainedWeightsPath(const AbstractModel* model) const
-{
-    if (!loadModelEnabled)
-    {
-        return std::nullopt;
-    }
-
+{   
     std::string fileName = this->GetModelFileName(model);
     std::filesystem::path finalPath = modelsDir / (fileName + ".bin");
 
@@ -265,6 +270,11 @@ std::optional<std::string> PretrainedManager::GetLatestTimeStampFile(const std::
     {
         std::string name = entry.path().filename().string();
         if (name.find(patternPrefix) != 0)
+        {
+            continue;
+        }
+
+        if (name.ends_with(".bin") == false)
         {
             continue;
         }

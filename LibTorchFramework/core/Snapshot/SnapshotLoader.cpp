@@ -29,6 +29,11 @@ bool SnapshotLoader::Load(const std::variant<std::string, std::shared_ptr<Pretra
     if (std::holds_alternative<std::shared_ptr<PretrainedManager>>(pathVariant))
     {
         std::shared_ptr<PretrainedManager> pm = std::get<std::shared_ptr<PretrainedManager>>(pathVariant);
+        if ((pm == nullptr) || (pm->IsLoadingEnabled() == false))
+        {
+            return false;
+        }
+
         path = pm->GetPreTrainedWeightsPath(model).value_or("");
         fi = pm->freezeInfo; // copy freeze info
     }
@@ -53,7 +58,7 @@ bool SnapshotLoader::Load(const std::variant<std::string, std::shared_ptr<Pretra
         this->LoadParametersFromDict(path);        
     }
                 
-    model->SetFrozen(freezeInfo);
+    model->SetFrozen(fi);
 
     return true;
 }

@@ -4,6 +4,7 @@
 
 #include <Compression/3rdParty/gif_write.h>
 #include <RasterData/Image2d.h>
+#include <RasterData/Colors/ColorSpace.h>
 
 #include "./PredictionEvaluators.h"
 
