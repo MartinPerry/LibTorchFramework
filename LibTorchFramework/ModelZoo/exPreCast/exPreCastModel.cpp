@@ -5,6 +5,8 @@
 #include <iostream>
 #include <optional>
 
+#include "../../core/Modules/WeightsInit/TruncatedNormalInit.h"
+
 #include "../../InputProcessing/DataLoaderData.h"
 
 #include "../../Utils/TorchUtils.h"
@@ -209,12 +211,42 @@ exPreCastModel::exPreCastModel(
             )
     );
 
-    
+    this->InitWeights(*this);
 }
 
 const char* exPreCastModel::GetName() const
 {
     return "exPreCastModel";
+}
+
+void exPreCastModel::InitWeights(torch::nn::Module& m)
+{
+    torch::NoGradGuard noGrad;
+
+    for (const auto& child : m.modules(/* include_self = */ true))
+    {
+        if (auto linear = std::dynamic_pointer_cast<torch::nn::LinearImpl>(child))
+        {
+            TruncatedNormalInit::trunc_normal(linear->weight, 0.0, 0.02);
+
+            if (linear->bias.defined())
+            {
+                torch::nn::init::constant_(linear->bias, 0.0);
+            }
+        }
+        else if (auto layerNorm = std::dynamic_pointer_cast<torch::nn::LayerNormImpl>(child))
+        {
+            if (layerNorm->bias.defined())
+            {
+                torch::nn::init::constant_(layerNorm->bias, 0.0);
+            }
+
+            if (layerNorm->weight.defined())
+            {
+                torch::nn::init::constant_(layerNorm->weight, 1.0);
+            }
+        }
+    }
 }
 
 torch::Tensor exPreCastModel::forward(torch::Tensor xWithFlow)

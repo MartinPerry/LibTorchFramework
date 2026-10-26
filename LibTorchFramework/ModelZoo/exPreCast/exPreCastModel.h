@@ -90,6 +90,9 @@ namespace ModelZoo {
             //DetailAwareFusion fusion{ nullptr };
             OpticalForecastEncoder opticalEncoder{ nullptr };
             torch::nn::ModuleList motionFusions{ nullptr };
+
+
+            void InitWeights(torch::nn::Module& m);
         };
     }
 }
