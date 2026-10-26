@@ -223,7 +223,7 @@ void exPreCastModel::InitWeights(torch::nn::Module& m)
 {
     torch::NoGradGuard noGrad;
 
-    for (const auto& child : m.modules(/* include_self = */ true))
+    for (const auto& child : m.modules(false))
     {
         if (auto linear = std::dynamic_pointer_cast<torch::nn::LinearImpl>(child))
         {
