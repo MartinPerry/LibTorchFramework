@@ -59,14 +59,16 @@ void SnapshotSaver::SaveParametersInfo(const std::string& path)
     for (const auto& p : model->named_parameters())
     {
         const auto& t = p.value();
-
+        
         auto tmp = t.detach().to(torch::kCPU, torch::kFloat32);
 
-        data += std::format("{}: version={}, mean={}, std={}, min={}, max={}\n",            
+        data += std::format("{}: ver={}, grad={}, numel={}, mean={}, std={}, min={}, max={}\n",            
             p.key().c_str(),
             static_cast<long long>(t._version()),
+            t.requires_grad() ? "1" : "0",
+            tmp.numel(),
             tmp.mean().item<double>(),
-            tmp.std().item<double>(),
+            (tmp.numel() > 1) ? std::to_string(tmp.std().item<double>()) : "x",
             tmp.min().item<double>(),
             tmp.max().item<double>()            
         );
@@ -80,11 +82,13 @@ void SnapshotSaver::SaveParametersInfo(const std::string& path)
 
         auto tmp = t.detach().to(torch::kCPU, torch::kFloat32);
 
-        data += std::format("{}: version={}, mean={}, std={}, min={}, max={}\n",
+
+        data += std::format("{}: ver={}, numel={}, mean={}, std={}, min={}, max={}\n",
             p.key().c_str(),
             static_cast<long long>(t._version()),
             tmp.mean().item<double>(),
-            tmp.std().item<double>(),
+            tmp.numel(),
+            (tmp.numel() > 1) ? std::to_string(tmp.std().item<double>()) : "x",
             tmp.min().item<double>(),
             tmp.max().item<double>()
         );

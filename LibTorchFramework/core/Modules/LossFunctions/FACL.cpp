@@ -74,8 +74,8 @@ torch::Tensor FACLImpl::forward(const torch::Tensor& predIn, const torch::Tensor
         gt = torch::sigmoid(gt);
     }
 
-    torch::Tensor fftPred = torch::fft::fftn(pred, {}, { -2, -1 }, "ortho");
-    torch::Tensor fftGt = torch::fft::fftn(gt, {}, { -2, -1 }, "ortho");
+    torch::Tensor fftPred = torch::fft::fftn(pred, {}, { -1, -2 }, "ortho");
+    torch::Tensor fftGt = torch::fft::fftn(gt, {}, { -1, -2 }, "ortho");
 
     double prob = GetThreshold();
 

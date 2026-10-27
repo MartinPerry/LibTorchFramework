@@ -20,10 +20,10 @@ public:
 
     bool Save(const std::variant<std::string, std::shared_ptr<PretrainedManager>>& path);
 
-private:
-
     void SaveParametersInfo(const std::string& path);
 
+private:
+    
     void SaveParametersSerialized(const std::string& path);
     void SaveParametersAsDict(const std::string& path);        
 

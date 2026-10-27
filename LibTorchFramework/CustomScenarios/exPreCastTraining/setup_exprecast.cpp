@@ -296,6 +296,9 @@ namespace CustomScenarios::exPreCastTraining
 
 			auto m = std::make_shared<ModelZoo::exPreCast::exPreCastModel>();
 
+			SnapshotSaver snp(m.get());
+ 			
+
 			if (settings.snapshot.weights.ends_with("safetensors"))
 			{
 				SafeTensorLoader tl;
@@ -313,7 +316,7 @@ namespace CustomScenarios::exPreCastTraining
 
 			m->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(1e-3).weight_decay(0.0));
 			
-			//m->CreateScheduler<WarmupCosineScheduler>(settings.training.epochCount, 1e-3);
+			m->CreateScheduler<WarmupCosineScheduler>(settings.training.epochCount, 1e-3);
 
 			sets.pretrainedManager = std::make_shared<PretrainedManager>(settings.snapshot.path);
 			sets.pretrainedManager->EnableTrainingSnapshot(true);
@@ -326,9 +329,10 @@ namespace CustomScenarios::exPreCastTraining
 
 			SnapshotLoader loader(m.get());
 			loader.Load(sets.pretrainedManager);
-
-			//todo - specify device
+			
 			m->to(sets.device);
+
+			snp.SaveParametersInfo("D://papa.info");
 
 			return m;
 		};
