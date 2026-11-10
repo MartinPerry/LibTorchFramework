@@ -299,7 +299,7 @@ torch::Tensor DeformConv3dImpl::forward(
         int N = x.size(0);
         int64_t ks = kernelSize[0] * kernelSize[1] * kernelSize[2];
         auto [w, h, d] = this->CalcOutputSize(x);
-        offset = torch::zeros({ N, 3 * ks, d, h, w });
+        offset = torch::zeros({ N, 3 * ks, d, h, w }, x.options());
     }
 
     if (mask.has_value() == false)

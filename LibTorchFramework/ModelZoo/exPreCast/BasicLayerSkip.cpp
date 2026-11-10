@@ -64,6 +64,10 @@ BasicLayerSkipImpl::BasicLayerSkipImpl(
     {
         subsample = register_module("subsample", CubicDualUpsample(dim, subsampleScale));        
     }
+    else 
+    {
+        subsample = register_module("subsample", torch::nn::Identity());
+    }
 }
 
 
@@ -133,9 +137,7 @@ torch::Tensor BasicLayerSkipImpl::computeMask(
 }
 
 
-std::tuple<torch::Tensor, torch::Tensor>
-BasicLayerSkipImpl::forward(
-    torch::Tensor x)
+std::tuple<torch::Tensor, torch::Tensor> BasicLayerSkipImpl::forward(torch::Tensor x)
 {
     const int64_t B = x.size(0);
     //const int64_t C = x.size(1);
@@ -166,6 +168,7 @@ BasicLayerSkipImpl::forward(
     x = x.view({ B, D, H, W, -1 });
 
     auto xSkip = x.permute({ 0, 4, 1, 2, 3}).contiguous();
+
 
     if (subsample.is_empty() == false)
     {

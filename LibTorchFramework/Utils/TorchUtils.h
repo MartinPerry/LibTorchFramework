@@ -66,8 +66,8 @@ public:
 
     template <typename T>
     static T CastAnyModule(torch::nn::AnyModule m);
-
-    static void TensorPrintInfo(const char* desc, const at::Tensor& t);
+    
+    static void TensorPrintInfo(const std::string& name, const torch::Tensor& x);
     
 };
 

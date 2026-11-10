@@ -71,6 +71,9 @@ void Trainer::CheckGradients()
     int zeroGrad = 0;
     int nonzeroGrad = 0;
 
+    std::vector<std::string> zeroGradLayers;
+    std::vector<std::string> nonZeroGradLayers;
+
     for (const auto& item : model->named_parameters())
     {
         const auto& name = item.key();
@@ -86,18 +89,30 @@ void Trainer::CheckGradients()
         const double gradNorm =
             p.grad().detach().norm().item<double>();
 
-        if (gradNorm == 0.0)
+        if (std::isfinite(gradNorm) == false)
+        {
+            MY_LOG_ERROR("%s - INVALID GRADIENT (norm=%f)", name.c_str(), gradNorm);
+        }
+        else if (gradNorm == 0.0)
         {
             zeroGrad++;
+            zeroGradLayers.emplace_back(name);
         }
         else
         {
             nonzeroGrad++;
+            nonZeroGradLayers.emplace_back(name);
         }
     }
 
     MY_LOG_INFO("Gradients: no grad=%d, zero grad=%d, nonzero grad=%d", 
         noGrad, zeroGrad, nonzeroGrad);    
+
+    MY_LOG_ERROR("Zero gradients:");
+    for (const auto& n : zeroGradLayers)
+    {
+        MY_LOG_ERROR("%s", n.c_str());
+    }
 }
 
 //============================================================================================

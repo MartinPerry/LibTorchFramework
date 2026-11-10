@@ -34,5 +34,6 @@ torch::Tensor PatchMergingImpl::forward(torch::Tensor x)
     x = norm->forward(x);
     x = reduction->forward(x);
     
+
     return x;
 }

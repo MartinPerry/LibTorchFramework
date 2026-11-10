@@ -23,43 +23,38 @@ bool TorchUtils::IsBf16Supported()
 /// </summary>
 /// <param name="desc"></param>
 /// <param name="t"></param>
-void TorchUtils::TensorPrintInfo(const char* desc, const at::Tensor& t)
+void TorchUtils::TensorPrintInfo(const std::string& name, const torch::Tensor& x)
 {
-	auto tmp = t.sizes();
+	auto tmp = x.sizes();
 
-	std::string res = "{";
+	std::string shapeInfo = "[";
 	for (size_t i = 0; i < tmp.size(); i++)
 	{
-		res += std::to_string(tmp[i]);
-		res += ", ";
+		shapeInfo += std::to_string(tmp[i]);
+		shapeInfo += ", ";
 	}
 
-	if (res.size() > 2)
+	if (shapeInfo.size() > 2)
 	{
-		res.pop_back();
-		res.pop_back();
+		shapeInfo.pop_back();
+		shapeInfo.pop_back();
 	}
-	res += "}";
+	shapeInfo += "]";
 
-	std::string info = desc;
-	info += ": ";
-	info += res.c_str();
-	info += ", ";
-
-	if (const auto& g = t.grad_fn())
+	std::string gradName = "";
+	if (const auto& g = x.grad_fn())
 	{
-		//crash on gName when freeing
-		info += "grad name: ";
-		info += g->name();
-		info += ", ";
-		//std::cout << "Grad: " << gName << std::endl;
-	}
-	else if (t.requires_grad())
-	{
-		info += "requires_grad";
-		info += ", ";
+		//crash on gName when freeing		
+		gradName = g->name();				
 	}
 
-	MY_LOG_INFO("%s", info.c_str());
+	MY_LOG_INFO(
+		"%s | requires_grad=%d | grad_fn=%s | dtype=%s | shape=%s",
+		name.c_str(),
+		x.requires_grad(),
+		x.grad_fn() ? gradName.c_str() : "-",
+		std::string(x.dtype().name()).c_str(),
+		shapeInfo.c_str()
+	);
 }
 

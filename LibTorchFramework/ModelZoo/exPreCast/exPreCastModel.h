@@ -1,7 +1,7 @@
 #ifndef EXPRECAST_MODEL_H
 #define EXPRECAST_MODEL_H
 
-
+#define MODIFIED
 
 #include <vector>
 #include <array>
@@ -86,10 +86,10 @@ namespace ModelZoo {
 
             torch::nn::Conv3d timeExtractor{ nullptr };       
 
-            
-            //DetailAwareFusion fusion{ nullptr };
+#ifdef MODIFIED            
             OpticalForecastEncoder opticalEncoder{ nullptr };
             torch::nn::ModuleList motionFusions{ nullptr };
+#endif
 
 
             void InitWeights(torch::nn::Module& m);

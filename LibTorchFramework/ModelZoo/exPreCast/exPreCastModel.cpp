@@ -56,12 +56,12 @@ exPreCastModel::exPreCastModel(
     encoder(register_module("encoder", torch::nn::ModuleList())),
     decoder(register_module("decoder", torch::nn::ModuleList()))
 {
-
-    //fusion = register_module("fusion", DetailAwareFusion(1));
-
+    
+#ifdef MODIFIED
     opticalEncoder = register_module("optical_encoder", OpticalForecastEncoder(1, 32, 64));
 
     motionFusions = register_module("motion_fusions", torch::nn::ModuleList());
+#endif
 
 
     //
@@ -183,7 +183,9 @@ exPreCastModel::exPreCastModel(
         
         const int64_t stageChannels = embedDim * (1LL << i);
 
+#ifdef MODIFIED
         motionFusions->push_back(MotionConditionedFusion(stageChannels, 64));
+#endif
     }
 
 
@@ -254,19 +256,22 @@ torch::Tensor exPreCastModel::forward(torch::Tensor xWithFlow)
   
     auto chunks = xWithFlow.chunk(2, 1);
 
-    auto x = chunks[0]; // [B, C, 1, H, W]
-    auto predOptFlow = chunks[1]; // [B, C, 1, H, W]
+    auto x = chunks[0]; // [B, C, 1, H, W]    
 
        
     //update loaded shape to match exPrecast input [B, 1, SeqLen, W, H]
     x = x.squeeze(2);
     x = x.unsqueeze(1);
 
+#ifdef MODIFIED
+    auto predOptFlow = chunks[1]; // [B, C, 1, H, W]
+
     predOptFlow = predOptFlow.squeeze(2);
     predOptFlow = predOptFlow.unsqueeze(1);
 
     // Extract optical forecast features once.
     auto opticalFeatures = opticalEncoder->forward(predOptFlow);
+#endif
 
     // Main exPreCast encoder.
     //[4, 1, 12, 256, 256] => [4, 96, 6, 64, 64]
@@ -276,35 +281,31 @@ torch::Tensor exPreCastModel::forward(torch::Tensor xWithFlow)
 
 
     std::vector<torch::Tensor> skips;
-    
-    
+        
+    // Encoder
     for (size_t i = 0; i < encoder->size(); i++)
-    //for (auto& module : *encoder)
-    {
-        auto result = encoder[i]->as<BasicLayerSkipImpl>()->forward(x);
-                
-        //auto layer = std::dynamic_pointer_cast<BasicLayerSkipImpl>(module.ptr());
-        //auto result = layer->forward(x);
-                
-        x = std::get<0>(result);
+    {        
+        auto [next, skip] = encoder[i]->as<BasicLayerSkipImpl>()->forward(x);
+                                
+        x = next;
 
         if (i < encoder->size() - 1)
         {
-            skips.push_back(std::get<1>(result));
+            skips.push_back(skip);
         }
     }
 
-    // Bottleneck upsampling.
+    // Bottleneck upsampling
     x = x.permute({ 0, 2, 3, 4, 1 }).contiguous();
     x = bottleneckUpscale->forward(x);
     x = x.permute({ 0, 4, 1, 2, 3}).contiguous();
 
-    // Decoder.
+    // Decoder
     const size_t fusionStart = decoder->size() > 2 ? decoder->size() - 2 : 0;
 
     for (size_t i = 0; i < decoder->size(); ++i)
     {        
-        auto skip = skips[skips.size() - i - 1];
+        auto skip = skips[skips.size() - 1 - i];
 
         if (skipConnection == "add")
         {
@@ -316,21 +317,21 @@ torch::Tensor exPreCastModel::forward(torch::Tensor xWithFlow)
             x = torch::cat({ x, skip }, 2);
         }
 
+#ifdef MODIFIED
         // Fuse only at the final two decoder resolutions.
         // The optical features are resized internally to match x.
         if (i >= fusionStart)
         {
             x = motionFusions[i]->as<MotionConditionedFusionImpl>()->forward(x, opticalFeatures);
         }
+#endif
 
-        auto result = decoder[i]->as<BasicLayerSkipImpl>()->forward(x);
-        //auto layer = std::dynamic_pointer_cast<BasicLayerSkipImpl>(decoder[i].ptr());
-        //auto result = layer->forward(x);
+        auto [next, _] = decoder[i]->as<BasicLayerSkipImpl>()->forward(x);
 
-        x = std::get<0>(result);
+        x = next;
     }
 
-    // Original output projection.
+    // Original output projection
     x = patchExpand3D->forward(x);
 
 
@@ -344,14 +345,7 @@ torch::Tensor exPreCastModel::forward(torch::Tensor xWithFlow)
     //update result shape back to match input shape
     x = x.squeeze(1);
     x = x.unsqueeze(2);
-
-    //x = fusion(x, predOptFlow);
-
-    //if (x.isnan().any().item<bool>())
-    //{
-    //    printf("nan");
-    //}
-   
+      
     return x;
 }
 

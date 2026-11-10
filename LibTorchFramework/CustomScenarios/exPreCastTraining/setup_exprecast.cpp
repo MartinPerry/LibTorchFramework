@@ -165,7 +165,7 @@ namespace CustomScenarios::exPreCastTraining
 			ilw->InitLoaders<MeteonetInputLoader, std::string>(
 				{
 					{ RunMode::TRAIN, loaderSets },
-					{ RunMode::TEST, loaderSets }
+					//{ RunMode::TEST, loaderSets }
 				},
 				settings.dataset.path, prevCount, futureCount, settings.dataset
 			);
@@ -181,7 +181,7 @@ namespace CustomScenarios::exPreCastTraining
 		}
 		
 		//-------
-		
+		/*
 		// test
 		auto loader = ilw->GetLoader<MeteonetInputLoader>(RunMode::TRAIN);
 		
@@ -287,7 +287,7 @@ namespace CustomScenarios::exPreCastTraining
 			loaderTest->Load();
 			loaderTest->PrecalcVectorField();
 		}
-		
+		*/
 		//return;
 		
 		//-------

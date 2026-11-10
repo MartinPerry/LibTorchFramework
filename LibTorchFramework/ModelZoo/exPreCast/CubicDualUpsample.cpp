@@ -17,16 +17,16 @@ CubicDualUpsampleImpl::CubicDualUpsampleImpl(
     pixelShuffle = register_module("pixel_shuffle", PixelShuffle3D(scale));
 
     convP1 = register_module("conv_p1",
-        CreateDeformConv3d(dim, (scaleFactor / 2) * dim, kernelSize, strideSize, padding, false));
+        CreateDefaultConv3d(dim, (scaleFactor / 2) * dim, kernelSize, strideSize, padding, false));
             
     convP2 = register_module("conv_p2",
-        CreateDeformConv3d(dim / 2, dim / 2, kernelSize, strideSize, padding, false));
+        CreateDefaultConv3d(dim / 2, dim / 2, kernelSize, strideSize, padding, false));
 
     convB1 = register_module("conv_b1",
-        CreateDeformConv3d(dim, dim, kernelSize, strideSize, padding, true));
+        CreateDefaultConv3d(dim, dim, kernelSize, strideSize, padding, true));
     
     convB2 = register_module("conv_b2",
-        CreateDeformConv3d(dim, dim / 2, kernelSize, strideSize, padding, false));
+        CreateDefaultConv3d(dim, dim / 2, kernelSize, strideSize, padding, false));
         
     convMerge = register_module("conv_merge", 
         CreateDefaultConv3d(dim, dim / 2, kernelSize, strideSize, padding, false));
