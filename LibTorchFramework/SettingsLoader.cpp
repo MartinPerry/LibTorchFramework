@@ -114,5 +114,6 @@ void SettingsLoader::LoadDashboard(const JsonCmdDefaults& json, DashboardSetting
 {
     settings.url = json.GetValue<std::string>("dashboard.url", settings.url);
     settings.token = json.GetValue<std::string>("dashboard.token", settings.token);
+    settings.runId = json.GetValue<std::string>("dashboard.run_id", settings.runId);
     settings.enableImageUpload = json.GetValue<bool>("dashboard.image_upload_enabled", settings.enableImageUpload);
 }

@@ -108,7 +108,14 @@ namespace CustomScenarios::exPreCastTraining
 			MetricsUploader::UPLOAD_TOKEN = settings.dashboard.token;
 			
 			dashboard = std::make_shared<MetricsUploader>();
-			dashboard->SetRunId("exprecast_" + std::to_string(time(0)));
+			if (settings.dashboard.runId == "")
+			{
+				dashboard->SetRunId("exprecast_" + std::to_string(time(0)));
+			}
+			else 
+			{
+				dashboard->SetRunId(settings.dashboard.runId);
+			}
 			dashboard->SetImageUploadEnabled(settings.dashboard.enableImageUpload);
 		}
 		
@@ -165,7 +172,7 @@ namespace CustomScenarios::exPreCastTraining
 			ilw->InitLoaders<MeteonetInputLoader, std::string>(
 				{
 					{ RunMode::TRAIN, loaderSets },
-					//{ RunMode::TEST, loaderSets }
+					{ RunMode::TEST, loaderSets }
 				},
 				settings.dataset.path, prevCount, futureCount, settings.dataset
 			);
@@ -181,7 +188,7 @@ namespace CustomScenarios::exPreCastTraining
 		}
 		
 		//-------
-		/*
+		
 		// test
 		auto loader = ilw->GetLoader<MeteonetInputLoader>(RunMode::TRAIN);
 		
@@ -287,7 +294,7 @@ namespace CustomScenarios::exPreCastTraining
 			loaderTest->Load();
 			loaderTest->PrecalcVectorField();
 		}
-		*/
+		
 		//return;
 		
 		//-------
@@ -332,7 +339,9 @@ namespace CustomScenarios::exPreCastTraining
 			
 			m->to(sets.device);
 
+#ifdef _WIN32
 			snp.SaveParametersInfo("D://papa.info");
+#endif
 
 			return m;
 		};

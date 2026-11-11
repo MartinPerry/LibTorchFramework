@@ -99,6 +99,7 @@ struct DashboardSettings
 {
     std::string url;
     std::string token;  
+    std::string runId;
     bool enableImageUpload = false;
 };
 

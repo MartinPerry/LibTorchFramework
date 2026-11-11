@@ -66,6 +66,9 @@ DeformConv2dImpl::DeformConv2dImpl(
             .bias(true)
         );
         register_module("convOffsetFromX", convOffsetFromX);
+
+        torch::nn::init::zeros_(convOffsetFromX->weight);
+        torch::nn::init::zeros_(convOffsetFromX->bias);
     }
     else
     {
@@ -78,6 +81,9 @@ DeformConv2dImpl::DeformConv2dImpl(
             .bias(true)
         );
         register_module("convDirs", convDirs);
+
+        torch::nn::init::zeros_(convDirs->weight);
+        torch::nn::init::zeros_(convDirs->bias);
     }
 
     if (useMask)
@@ -141,7 +147,7 @@ torch::Tensor DeformConv2dImpl::forward(
         else
         {
             // Fallback
-            mask = torch::zeros_like(x);
+            mask = torch::ones_like(x);
         }
     }
 
@@ -172,10 +178,10 @@ torch::Tensor DeformConv2dImpl::forward(torch::Tensor x)
 DeformConv3dImpl::DeformConv3dImpl(
     int64_t in_channels,
     int64_t out_channels,
-    std::array<int64_t, 3> kernelSizes, //w, h, d
-    std::array<int64_t, 3> strides,   //w, h, d
-    std::array<int64_t, 3> paddings,  //w, h, d
-    std::array<int64_t, 3> dilations, //w, h, d     
+    std::array<int64_t, 3> kernelSizes, //d, h, w
+    std::array<int64_t, 3> strides,   //d, h, w
+    std::array<int64_t, 3> paddings,  //d, h, w
+    std::array<int64_t, 3> dilations, //d, h, w 
     bool useMask,
     bool useAutoOffset) :
     in_channels(in_channels),
@@ -222,6 +228,9 @@ DeformConv3dImpl::DeformConv3dImpl(
             .bias(true)
         );
         convOffsetFromX = register_module("convOffsetFromX", convOffsetFromX);
+
+        torch::nn::init::zeros_(convOffsetFromX->weight);
+        torch::nn::init::zeros_(convOffsetFromX->bias);
     }
     else
     {
@@ -234,6 +243,9 @@ DeformConv3dImpl::DeformConv3dImpl(
             .bias(true)
         );
         convDirs = register_module("convDirs", convDirs);
+
+        torch::nn::init::zeros_(convDirs->weight);
+        torch::nn::init::zeros_(convDirs->bias);
     }
 
     if (useMask)
@@ -273,7 +285,7 @@ std::array<int64_t, 3> DeformConv3dImpl::CalcOutputSize(torch::Tensor x) const
     int h = (x.size(3) + 2 * padding[1] - dilation[1] * (kernelSize[1] - 1) - 1) / stride[1] + 1;
     int w = (x.size(4) + 2 * padding[0] - dilation[0] * (kernelSize[0] - 1) - 1) / stride[0] + 1;
 
-    return { w, h, d };
+    return { d, h, w };
 }
 
 torch::Tensor DeformConv3dImpl::forward(
@@ -298,7 +310,7 @@ torch::Tensor DeformConv3dImpl::forward(
         // Fallback
         int N = x.size(0);
         int64_t ks = kernelSize[0] * kernelSize[1] * kernelSize[2];
-        auto [w, h, d] = this->CalcOutputSize(x);
+        auto [d, h, w] = this->CalcOutputSize(x);
         offset = torch::zeros({ N, 3 * ks, d, h, w }, x.options());
     }
 
@@ -314,8 +326,8 @@ torch::Tensor DeformConv3dImpl::forward(
             // Fallback
             int N = x.size(0);
             int64_t ks = kernelSize[0] * kernelSize[1] * kernelSize[2];
-            auto [w, h, d] = this->CalcOutputSize(x);
-            mask = torch::zeros({ N, ks, d, h, w }, x.options());
+            auto [d, h, w] = this->CalcOutputSize(x);
+            mask = torch::ones({ N, ks, d, h, w }, x.options());
         }
     }
     
