@@ -93,7 +93,7 @@ void Runner::Run(std::shared_ptr<InputLoader> loader)
     else 
     {
         int epochId = 0;
-        while (this->processedBatchesCount < sets.iterCount)
+        while (this->processedBatchesCount < static_cast<size_t>(sets.iterCount))
         {
             MY_LOG_INFO("Running iteration: %d / %d", this->processedBatchesCount, sets.iterCount);
 
@@ -111,7 +111,7 @@ void Runner::RunEpoch(DataLoaderType& dl, int epochId, int batchesCount)
 {
     if (sets.iterType == Settings::IterationType::STEPS)
     {
-        if (this->processedBatchesCount > sets.iterCount)
+        if (this->processedBatchesCount > static_cast<size_t>(sets.iterCount))
         {
             return;
         }
@@ -143,7 +143,7 @@ void Runner::RunEpoch(DataLoaderType& dl, int epochId, int batchesCount)
 
         if (sets.iterType == Settings::IterationType::STEPS)
         {
-            if (this->processedBatchesCount > sets.iterCount)
+            if (this->processedBatchesCount > static_cast<size_t>(sets.iterCount))
             {
                 break;
             }

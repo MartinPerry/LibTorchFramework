@@ -179,7 +179,7 @@ void TrainingHelper::Run(std::shared_ptr<InputLoadersWrapper> loaders)
     else
     {
         int epochId = 0;
-        while (train->GetProcessedBatchesCount() < sets.iterCount)
+        while (train->GetProcessedBatchesCount() < static_cast<size_t>(sets.iterCount))
         {
             MY_LOG_INFO("Running iteration: %d / %d", train->GetProcessedBatchesCount(), sets.iterCount);
 

@@ -1,7 +1,7 @@
 #ifndef EXPRECAST_MODEL_H
 #define EXPRECAST_MODEL_H
 
-#define MODIFIED
+//#define MODIFIED
 
 #include <vector>
 #include <array>
