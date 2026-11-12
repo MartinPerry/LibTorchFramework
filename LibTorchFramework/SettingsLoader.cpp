@@ -59,7 +59,16 @@ ModelSettings SettingsLoader::Load(JsonCmdDefaults& json)
 void SettingsLoader::LoadTraining(const JsonCmdDefaults& json, TrainingSettings& settings)
 {
     settings.enabled = json.GetValue<bool>("training.enabled", settings.enabled);
-    settings.epochCount = json.GetValue<int>("training.epoch_count", settings.epochCount);
+    if (json.IsKeySet("training.steps_count"))
+    {
+        settings.iterCount = json.GetValue<int>("training.steps_count", settings.iterCount);
+        settings.iterType = Settings::IterationType::STEPS;
+    }
+    else 
+    {
+        settings.iterCount = json.GetValue<int>("training.epoch_count", settings.iterCount);
+        settings.iterType = Settings::IterationType::EPOCH;
+    }
     settings.numWorkers = json.GetValue<int>("training.num_workers", settings.numWorkers);
     settings.autocast = json.GetValue<bool>("training.autocast", settings.autocast);
     settings.batchSize = json.GetValue<int>("training.batch_size", settings.batchSize);

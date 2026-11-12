@@ -16,13 +16,20 @@ class MetricsDefault;
 
 struct Settings
 {
+	enum class IterationType 
+	{
+		EPOCH, //each epoch process all batches
+		STEPS //run until processed number of batches < iterCount
+	};
+
 	using LossFnCallback = std::function<torch::Tensor(const std::vector<torch::Tensor>& output, torch::Tensor target)>;
 	using MetricsInitCallback = std::function<std::shared_ptr<MetricsDefault>()>;
 	using GradientClippingCallback = std::function<double(const torch::autograd::variable_list& params)>;
 
 	torch::DeviceType device = torch::kCPU;
 
-	int epochCount = 10;
+	IterationType iterType = IterationType::EPOCH;
+	int iterCount = 10;
 
 	size_t batchSize = 3;
 

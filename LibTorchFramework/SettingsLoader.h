@@ -4,6 +4,8 @@
 #include <optional>
 #include <unordered_map>
 
+#include "./Settings.h"
+
 class CmdParser;
 class JsonCmdDefaults;
 
@@ -57,7 +59,8 @@ namespace
 struct TrainingSettings
 {
     bool enabled = true;
-    int epochCount = 100;
+    Settings::IterationType iterType = Settings::IterationType::EPOCH;
+    int iterCount = 100;
     int numWorkers = 4;
     bool autocast = false;
     int batchSize = 2;

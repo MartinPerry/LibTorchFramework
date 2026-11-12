@@ -77,13 +77,14 @@ auto TrainingHelper::BuildDataLoader(RunMode type,
 template <typename DatasetType>
 void TrainingHelper::Run(std::shared_ptr<InputLoadersWrapper> loaders)
 {
-    int bacthesCountTrain = 0;
-    int bacthesCountValid = 0;
-    int bacthesCountTest = 0;
+    
+    int batchesCountTrain = 0;
+    int batchesCountValid = 0;
+    int batchesCountTest = 0;
 
-    auto dlTrain = this->BuildDataLoader<DatasetType>(RunMode::TRAIN, loaders, bacthesCountTrain);
-    auto dlValid = this->BuildDataLoader<DatasetType>(RunMode::VALID, loaders, bacthesCountValid);
-    auto dlTest = this->BuildDataLoader<DatasetType>(RunMode::TEST, loaders, bacthesCountTest);
+    auto dlTrain = this->BuildDataLoader<DatasetType>(RunMode::TRAIN, loaders, batchesCountTrain);
+    auto dlValid = this->BuildDataLoader<DatasetType>(RunMode::VALID, loaders, batchesCountValid);
+    auto dlTest = this->BuildDataLoader<DatasetType>(RunMode::TEST, loaders, batchesCountTest);
           
 #ifdef LIBTORCH_FRAMEWORK_HAS_NCCL           
     std::shared_ptr<Runner> train = nullptr;
@@ -140,37 +141,82 @@ void TrainingHelper::Run(std::shared_ptr<InputLoadersWrapper> loaders)
         MY_LOG_INFO("Running on device: %s", tmp.c_str());
     }
 
-    
+    if (train)
+    {
+        train->OnStart();
+    }
+
     Runner runnerValid(RunMode::VALID, sets, model);
     Runner runnerTest(RunMode::TEST, sets, model);
 
-    for (int i = 0; i < sets.epochCount; i++)
+    runnerValid.OnStart();
+    runnerTest.OnStart();
+
+    if (sets.iterType == Settings::IterationType::EPOCH)
     {
-        MY_LOG_INFO("Running epoch: %d / %d", i, sets.epochCount);
-         
-        if (dlTrain)
+        for (int epochId = 0; epochId < sets.iterCount; epochId++)
         {
-            MY_LOG_INFO("Batches count (train): %d", bacthesCountTrain);
-            train->RunEpoch(dlTrain, i, bacthesCountTrain);
+            MY_LOG_INFO("Running epoch: %d / %d", epochId, sets.iterCount);
+
+            if (dlTrain)
+            {
+                MY_LOG_INFO("Batches count (train): %d", batchesCountTrain);
+                train->RunEpoch(dlTrain, epochId, batchesCountTrain);
+            }
+
+            if (dlValid)
+            {
+                MY_LOG_INFO("Batches count (valid): %d", batchesCountValid);
+                runnerValid.RunEpoch(dlValid, epochId, batchesCountValid);
+            }
+            else if (dlTest)
+            {
+                MY_LOG_INFO("Batches count (test): %d", batchesCountTest);
+                runnerTest.RunEpoch(dlTest, epochId, batchesCountTest);
+            }
         }
-        
-        if (dlValid)
+    }
+    else
+    {
+        int epochId = 0;
+        while (train->GetProcessedBatchesCount() < sets.iterCount)
         {
-            MY_LOG_INFO("Batches count (valid): %d", bacthesCountValid);
-            runnerValid.RunEpoch(dlValid, i, bacthesCountValid);
-        }
-        else if (dlTest)
-        {   
-            MY_LOG_INFO("Batches count (test): %d", bacthesCountTest);
-            runnerTest.RunEpoch(dlTest, i, bacthesCountTest);                        
+            MY_LOG_INFO("Running iteration: %d / %d", train->GetProcessedBatchesCount(), sets.iterCount);
+
+            if (dlTrain)
+            {
+                MY_LOG_INFO("Batches count (train): %d", batchesCountTrain);
+                train->RunEpoch(dlTrain, epochId, batchesCountTrain);
+            }
+
+            if (dlValid)
+            {
+                MY_LOG_INFO("Batches count (valid): %d", batchesCountValid);
+                runnerValid.RunEpoch(dlValid, epochId, batchesCountValid);
+            }
+            else if (dlTest)
+            {
+                MY_LOG_INFO("Batches count (test): %d", batchesCountTest);
+                runnerTest.RunEpoch(dlTest, epochId, batchesCountTest);
+            }
+
+            epochId++;
         }
     }
     
     if (dlTest)
     {
-        MY_LOG_INFO("Batches count (test): %d", bacthesCountTest);
-        runnerTest.RunEpoch(dlTest, 0, bacthesCountTest);
+        MY_LOG_INFO("Batches count (test): %d", batchesCountTest);
+        runnerTest.RunEpoch(dlTest, 0, batchesCountTest);
     }
+
+    if (train)
+    {
+        train->OnEnd();
+    }
+
+    runnerValid.OnEnd();
+    runnerTest.OnEnd();
 }
 
 #endif

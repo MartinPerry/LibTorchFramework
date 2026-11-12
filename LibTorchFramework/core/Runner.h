@@ -24,6 +24,11 @@ public:
     Runner(RunMode type, const Settings& sets, std::shared_ptr<AbstractModel> model);
     virtual ~Runner();
     
+    size_t GetProcessedBatchesCount() const;
+
+    void OnStart();
+    void OnEnd();
+
     template <typename DatasetType = DefaultDataset>
     void Run(std::shared_ptr<InputLoader> loader);
 
@@ -40,10 +45,11 @@ protected:
     
     std::shared_ptr<ProgressBar> pBar;
     
-    size_t batchIndex;
-    size_t dataLoaderBatchesCount;
+    size_t batchIndex; //index of batch within active epoch
+    size_t dataLoaderBatchesCount; //number of batches loaded from dataLoader for current run
+    size_t processedBatchesCount; //total number of processed bateches across all epochs
 
-    int activeEpochId;
+    int activeEpochId; //active epoch ID
 
     torch::Tensor ForwardAndLoss(DataLoaderData& batch);    
     torch::Tensor ForwardAndLoss(DataLoaderData& batch,
@@ -70,22 +76,47 @@ void Runner::Run(std::shared_ptr<InputLoader> loader)
 {
     loader->Load();
 
+    this->OnStart();
+
     int bacthesCount = 0;
     auto dl = loader->BuildDataLoader<DatasetType>(sets, bacthesCount);
-    
-    for (int i = 0; i < sets.epochCount; i++)
+        
+    if (sets.iterType == Settings::IterationType::EPOCH)
     {
-        MY_LOG_INFO("Running epoch: %d / %d", i, sets.epochCount);
+        for (int epochId = 0; epochId < sets.iterCount; epochId++)
+        {
+            MY_LOG_INFO("Running epoch: %d / %d", epochId, sets.iterCount);
 
-        //self._startTime("epoch")
-        this->RunEpoch(dl, i, bacthesCount);
-        //self._logTime("epoch")
+            this->RunEpoch(dl, epochId, bacthesCount);            
+        }
     }
+    else 
+    {
+        int epochId = 0;
+        while (this->processedBatchesCount < sets.iterCount)
+        {
+            MY_LOG_INFO("Running iteration: %d / %d", this->processedBatchesCount, sets.iterCount);
+
+            this->RunEpoch(dl, epochId, bacthesCount);
+
+            epochId++;
+        }
+    }
+
+    this->OnEnd();
 }
 
 template <typename DataLoaderType>
 void Runner::RunEpoch(DataLoaderType& dl, int epochId, int batchesCount)
 {
+    if (sets.iterType == Settings::IterationType::STEPS)
+    {
+        if (this->processedBatchesCount > sets.iterCount)
+        {
+            return;
+        }
+    }
+
     this->dataLoaderBatchesCount = batchesCount;
     this->activeEpochId = epochId;
 
@@ -108,6 +139,15 @@ void Runner::RunEpoch(DataLoaderType& dl, int epochId, int batchesCount)
         this->OnModelBatchEnd();
 
         batchIndex++;
+        this->processedBatchesCount++;
+
+        if (sets.iterType == Settings::IterationType::STEPS)
+        {
+            if (this->processedBatchesCount > sets.iterCount)
+            {
+                break;
+            }
+        }
     }
 
     this->OnModelEpochEnd();

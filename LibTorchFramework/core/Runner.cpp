@@ -60,12 +60,27 @@ Runner::Runner(RunMode type, const Settings& sets, std::shared_ptr<AbstractModel
     metrics(nullptr),
     batchIndex(0),
     dataLoaderBatchesCount(0),
+    processedBatchesCount(0),
     activeEpochId(0)
 {
     this->pBar = std::make_shared<ProgressBar>();
 }
 
 Runner::~Runner()
+{
+}
+
+size_t Runner::GetProcessedBatchesCount() const
+{
+    return this->processedBatchesCount;
+}
+
+void Runner::OnStart()
+{
+    this->processedBatchesCount = 0;
+}
+
+void Runner::OnEnd()
 {
 }
 

@@ -119,14 +119,15 @@ namespace CustomScenarios::exPreCastTraining
 			dashboard->SetImageUploadEnabled(settings.dashboard.enableImageUpload);
 		}
 		
-
-		FACL facl(settings.training.epochCount);
+		
+		FACL facl(settings.training.iterCount);
 		
 		Settings sets;
 		sets.device = (settings.device == "cpu") ? torch::kCPU : torch::kCUDA;
 		sets.numWorkers = settings.training.numWorkers;		
 		sets.perf.enableAutoCast = settings.training.autocast;				
-		sets.epochCount = settings.training.epochCount;
+		sets.iterType = Settings::IterationType::STEPS;
+		sets.iterCount = settings.training.iterCount;
 		sets.batchSize = settings.training.batchSize;
 		sets.metricsInitFn = [dashboard]() -> auto {
 			auto metr = std::make_shared<MetricsVideo>();
@@ -323,7 +324,7 @@ namespace CustomScenarios::exPreCastTraining
 
 			m->CreateOptimizer<torch::optim::AdamW>(torch::optim::AdamWOptions(1e-3).weight_decay(0.0));
 			
-			m->CreateScheduler<WarmupCosineScheduler>(settings.training.epochCount, 1e-3);
+			m->CreateScheduler<WarmupCosineScheduler>(settings.training.iterCount, 1e-3);
 
 			sets.pretrainedManager = std::make_shared<PretrainedManager>(settings.snapshot.path);
 			sets.pretrainedManager->EnableTrainingSnapshot(true);
